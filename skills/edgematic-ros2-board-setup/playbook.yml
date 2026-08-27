@@ -1,0 +1,8 @@
+id: edgematic-ros2-board-setup
+name: Edgematic ROS2 Board Setup (DevKit pre-flight)
+version: 0.1.0
+agents: [codex, claude]
+description: Prepare a Modalix DevKit before running a ROS2 pipeline, and verify it is still prepared — the pre-flight order (pairing, a clean board, Neat version match, workspace build traps, input stream, foxglove_bridge), the requirement that the pipeline's RTSP input comes from Edgematic Streams rather than a hand-started server, and the conditions that let a run report "started" while publishing nothing.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

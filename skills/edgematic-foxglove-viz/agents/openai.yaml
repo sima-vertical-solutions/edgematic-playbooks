@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Foxglove Visualization (Flora)"
+  short_description: "Visualize live pipeline output in the bundled Flora app over foxglove_bridge"
+  default_prompt: "Use $edgematic-foxglove-viz to help the user see a running pipeline's live output in the bundled Flora app — guide the board-side foxglove_bridge/pipeline prerequisites over the terminal, then offer the Open in Flora quick-action pill."

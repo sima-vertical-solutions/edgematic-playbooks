@@ -1,0 +1,8 @@
+id: edgematic-ros2-integration
+name: Edgematic ROS2 + Neat Integration (SoM setup)
+version: 0.1.0
+agents: [codex, claude]
+description: End-to-end setup path for running SiMa ROS2 Neat pipelines (yolov8_seg) on a Modalix SoM and wiring them into Edgematic Studio — SoC 2.1.2 flashing, Neat core@v0.2.1 on both the board and palette/SDK platforms, building vdp-simaai-ros2 (branch neat_integration), Foxglove/Flora visualization, and installing the Edgematic playbook skills into the Neat SDK container.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
