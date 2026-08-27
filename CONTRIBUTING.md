@@ -128,13 +128,23 @@ To validate the whole repository the way the bundle installer does:
 sima-cli playbooks install . --force
 ```
 
-## During the Migration
+## What CI Cannot Check Here
 
-These skills are currently mirrored in the private `edgematic-studio` repository
-under `playbooks/skills/`, where backend tests check every named tool and route
-against the live Studio catalog and OpenAPI document. Until that copy is
-removed, land a skill change in **both** repositories — this one is what users
-install, and that one is what CI validates.
+`validate_skills.py` checks the *shape* of a skill. It cannot check the two
+things most likely to be wrong in the prose:
+
+- that every agent tool a skill names is one the Studio MCP bridge exposes — a
+  skill naming an unexposed tool sends the CLI providers into a `-32601`
+  transport error
+- that every endpoint a skill documents still exists — a dead route sends the
+  model to a 404, or worse to the SPA fallback's `200`-with-HTML, which reads as
+  success
+
+Both need Studio's live tool catalog and OpenAPI document, which live in the
+`edgematic-studio` repository. Its backend suite checks this repo out and runs
+those two tests against it on every run, so a skill that names a stale tool or
+route fails **there**, not here. Expect that signal to arrive from the Studio
+side, and say in your pull request which Studio version the change tracks.
 
 ## Pull Requests
 
