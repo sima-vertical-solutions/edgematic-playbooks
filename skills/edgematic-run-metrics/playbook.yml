@@ -1,0 +1,8 @@
+id: edgematic-run-metrics
+name: Edgematic Run Metrics
+version: 0.1.0
+agents: [codex, claude]
+description: Benchmark a compiled model's KPIs (latency / FPS / power / energy) on a paired SiMa DevKit via the Edgematic Studio run-metrics endpoints — for an uploaded BYOM model or a project's pipeline model. Covers the async start-then-poll flow, benchmark knobs (frame count, device prep), reading the report, and error handling.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

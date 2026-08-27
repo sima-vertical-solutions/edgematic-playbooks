@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic View Streams"
+  short_description: "Show the active live video streams inline in the Edgematic Studio chat"
+  default_prompt: "Use $edgematic-view-streams to show the live video streams — count the active streams and render them as a compact grid in chat."

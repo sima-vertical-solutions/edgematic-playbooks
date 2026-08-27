@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Model Compile"
+  short_description: "Compile your own ONNX model into a SiMa MPK — upload, calibrate, compile, poll"
+  default_prompt: "Use $edgematic-model-compile to turn an ONNX model into a SiMa MPK: upload it, attach a calibration dataset, run the compile (standard or a custom Python compile script), poll until it is compiled, and report the .tar.gz artifact."

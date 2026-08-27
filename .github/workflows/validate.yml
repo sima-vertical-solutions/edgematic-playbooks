@@ -1,0 +1,31 @@
+name: Validate skills
+
+# Every push to main is immediately live: `sima-cli playbooks install
+# gh:sima-vertical-solutions/edgematic-playbooks` resolves the literal `main`
+# ref, so a malformed skill reaches the next bundle install with no release step
+# in between. This is the gate for that.
+#
+# Deliberately hermetic — no sima-cli, no network. It re-checks the handful of
+# invariants sima-cli's installer actually depends on, which is enough to catch
+# every way a skill has been broken so far, and it runs in seconds.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate skills
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate
+        run: python3 .github/scripts/validate_skills.py

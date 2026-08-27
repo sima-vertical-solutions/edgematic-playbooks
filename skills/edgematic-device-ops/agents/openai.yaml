@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Device Ops"
+  short_description: "Manage SiMa DevKits and deploy from the Edgematic Studio chat"
+  default_prompt: "Use $edgematic-device-ops to manage devices from chat — list, add (pair), or remove DevKits, check device status, and deploy a project over SCP or NFS."

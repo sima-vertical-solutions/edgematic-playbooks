@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Build, Deploy & Run"
+  short_description: "Build, deploy, run a project on a device, and pull results — from chat"
+  default_prompt: "Use $edgematic-build-deploy-run to take a project to a board — build it, deploy to a paired SiMa DevKit, run it, poll status, and copy results back into the project."

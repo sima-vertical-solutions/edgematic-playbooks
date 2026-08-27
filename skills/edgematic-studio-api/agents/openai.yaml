@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Studio API"
+  short_description: "Build integrations and tests against the Edgematic Studio HTTP API"
+  default_prompt: "Use $edgematic-studio-api to work with the Edgematic Studio REST API — projects, graphs, builds, deployments, agentic tools, and devices."

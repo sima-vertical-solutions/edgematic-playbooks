@@ -1,0 +1,8 @@
+id: edgematic-media-streams
+name: Edgematic Media & Streams
+version: 0.1.0
+agents: [codex, claude]
+description: Manage the Edgematic Studio video media library and control RTSP/WebRTC streams from chat — list, add, and remove videos; start and stop streams (returning every RTSP + WebRTC address); and list running input streams and output streams.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

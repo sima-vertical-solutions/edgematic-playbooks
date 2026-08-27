@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Media & Streams"
+  short_description: "Manage the video library and control RTSP/WebRTC streams from the Edgematic Studio chat"
+  default_prompt: "Use $edgematic-media-streams to manage media from chat — list, add, or remove videos, start or stop RTSP/WebRTC streams, and list the running input and output streams."

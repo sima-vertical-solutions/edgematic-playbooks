@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Run Metrics"
+  short_description: "Benchmark model KPIs (latency / FPS / power) on a SiMa DevKit"
+  default_prompt: "Use $edgematic-run-metrics to benchmark a model's KPIs on a paired DevKit — start a run-metrics job for an uploaded model or a project's pipeline model, poll it to completion, and report latency / FPS / power / energy."

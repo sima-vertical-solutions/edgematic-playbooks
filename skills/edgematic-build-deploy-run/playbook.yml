@@ -1,0 +1,8 @@
+id: edgematic-build-deploy-run
+name: Edgematic Build, Deploy & Run
+version: 0.1.0
+agents: [codex, claude]
+description: Build an Edgematic project, deploy it to a paired SiMa DevKit, run it on the board, and pull results back — all from chat. Covers the async build/run poll flow, SCP/NFS deploy, and copying device files into the project.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

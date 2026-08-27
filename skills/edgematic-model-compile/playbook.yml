@@ -1,0 +1,8 @@
+id: edgematic-model-compile
+name: Edgematic Model Compile
+version: 0.1.0
+agents: [codex, claude]
+description: Compile a user's own ONNX model into a SiMa MPK via the Edgematic Studio user-models API — upload the ONNX, attach a calibration dataset, run the standard or custom-script compile, poll to completion, and read the resulting .tar.gz artifact.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
