@@ -1,13 +1,14 @@
 ---
 name: edgematic-ros-capabilities
-description: Use when the user wants to set up or open a host ROS 2 colcon workspace in Edgematic Studio and work on which capabilities its robot builds with — "clone the robot repositories", "set up the ROS workspace", "open this ROS workspace", "what capabilities does this build include?", "add/remove/turn off <capability>", "build the ROS workspace", "deploy it to the robot". Covers the agent tools clone_repository / open_ros_workspace / list_ros_capabilities / set_ros_capabilities / prepare_ros_build / cancel_ros_build, cloning the client repository and sima-core into one parent directory before opening it (and why that clone must never be improvised in a shell), the rule that the selection is only the bringup package's exec_depend entries, the build handoff (Studio starts the build itself where a build channel is configured and otherwise hands the user a command to run, and watches the log either way — branch on the run_on the tool returns), and how to read the two build failures that really happen. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit (run_ros_pipeline / ros2_topic_list / ros2_node_list — see ros2-neat-nodes), Foxglove/Flora rendering (see edgematic-foxglove-viz), board bring-up and flashing (see ros2-edgematic-integration), or Edgematic model-archive projects (build_project / run_pipeline — a DIFFERENT, non-ROS flow, see edgematic-build-deploy-run).
+description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio and work on which capabilities its robot builds with — "clone the robot repositories", "set up the ROS workspace", "open this ROS workspace", "what capabilities does this build include?", "add/remove/turn off <capability>", "build the ROS workspace", "deploy it to the robot". Covers the agent tools clone_repository / open_ros_workspace / list_ros_capabilities / set_ros_capabilities / prepare_ros_build / cancel_ros_build, cloning the client repository and sima-core into one parent directory before opening it (and why that clone must never be improvised in a shell), the rule that the selection is only the bringup package's exec_depend entries, completing the third-party sources the workspace declares in its dependencies.repos files (with the revision each one pins) before any build, working out and naming the build script since prepare_ros_build has no default for it, searching a build log past its tail with get_build_status's match, the build handoff (Studio starts the build itself where a build channel is configured and otherwise hands the user a command to run, and watches the log either way — branch on the run_on the tool returns), and how to read the two build failures that really happen. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit (run_ros_pipeline / ros2_topic_list / ros2_node_list — see ros2-neat-nodes), Foxglove/Flora rendering (see edgematic-foxglove-viz), board bring-up and flashing (see ros2-edgematic-integration), or EdgeMatic model-archive projects (build_project / run_pipeline — a DIFFERENT, non-ROS flow, see edgematic-build-deploy-run).
 ---
 
 # ROS Workspace Capabilities, Build & Deploy
 
 A **host-side ROS 2 workspace** is a directory on this machine holding two sibling
-repositories: a **client** repository (it carries `build.sh` and `deploy.yaml`) and a
-**core** repository (it carries a `capabilities` directory). The client's *bringup*
+repositories: a **core** repository, which carries a `capabilities/` directory — that
+is what identifies the workspace at all — and a **client** repository beside it. The
+client's *bringup*
 package declares which of the core's capabilities the robot is built with. When those two
 repositories are not on disk yet, `clone_repository` is what puts them there — see step 0.
 
@@ -34,6 +35,9 @@ Follow it. Each step needs what the one before it returns.
    `parent`, and then step 1 on that same parent. Skip it only when the two repositories are
    already on disk side by side. See "Getting the two repositories onto disk" below, which
    also covers why the clone must not be improvised in a shell.
+0b. **Complete the workspace's third-party sources** — see "Dependencies the workspace
+   declares" below. Cloning the two repositories is NOT enough to build; do this before
+   step 4 or the build fails on a package that was never fetched.
 1. **`open_ros_workspace` `{ path }`** — the absolute host path the user named, or the parent
    step 0 cloned into. Detects the layout *before* registering anything, so a directory that
    is not a usable workspace is refused without leaving a project behind. Returns `project_id`,
@@ -46,17 +50,22 @@ Follow it. Each step needs what the one before it returns.
    Writes nothing.
 3. **`set_ros_capabilities` `{ project_id, capabilities }`** — only when the user wants
    the selection changed.
-4. **`prepare_ros_build` `{ project_id }`** — opens a pending build row, starts the
+4. **`prepare_ros_build` `{ project_id, script }`** — opens a pending build row, starts the
    watcher, and returns `run_on`, `log_path` and `build_id` always, plus `command`
    **only when `run_on` is `"host"`**. On the container path that key is *absent*, not
    empty.
+   **`script` is required and has no default** — see "Which script builds this project".
 5. **Branch on `run_on`.** When it is `"host"`, show `command` to the user as a fenced
    `bash` block and ask them to run it on the host — the chat already renders a fenced
    block with a copy button, so nothing else is needed. When it is `"container"` there is
    no `command`: say that Studio started the build in the container, and go straight to
    step 6. Never render a fenced block with nothing in it.
 6. **Poll `get_build_status` `{ project_id }`** until it is terminal, and read the result
-   as described under "Watching the build".
+   as described under "Watching the build". When a failure's cause is not in the returned
+   `log_tail`, call it again with `match` — for example
+   `{ project_id, match: "Could not find a package" }` — which searches the WHOLE log and
+   returns the matching lines. The default tail is only the last few KB, and a colcon
+   failure prints the missing package's name well above the line that reports the failure.
 7. **Deploy** to the paired device with `deploy_to_device` once — and only once — the
    build reported an observed success.
 
@@ -88,8 +97,8 @@ that comes back true, say so rather than acting on it.
 **A wrong layout is refused legibly, and that is the compensating control for the clone tool
 not guaranteeing one.** `open_ros_workspace` detects the layout *before* it registers
 anything, so a directory that is not a usable workspace leaves no project behind, and its
-refusal names exactly what it could not find — no child holding both `build.sh` and
-`deploy.yaml`, several children holding them, a missing `bringup` key, no sibling holding a
+refusal names exactly what it could not find — no child holding a `capabilities/`
+directory, several children holding one, a missing `bringup` key, no sibling holding a
 `capabilities` directory — with your own path spelling echoed back and everything else stated
 relative to the workspace root. Read the sentence, fix the thing it names, and open again. Do
 not go probing other directories to work out what happened.
@@ -103,7 +112,7 @@ path it can know:
 
 - The parent must sit **inside the directory Studio and the ROS container both mount at the
   same path** — the same premise the build command relies on (see "Always invoke the
-  workspace's own `build.sh`"). A pair cloned outside it clones perfectly well and then fails
+  workspace's own build script"). A pair cloned outside it clones perfectly well and then fails
   at build time, visibly, with a failed `cd` as the whole log.
 - The parent must **not be Studio's projects root itself**, which is also that mount. Studio's
   own managed projects sit directly in it, so opening it as a workspace is refused for
@@ -239,12 +248,64 @@ entry rather than in its original position. Only the pure-addition direction is
 byte-exact. **Tell the user this rather than promising a byte-exact undo**, and if the
 entry mattered in its original spelling, say that reverting it is a job for their VCS.
 
-## 3. Always invoke the workspace's own `build.sh` — never compose a colcon command
+## Dependencies the workspace declares
+
+**Cloning the client and core repositories does not give you a buildable workspace.** The
+third-party sources are declared, not vendored, and nothing fetches them for you. A build
+attempted without them fails on a package that is simply absent — most often as
+`Could not find a package configuration file provided by "<name>"`.
+
+Where the declarations live, in the order to read them:
+
+| File | Declares |
+| --- | --- |
+| `<core>/capabilities/*/dependencies.repos` | one file per capability — apriltag, py_trees, rtabmap and so on |
+| `<client>/dependencies.repos` | the client's own mission dependencies |
+| `<client>/manifest.repos` | the platform repositories — you already cloned these |
+
+Each is a `vcs` manifest: a `repositories:` map of `name → {type, url, version}`.
+
+**What to do:**
+
+1. Read those files (they are ordinary project files — `read_file`).
+2. List `<client>/src/` and see which declared names are missing.
+3. `clone_repository` each missing one into `<client>/src/`, **passing `ref` set to the
+   manifest's `version`**.
+
+**Do not scope this to the selected capabilities.** It is tempting and it is wrong: a
+package outside the selection can still be pulled into the build graph by an ordinary
+dependency — in the Stiga workspace `stiga_behavior` requires `apriltag_docking` whatever
+the selection says. Take every declaration.
+
+**`ref` is not optional in practice.** The manifests pin branches (`release/2.4.x`), tags
+(`v1.2.1-devel`) and raw commits (`62a272ac…`). Omitting it clones the default branch,
+which succeeds, builds, and ships a different revision than the one asked for — a failure
+nothing downstream can notice.
+
+A manifest may name a private repository (the Stiga workspace's `visual_odometry` names two).
+Those need a credential; report them by name rather than silently skipping them.
+
+## Which script builds this project
+
+`prepare_ros_build` requires `script` — the build script to run, relative to the client
+repository — and there is **no default**. Work out what this project actually uses:
+
+1. Look for an executable script at the client repository's root (`build.sh` is the common
+   name, but it is only a convention).
+2. Failing that, read its `README` for the documented build command.
+3. If there is no script at all, **write one** into the client repository with `write_file`
+   and pass its name. A three-line script that sources the ROS environment and runs
+   `colcon build` is a perfectly good answer.
+
+Pass the path as it sits relative to the client repository — `build.sh`,
+`scripts/compile.sh`. Absolute paths and `..` are refused.
+
+## 3. Always invoke the workspace's own build script — never compose a colcon command
 
 `prepare_ros_build` builds a command that changes into the client repository inside the
-container and runs `./build.sh` verbatim. When `run_on` is `"host"` that command is in the
-result: present it, and do not write your own. When `run_on` is `"container"` there is no
-command to present — Studio already ran that same `./build.sh` through the build channel,
+container and runs the script you named, verbatim. When `run_on` is `"host"` that command
+is in the result: present it, and do not write your own. When `run_on` is `"container"`
+there is no command to present — Studio already ran that same script through the channel,
 in the same container — and the rule against composing one of your own is if anything
 stronger, because there is nothing to correct.
 
@@ -399,10 +460,12 @@ do not guess around it.
   runtime image: an operator's job, and retrying cannot help.
 - **The clone destination is occupied by a project** — the folder would overlap a workspace
   Studio manages. Choose a different parent; do not delete anything to make room.
-- **Not a usable workspace** — no single child holds both `build.sh` and `deploy.yaml`,
-  several do, the `bringup` key is missing from `deploy.yaml`, or no sibling holds a
-  `capabilities` directory. Ask the user for the right directory; do not go looking for
-  one by probing paths.
+- **Not a usable workspace** — no child holds a `capabilities/` directory, or several
+  do. Ask the user for the right directory; do not go looking for one by probing paths.
+- **Recognised, but incomplete** — the client repository has no `deploy.yaml`, or its
+  `bringup` key is missing. This one is worth reading carefully: the workspace WAS
+  recognised, and what is named is the file to supply. Do not report it as "not a ROS
+  workspace".
 - **Unknown capability** — every unrecognised name is listed together with `available`,
   and the file was not touched. Correct the list and call again.
 - **A line the editor will not own** — the manifest holds an `<exec_depend>` spread over
