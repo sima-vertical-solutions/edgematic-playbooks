@@ -261,7 +261,7 @@ Where the declarations live, in the order to read them:
 | --- | --- |
 | `<core>/capabilities/*/dependencies.repos` | one file per capability — apriltag, py_trees, rtabmap and so on |
 | `<client>/dependencies.repos` | the client's own mission dependencies |
-| `<client>/manifest.repos` | the platform repositories — you already cloned these |
+| `<client>/manifest.repos` | the platform repositories — the client and the core you cloned yourself, and sometimes others nothing else declares |
 
 Each is a `vcs` manifest: a `repositories:` map of `name → {type, url, version}`.
 
@@ -271,6 +271,18 @@ Each is a `vcs` manifest: a `repositories:` map of `name → {type, url, version
 2. List `<client>/src/` and see which declared names are missing.
 3. `clone_repository` each missing one into `<client>/src/`, **passing `ref` set to the
    manifest's `version`**.
+
+**`manifest.repos` is where to look when a package is missing that no
+`dependencies.repos` declares.** It names the platform repositories — usually the client
+and the core you cloned yourself, but it can name more: the Stiga workspace declares
+`sima-sensor-stack`, which carries `sensor_bringup`, `intel_realsense_d435`,
+`imu_icm42688_spi`, `power_board_driver` and `sensor_manager`, and nothing else on disk
+mentions them.
+
+Fetch from it on that symptom rather than on sight. The capability manifests declare BUILD
+dependencies, so taking all of them is right; `manifest.repos` mostly declares packages
+needed at RUN time, and a repository's packages join the build graph the moment they are on
+disk — so pulling one nothing needs lengthens every build and adds ways for it to fail.
 
 **Do not scope this to the selected capabilities.** It is tempting and it is wrong: a
 package outside the selection can still be pulled into the build graph by an ordinary
