@@ -1,0 +1,8 @@
+id: edgematic-ros2-host-container
+name: Edgematic ROS2 Host Container (install and provision)
+version: 0.1.0
+agents: [codex, claude]
+description: Get the ROS 2 SDK container onto the user's own host and make it able to build — the host-only install command Edgematic Studio cannot run for them, cloning sima-core into the directory Studio and the ROS container both mount at the same path, and running sima-core's in-place provisioning script inside the container; plus why the provisioning does not survive a recreated container.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

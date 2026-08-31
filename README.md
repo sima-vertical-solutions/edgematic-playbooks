@@ -54,6 +54,7 @@ sima-cli playbooks remove edgematic-device-ops
 | [`edgematic-run-metrics`](skills/edgematic-run-metrics) | Benchmark a compiled model's latency, FPS, power, and energy on a paired DevKit, and read the resulting report. |
 | [`edgematic-media-streams`](skills/edgematic-media-streams) | Manage the video media library and control RTSP/WebRTC streams — add and remove videos, start and stop streams, list inputs and outputs. |
 | [`edgematic-view-streams`](skills/edgematic-view-streams) | Show the live video streams inline in the Studio chat as a multi-stream grid. |
+| [`edgematic-ros2-host-container`](skills/edgematic-ros2-host-container) | Install the ROS 2 SDK container on the user's own host and provision it to build — the host-only install command, cloning sima-core into the shared mount, and the in-place provisioning script. |
 
 ## Layout
 
