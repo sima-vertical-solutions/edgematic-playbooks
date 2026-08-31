@@ -1,0 +1,8 @@
+id: edgematic-ros2-neat-nodes
+name: Edgematic ROS2 Neat Nodes (yolov8_seg)
+version: 0.1.0
+agents: [codex, claude]
+description: Build, run, and introspect the SiMa ROS2 Neat pipeline (yolov8_seg / neat_inference) on a paired Modalix DevKit from chat via the run_ros_pipeline / ros2_topic_list / ros2_node_list agent tools — the yolov8_seg topic contract, the build+run-on-device flow, and when to auto-open Flora and offer the ROS topics/nodes inspection pills.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

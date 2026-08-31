@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS2 Neat Nodes (yolov8_seg)"
+  short_description: "Build/run/introspect the ROS2 yolov8_seg pipeline on a DevKit via agent tools"
+  default_prompt: "Use $edgematic-ros2-neat-nodes to build and run the ROS2 yolov8_seg pipeline on the paired DevKit (run_ros_pipeline), list ROS topics/nodes (ros2_topic_list / ros2_node_list), then auto-open Flora and offer the ROS topics/nodes inspection pills."

@@ -1,0 +1,8 @@
+id: edgematic-foxglove-viz
+name: Edgematic Foxglove Visualization (Flora)
+version: 0.1.0
+agents: [codex, claude]
+description: Visualize a running pipeline's live output in the bundled Flora (Foxglove-fork) app at /flora, connected to the DevKit's foxglove_bridge — the yolov8_seg topic contract, guiding board-side prerequisites over the built-in SSH terminal, the Flora auto-connect URL, and the "Open in Flora" quick-action pill.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
