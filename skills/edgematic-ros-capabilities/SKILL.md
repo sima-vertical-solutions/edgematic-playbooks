@@ -379,6 +379,38 @@ robots hear each other, so a guessed value fails on hardware and not in Studio. 
 workspace declares a key you do not handle, say that it is declared and unhandled rather
 than dropping it silently.
 
+### What the deploy carries, and what it does not
+
+By default `deploy_to_device` ships the staged `install/` tree plus whatever `models`
+names. It does **not** carry `bundle_libs`, `runtime_pip`, `upstream_setups` or
+`sys_config`, and the result says so in `skipped_deploy_keys`.
+
+Read that field. It is the difference between "the deploy failed" and "the deploy
+succeeded and the robot cannot start": a node that links RealSense or GTSAM, or imports a
+vendored Python package, fails at load with nothing pointing back at the deploy.
+
+When those keys matter, **assemble the payload yourself**: build a directory inside the
+workspace holding the `install/` tree beside whatever else the manifest declares, and pass
+its path as `payload`. That directory is shipped exactly as it stands — it replaces
+staging rather than adding to it, so it must be complete. The result then reports
+`payload` instead of `skipped_deploy_keys`, because staging did not run and its omissions
+are not a fact about your directory.
+
+Do not reach for the client's own `deploy.sh`. It refuses to run inside a container, and
+Studio is inside one — there is nowhere to execute it from.
+
+### After a deploy, look at the board
+
+`ros2_topic_list` and `ros2_node_list` ask a paired device what it is running. Both take a
+`domain`, and **passing it is not optional in practice**: ROS 2 discovery is partitioned by
+domain id, the workspace declares its own, and querying the wrong one returns an EMPTY
+LIST and exits successfully. That is indistinguishable from a board running nothing, so an
+omitted domain does not fail — it misleads, and you will go looking for a fault that is
+not there.
+
+Take the value from `ros_domain_id`, which both `prepare_ros_build` and `deploy_to_device`
+report. Never guess it, and never carry one over from another workspace.
+
 ## Watching the build
 
 What `prepare_ros_build` set in motion depends on `run_on`. With `run_on: "host"` Studio
