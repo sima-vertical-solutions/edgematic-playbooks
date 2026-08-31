@@ -113,9 +113,9 @@ with a secret prompt asks for a secret before showing that it is needed. The
 other `requirement` values, `git` and `git_lfs`, are an operator's to fix:
 report which one, and stop.
 
-If the provisioning script named in the next step is not in the checkout, it has
-not reached the default branch yet — re-clone with `ref` set to the branch that
-carries it. Do not reconstruct its steps by hand.
+The provisioning script the next step runs is on sima-core's default branch, so
+a plain clone lands on it. If it is missing, the checkout predates it: re-clone,
+or pass `ref`. Do not reconstruct its steps by hand.
 
 ## Step 3 — provision the container, in place
 
@@ -126,19 +126,23 @@ container you already have** — there is no second image to build.
 
 The script must run **as root**, and it refuses to run anywhere that is not this
 container (it checks `/etc/sdk-release` for `SDK Type = ros2-sdk`), so it cannot
-be run on the host by mistake. `sima-cli sdk ros2` opens a shell as the mapped
-host user, so from that shell it needs `sudo`:
+be run on the host by mistake.
 
-```bash
-sudo bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
-```
-
-Or from the host, against the container name resolved in step 1:
+**Run it from the host, as uid 0** — against the container name resolved in
+step 1:
 
 ```bash
 docker exec -u 0 -it <container> \
   bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
 ```
+
+**Do not tell the user to reach for `sudo`.** `sima-cli sdk ros2` attaches as
+the mapped host user, and the image ships no `sudo` — so inside that shell the
+script refuses for not being root, and the obvious repair fails a second time
+with a command that does not exist. That is two dead ends in a row, which is
+why the host form above is the one to give. If a shell opened in that container
+already reports uid 0 — `sima-cli` falls back to no user mapping when the
+container cannot map one — running the script directly from it is fine.
 
 It is idempotent — a re-run redoes only what is missing — and tees every run to
 a log under `/tmp`, so a run that dies partway can be read back instead of being

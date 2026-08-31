@@ -15,18 +15,22 @@ disagree about what is installed.
 
 ## Invocation
 
-Inside the container, as root:
-
-```bash
-sudo bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
-```
-
 From the host, against the real container name:
 
 ```bash
 docker exec -u 0 -it <container> \
   bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
 ```
+
+This is the form to give. `-u 0` is not decoration: on Linux and macOS
+`sima-cli sdk ros2` attaches with `docker exec -u <host user>`, so the shell it
+opens is not root, and **the image ships no `sudo`**. From inside that shell the
+script refuses for not being root, and `sudo` then fails as a missing command —
+two dead ends where the host form has none.
+
+`sima-cli` does drop the user mapping when the container cannot provide one, and
+the image's own default user is root, so a shell that already reports uid 0 can
+run the script directly. Check `id -u` rather than assuming either way.
 
 Copying the script in first also works and is what the script's own header
 suggests, but there is no need for it once `sima-core` is cloned inside the
@@ -51,8 +55,8 @@ stops, not as an error naming memory.
 
 ## Guards, and what each refusal means
 
-- **not root** — the script apt-installs packages. Re-run with `sudo`, or
-  `docker exec -u 0`.
+- **not root** — the script apt-installs packages. Re-run it through
+  `docker exec -u 0` from the host. Not with `sudo`: the image does not have it.
 - **`/etc/sdk-release` does not report `SDK Type = ros2-sdk`** — this is not the
   ROS 2 SDK container. The usual cause is running it on the host, or in the Neat
   SDK container. It refuses before touching anything, deliberately.
