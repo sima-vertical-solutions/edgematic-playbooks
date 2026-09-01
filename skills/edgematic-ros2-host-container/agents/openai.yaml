@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS2 Host Container"
+  short_description: "Install and provision the ROS 2 SDK container on the user's host"
+  default_prompt: "Use $edgematic-ros2-host-container to get a ROS 2 SDK container running on the host — hand the user the host-only `sima-cli neat install ros2-sdk` command, clone sima-core with clone_repository into the directory Studio and the ROS container both mount at the same path, then have them run sima-core's provision-modalix-deps.sh inside the container as root."
