@@ -1,0 +1,8 @@
+id: edgematic-ros-overlay-deploy-run
+name: Edgematic ROS Overlay Deploy and Run
+version: 0.1.0
+agents: [codex, claude]
+description: Carry a host-built ROS 2 colcon overlay from a green build to published data on a board — deploy it with deploy_to_device, reconcile the skipped_deploy_keys the deploy reports but does not perform, compensate each one over SSH, launch on the right DDS domain, and prove the capability with a message rather than a status string. Covers reading the client repository's own deploy script or profile as the authoritative specification and the fallback checklist for when neither exists, recovering the DDS domain from four independent sources, why run_ros_pipeline usually cannot reach a deployed overlay, whether a launch config argument wants a path or serialized JSON, and the four failures that make a healthy overlay look dead. Does not cover selecting capabilities or the host build itself (edgematic-ros-capabilities), the board-side yolov8_seg pipeline (edgematic-ros2-neat-nodes), or first-time board flashing (edgematic-ros2-integration).
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
