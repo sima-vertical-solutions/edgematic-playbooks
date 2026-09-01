@@ -24,7 +24,7 @@ labeled result **image** (for a single-image/Model-View pipeline) or the live
 video stream (for an RTSP pipeline). For a **Model-View** run you do **not**
 fetch, decode, or draw the output yourself — the card fetches `output/raw.bin`
 and renders it; your job ends at "the run succeeded — the output is in the result card".
-Manually re-running the parser over `Bash` for those duplicates the card's work.
+Manually re-running the parser in a shell for those duplicates the card's work.
 
 **A video pipeline is not delivered until you have SEEN the video.** For any
 pipeline that produces live output channels (RTSP, a camera, a multi-stream or
