@@ -1,6 +1,6 @@
 # Provisioning the ROS 2 SDK container
 
-Reference for `sima-core`'s `tools/docker/provision-modalix-deps.sh`. Read it
+Reference for `sima-core`'s `tools/edgematic/provision-modalix-deps.sh`. Read it
 when a provisioning run refuses, fails partway, or leaves a build still short of
 a dependency. The workflow itself is in the skill body.
 
@@ -19,7 +19,7 @@ From the host, against the real container name:
 
 ```bash
 docker exec -u 0 -it <container> \
-  bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
+  bash /workspace/sima-core/tools/edgematic/provision-modalix-deps.sh
 ```
 
 This is the form to give. `-u 0` is not decoration: on Linux and macOS
@@ -108,6 +108,33 @@ Two values are worth a second look:
 - **the link symlink** — reported missing means the socpipeline step could not
   find a versioned library to link against, and the workspace will fail at link
   time rather than at configure time.
+
+## The build channel, and how it differs from everything else here
+
+The script's last step provisions the **Edgematic build channel**: a small HTTP
+endpoint inside the container, plus the address it publishes to
+`<shared mount>/.edgematic/ros-build-channel.json`. Studio reads that file to
+find it — nothing is configured on either side. Skip it with
+`--skip-build-channel`, or run it alone with the sibling
+`tools/edgematic/provision-build-channel.sh`.
+
+It is the one part of this that **does not survive a container restart**, which
+is a stricter statement than the section below. The binary and the script sit in
+the writable layer like everything else and persist; the running endpoint is a
+*process* and does not, and nothing restarts it. So a container that was
+provisioned yesterday and merely restarted still has its dependencies and has
+lost its channel.
+
+The symptom is not an error: `prepare_ros_build` answers `run_on: "host"` and
+hands back a command to paste, exactly as it does on a machine that never had a
+channel. Check the published file first — it is written last, so its absence
+distinguishes "provisioning never reached the tail" from "the process died".
+
+Pass `GH_TOKEN` when launching it. The channel gives it to every build it
+starts, and without one those fetches go out unauthenticated and can meet
+GitHub's rate limit partway through a long build — reported as
+`could not read Username for https://github.com` an hour in. The container's own
+`gh` is normally signed out, so nothing recovers it locally.
 
 ## It does not survive a recreated container
 
