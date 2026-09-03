@@ -40,6 +40,11 @@ step that was supposed to produce them worked.
    on this: Studio resolves paths and hands them to the container untranslated.
 3. `sima-core` is cloned inside that shared directory, and its provisioning
    script has been run in the container.
+4. The **build channel** is running and has published its address. That is what
+   lets Studio start builds itself instead of handing the user a command to
+   paste, and it is the difference between `prepare_ros_build` answering
+   `run_on: "container"` and `run_on: "host"`. Provisioning does this at the end
+   of step 3; see "The build channel" below for how to check it.
 
 ## Step 1 is the user's to run, not yours
 
@@ -106,9 +111,15 @@ loudly exactly where a hand clone looks clean.
 **Ask for a GitHub token only after a refusal asks for one.** Call
 `clone_repository` with no `token`: Studio resolves the credential itself, from
 its own configuration or from one stored earlier. Only when the call comes back
-`clone_unavailable` with `requirement` set to `token` do you ask — once, in one
-sentence, for a token with read access — then retry the same call and tell the
-user it is stored and will not be asked for again. Opening a container setup
+`clone_unavailable` do you ask — once, in one sentence, for a token with read
+access — then retry the same call and tell the user it is stored and will not be
+asked for again.
+
+**Read which requirement it is from the `message` and `applicable_fixes`, not
+from a `requirement` field.** The error envelope carries `code` and `message`
+only; `requirement` exists inside the server and never reaches you. A missing
+token says so in the message and offers an `ask_user` fix carrying the exact
+question to put. Opening a container setup
 with a secret prompt asks for a secret before showing that it is needed. The
 other `requirement` values, `git` and `git_lfs`, are an operator's to fix:
 report which one, and stop.
@@ -133,7 +144,7 @@ step 1:
 
 ```bash
 docker exec -u 0 -it <container> \
-  bash /workspace/sima-core/tools/docker/provision-modalix-deps.sh
+  bash /workspace/sima-core/tools/edgematic/provision-modalix-deps.sh
 ```
 
 **Do not tell the user to reach for `sudo`.** `sima-cli sdk ros2` attaches as
@@ -165,6 +176,43 @@ proposing:
 A build that fails on a missing build dependency in a container that worked
 yesterday is this, not a workspace problem. Check the container's identity and
 provisioning before touching the workspace.
+
+## The build channel
+
+The tail of step 3 installs a small HTTP endpoint inside the container and
+publishes its address to `<shared mount>/.edgematic/ros-build-channel.json`.
+Studio reads that file and needs nothing configured — no environment variable,
+no container name, no network alias. When it is there, `prepare_ros_build`
+starts the build in the container and answers `run_on: "container"`.
+
+**It is a process, so it does not survive a container restart** — a stricter
+statement than the section above, which is about a container being *recreated*.
+The binary and the script persist in the writable layer; the running endpoint
+does not, and nothing restarts it. After a restart, re-run:
+
+```bash
+docker exec -u 0 -e GH_TOKEN="$(gh auth token)" <container> \
+  bash /workspace/sima-core/tools/edgematic/provision-build-channel.sh
+```
+
+**Pass `GH_TOKEN`, and check it took.** The channel hands the token to every
+build it starts. Without one, a build's GitHub fetches go out unauthenticated
+and can meet the rate limit partway through a long build — surfacing as
+`could not read Username for https://github.com` an hour in, which reads as a
+broken container rather than a missing credential. The container's own `gh` is
+normally signed out, so nothing recovers it. To check a running channel:
+
+```bash
+docker exec -u 0 <container> sh -c \
+  'tr "\0" "\n" < /proc/$(pgrep -x shell2http)/environ | grep -c GH_TOKEN'
+```
+
+`0` means every build it starts fetches anonymously.
+
+**A build that comes back `run_on: "host"` on a provisioned machine means the
+channel is absent**, not that anything is misconfigured in Studio. Check the
+published file exists and the process is running, in that order — the file is
+written last, so its absence says provisioning did not reach its tail.
 
 ## What not to do
 
