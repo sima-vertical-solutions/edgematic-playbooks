@@ -62,6 +62,54 @@ listing them all as unselected is the expected result, not a problem to fix.
 says whether Studio started it (`container`) or handed the user a command. Watch
 the log to completion rather than assuming.
 
+**Both of those are the cross-compiler.** `run_on: "container"` means Studio
+started the build in the ROS 2 SDK container over its build channel;
+`run_on: "host"` means no channel was reachable, so the result carries a
+`command` for the user to run — and that command is still an exec INTO the same
+container. There is no third outcome in which a build happens somewhere else,
+and you must not invent one.
+
+### When there is no cross-compiler: ask, never fall back
+
+If the container is missing the handed-back command fails on the host — no such
+container, or no container runtime at all — and `prepare_ros_build` cannot be
+used until that is fixed. The DevKit can compile natively, so the tempting move
+is to build there instead. **Do not do it silently.** Building on the board
+compiles against whatever that board happens to have rather than the pinned
+sysroot, and it writes into a live robot's stack: a root-owned build leaves
+artifacts the pipeline user cannot use, a rebuild swaps shared objects under a
+pipeline that is still running, and a later Neat reinstall invalidates the build
+directory without saying so. Those failures surface far from the build, as a
+pipeline that runs and produces nothing.
+
+So stop and put it to the user with `ask_user`. Keep the question itself short —
+they may not know what a cross-compiler is, and a wall of text is not a choice:
+
+> I can't reach the ROS 2 cross-compiler container, so I can't build this the
+> normal way. I can either help you install that container, or build directly on
+> the DevKit — which is faster to start but changes the board. Which would you
+> prefer?
+
+Offer it as three `prompt` pills: **Install the container**, **Build on the
+DevKit**, and **Tell me more**. On *Tell me more*, give the detail above —
+compiling against the board's own libraries instead of the pinned sysroot, the
+root-owned artifacts, the swap under a running pipeline, the invalidated build
+directory after a Neat reinstall — and say plainly that installing the container
+is the fix and a device build is a one-off.
+
+Then honour the answer:
+
+- **Install the container** — hand over to `edgematic-ros2-host-container`,
+  which is the skill for exactly this, and come back here afterwards.
+- **Build on the DevKit** — proceed, but say once what they have accepted, and
+  walk them through it over the built-in SSH terminal rather than pretending a
+  Studio tool does it: there is no agent tool that builds an arbitrary workspace
+  on the board. Build as the same user that will run the pipeline (never as
+  root), stop a running pipeline first, and remove the package's build directory
+  before rebuilding if Neat was reinstalled since the last build.
+- **No answer / unsure** — do not guess. A build that starts on the wrong machine
+  is far more expensive to undo than a second question.
+
 Two failures that look like broken code and are not:
 
 - **The build script must be executable.** `write_file` cannot set the exec bit —

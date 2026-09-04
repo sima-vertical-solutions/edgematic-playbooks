@@ -23,6 +23,14 @@ container.** The board receives artifacts and runs them. Never build, install
 packages, or write to system library directories on the board — on a live robot
 that stack belongs to someone else.
 
+That rule holds even when the container is missing. A build on the board is not
+a fallback you may take on the user's behalf: ask them first, and say what it
+costs — `edgematic-ros2-portable-pipeline` carries the wording and the three
+answers to honour. Here the stakes are higher than there, because this port
+exists to link against the pinned sysroot's own headers and libraries; a native
+build on the board links against whatever that board happens to have, which is
+the exact mismatch the six fixes below are about.
+
 This skill is only usable on a deployment that still works from the
 `vdp-simaai-ros2` client repository. Where the Robotics setting **Legacy
 vdp-simaai-ros2 repository** is off, the repository is out of scope and
