@@ -131,6 +131,41 @@ def check_skill(skill: Path) -> None:
         fail(f"{rel}: playbook.yml has no version")
 
 
+# Edgematic Studio can be told that the legacy ROS 2 client repository does not
+# exist for a deployment. It enforces that by hiding every installed skill whose
+# TEXT names the repository — a skill is prose the model reads, so no tool gate
+# can reach it, and reading the text is the only check that works on a skill set
+# we install but do not control.
+#
+# The consequence for this repository is that a mention is load-bearing. These
+# skills are the ones a deployment still has once the repository is disowned, so
+# a mention inside one of them removes the very guidance that mode depends on —
+# and the failure is silent, because a hidden skill looks exactly like a skill
+# that was never installed.
+LEGACY_REPO_SLUG = "vdp-simaai-ros2"
+MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO = ("edgematic-ros2-portable-pipeline",)
+
+
+def check_legacy_repo_mentions(skill: Path) -> None:
+    """A skill that must outlive the legacy repository must not name it."""
+    if skill.name not in MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO:
+        return
+    for path in sorted(skill.rglob("*")):
+        if not path.is_file() or path.suffix not in (".md", ".yml", ".yaml"):
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if LEGACY_REPO_SLUG in line:
+                rel = path.relative_to(REPO)
+                fail(
+                    f"{rel}:{lineno}: names `{LEGACY_REPO_SLUG}`, but this skill is "
+                    "what a deployment falls back to once that repository is "
+                    "disowned — naming it makes the skill invisible to exactly "
+                    "the deployments that need it. Describe the repository "
+                    "without its name."
+                )
+
+
 def main() -> int:
     if not SKILLS.is_dir():
         print("error: no skills/ directory", file=sys.stderr)
@@ -145,6 +180,7 @@ def main() -> int:
 
     for skill in skills:
         check_skill(skill)
+        check_legacy_repo_mentions(skill)
 
     if errors:
         print(f"{len(errors)} problem(s) found:\n", file=sys.stderr)
