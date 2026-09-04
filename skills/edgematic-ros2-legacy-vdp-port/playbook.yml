@@ -1,0 +1,8 @@
+id: edgematic-ros2-legacy-vdp-port
+name: Edgematic ROS 2 Legacy vdp-simaai-ros2 Port
+version: 0.1.0
+agents: [codex, claude]
+description: Cross-compile a package from the legacy vdp-simaai-ros2 client repository for a Modalix DevKit and port its develop-branch sources onto the board's current Neat runtime — the bringup package colcon expects beside sima-core, and the six runtime fixes of which only one is a compile error, so a green build proves cross-compilation and not correctness.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
