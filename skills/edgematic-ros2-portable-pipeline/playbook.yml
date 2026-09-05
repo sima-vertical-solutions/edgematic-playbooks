@@ -2,7 +2,7 @@ id: edgematic-ros2-portable-pipeline
 name: Edgematic ROS 2 Portable Pipeline
 version: 0.2.0
 agents: [codex, claude]
-description: Build, deploy and run a ROS 2 Neat pipeline the user owns on a paired Modalix DevKit, against sima-core and their own bringup package rather than a SiMa client repository — the minimal colcon layout, cross-compiling in the ROS 2 SDK container and asking the user before ever building on the device instead, the sima-owned deploy target, the board pre-flight, the environment the merge-install setup script breaks, and the detached launch that keeps the run alive after the SSH command returns.
+description: Build, deploy and run a ROS 2 Neat pipeline the user owns on a paired Modalix DevKit, against sima-core and their own bringup package rather than a SiMa client repository — the minimal colcon layout, cross-compiling in the ROS 2 SDK container and asking the user before ever building on the device instead, the sima-owned deploy target, the board pre-flight including a stale deployment holding the MLA and the segment pool that crash-relaunch cycles exhaust, matching the source geometry the pipeline was built for before blaming the encoder, the environment the merge-install setup script breaks, and the detached launch that keeps the run alive after the SSH command returns.
 compatibility:
   env_types: [host, sdk]
   min_cli_version: 2.1.0

@@ -9,12 +9,15 @@ description: >-
   environment that merge-install breaks, and the detached launch that keeps a
   run alive after the SSH command returns. Trigger on "run my own ROS 2
   pipeline", "build a standalone pipeline for the DevKit", or a pipeline that
-  starts, shows real frames for about twenty seconds and then goes dark. Do NOT
-  use for creating or provisioning the ROS 2 container (see
-  edgematic-ros2-host-container), choosing capabilities in a client workspace
-  (see edgematic-ros-capabilities), the pre-built yolov8_seg pipeline (see
-  edgematic-ros2-neat-nodes), or Foxglove/Flora rendering itself (see
-  edgematic-foxglove-viz).
+  starts, shows real frames for about twenty seconds and then goes dark, or one
+  that dies on frame one with "Failed to prepare input buffer". Also covers the
+  two board-side failures that read as code bugs and are not: a source whose
+  geometry does not match what the pipeline was built for, and an MLA segment
+  pool exhausted by repeated crashes. Do NOT use for creating or provisioning the
+  ROS 2 container (see edgematic-ros2-host-container), choosing capabilities in a
+  client workspace (see edgematic-ros-capabilities), the pre-built yolov8_seg
+  pipeline (see edgematic-ros2-neat-nodes), or Foxglove/Flora rendering itself
+  (see edgematic-foxglove-viz).
 ---
 
 # Running a ROS 2 pipeline the user owns
@@ -147,11 +150,51 @@ have cost hours when skipped.
   the board image). A stale value left by a previous stack means the board needs
   a reboot before anything will run.
 - **The MLA must be free** — no pipeline container from an earlier session still
-  holding it. When matching a process name, bracket the first character of the
-  pattern so the search cannot match the very command that runs it and kill the
-  user's own session.
+  holding it. Check **every** path this board has been deployed to, not just the
+  one you are about to use: a container left running from an older deploy
+  directory holds the MLA just as firmly, and it is easy to miss because you are
+  looking at the wrong tree. When matching a process name, bracket the first
+  character of the pattern so the search cannot match the very command that runs
+  it and kill the user's own session.
+- **The MLA segment pool must not be exhausted.** The board's shared memory is a
+  **fixed** pool of segments, and a pipeline that dies with a SIGSEGV does not
+  return its own. Crash-and-relaunch cycles therefore eat it, and the tell is a
+  run that dies at an ever-lower frame count than the one before it (1500, then
+  500), with `Failed to allocate segments in mem allocate only!` in the log. It
+  is not end-of-stream and it is not system RAM — the board can have gigabytes
+  free. A reboot clears it. Two things follow: **fix the configuration before
+  relaunching** rather than trying again and hoping, and treat the reboot as the
+  shared-board action it is — ask the user, do not take it.
 
-## 5. The two things that decide whether the run survives
+## 5. The source must match the geometry the pipeline was built for
+
+A pipeline is built for one input size. `yolov8_seg` is built for **1280x720**:
+the render stage parses that, the preprocessor's input buffer is sized
+`1280*720*1.5`, and the encoder is configured for it. Feed it anything else and
+the encoder's async prepare fails on frame one — `Failed to prepare input
+buffer` — appsrc reports an internal data stream error, and the container dies
+with a SIGSEGV.
+
+**`ffprobe` the clip you are actually streaming before you launch**, and
+transcode it if it does not match:
+
+```sh
+ffmpeg -i in.mp4 -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2" \
+  -r 30 -c:v libx264 -pix_fmt yuv420p out.mp4
+```
+
+Then upload it through the media endpoint and assign it to a stream slot. Keep
+the transcoded asset and reuse it; deriving it again for every demo is pure loss.
+
+**Do not read that message as an encoder bug.** It has been chased as one at the
+cost of a session, and the diagnosis that settled it is the one worth copying: a
+deploy already known to work failed **identically** on the same undersized clip.
+When a known-good artifact reproduces your symptom, the fault is not in the code
+you are editing. The other cause that is real is an encoder element string
+re-derived from prose that came out short of its full property set — read the
+exact string out of a working deploy rather than reconstructing it.
+
+## 6. The two things that decide whether the run survives
 
 1. **Set the environment explicitly, do not source the deployed setup script.**
    The merge-install setup script re-sources the container's build-time parent
@@ -159,13 +202,19 @@ have cost hours when skipped.
    on some board images the local variant emits no prepend either. Source the
    base ROS 2 overlay for the CLI, then prepend the deployed prefix to
    `AMENT_PREFIX_PATH` and its `lib` to `LD_LIBRARY_PATH` directly.
+
+   If you source it anyway, **hold the install path in your own variable first**.
+   That script *unsets* `COLCON_CURRENT_PREFIX` on its way out, so a later
+   `cd "$COLCON_CURRENT_PREFIX/share/<pkg>"` runs with an empty value and
+   launches from the wrong directory — where the pipeline's relative config paths
+   resolve to nothing.
 2. **Launch detached.** A backgrounded launch over a non-interactive SSH command
    dies of `SIGHUP` the moment that command returns. The tell is unmistakable and
    routinely misread: real annotated frames for roughly twenty seconds, then the
    tile goes dark. Launch it under `setsid` with stdout and stderr redirected to
    a log file, so it outlives the session that started it.
 
-## 6. Verify, do not assume
+## 7. Verify, do not assume
 
 - On the board: the encoder's frame-rate line, zero discarded frames, and the
   process still alive **from a second SSH session** — that last one is what
@@ -177,7 +226,7 @@ have cost hours when skipped.
   after its first annotated frame, so never show the user a zero-count grid and
   call it a result.
 
-## 7. Making the output visible
+## 8. Making the output visible
 
 - **Video, the short path:** point the encoder's UDP sink at a Studio output
   channel and the annotated stream appears in the streams grid with no Foxglove

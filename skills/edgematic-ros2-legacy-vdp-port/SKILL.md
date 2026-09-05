@@ -4,13 +4,13 @@ description: >-
   Use when cross-compiling a package from the legacy vdp-simaai-ros2 client
   repository for a Modalix DevKit and porting its develop-branch sources, which
   were written against simaai-socpipeline 2.1.x, onto the board's current Neat
-  runtime. Covers the sibling sima-core layout that repository needs, the
-  bringup package colcon expects, and the six runtime fixes — only one of which
-  is a compile error, so a green build is necessary and nowhere near
-  sufficient. Trigger on a vdp-simaai-ros2 package that builds cleanly and then
+  runtime. Covers finding the tree the build actually compiles before editing
+  anything, the sibling sima-core layout that repository needs, the bringup
+  package colcon expects, and the six runtime fixes — only one of which is a
+  compile error, so a green build is necessary and nowhere near sufficient. Trigger on a vdp-simaai-ros2 package that builds cleanly and then
   dies on the board with a bad_alloc, a segfault on the first frame, an
-  unsupported-operation dispatcher error, or an encoder rejecting its input
-  buffer. Do NOT use for a pipeline the user owns (see
+  unsupported-operation dispatcher error, or an encoder failing to prepare its
+  input buffer. Do NOT use for a pipeline the user owns (see
   edgematic-ros2-portable-pipeline), for choosing capabilities in a workspace
   (see edgematic-ros-capabilities), or for compiling anything on the board — that
   never happens.
@@ -53,7 +53,20 @@ Scope the colcon invocation to the bringup and message packages so the upstream
 SSH user owns (a root-owned target fails while `tar` restores timestamps) and
 the board's real `ros_domain_id` (a wrong id fails silently on hardware).
 
-## 2. Ground every fix in the board's own headers
+## 2. Find the tree the build actually compiles, before editing any of it
+
+The single most expensive mistake available here. The upstream repository keeps
+node sources in more than one place, and the bringup package decides which ones
+are compiled — often real files under the client repository's own `nodes/`
+directory rather than anything under `sima-core`. Applying all of the fixes
+below to the wrong tree produces a clean build, an unchanged binary, and the
+same runtime failure, with nothing to tell you why.
+
+Read the bringup package's `CMakeLists.txt` and resolve the source paths it
+globs, following symlinks to see where they land, before you touch a line. A
+whole port has been redone for want of that one check.
+
+## 3. Ground every fix in the board's own headers
 
 The develop branch was written against the 2.1.x socpipeline API; the board runs
 a much newer Neat. **The old libraries are usually still installed**, so the
@@ -61,7 +74,7 @@ mismatch compiles clean and explodes at runtime. Read the fixes off the cross
 sysroot's real headers on this host — not off prose, and not off the
 2.1.x sources — or the fix is a guess wearing a diff.
 
-## 3. The six fixes, in the order they bite
+## 4. The six fixes, in the order they bite
 
 1. **The config manager is a shared pointer** in the current job header. Declare
    it as one, construct it as one, and assign it to the job directly. This is
@@ -85,14 +98,29 @@ sysroot's real headers on this host — not off prose, and not off the
    different tensor layout than segmentation produces, and over-reads by roughly
    half a megabyte a few hundred frames in — which presents as random corruption
    far from its cause.
-6. **Re-attach the video metadata before the encoder.** The encoder rejects a
-   forwarded DMA buffer whose padded NV12 layout it cannot infer ("attach
-   GstVideoMeta for a custom padded layout"). The decoder's output is
-   height-padded and that metadata is lost across the ROS boundary, so rebuild it
-   from the real buffer size before pushing, and add the GStreamer video library
-   to the build dependencies.
+6. **`Failed to prepare input buffer` is almost never the encoder's code.**
+   It reads like one, and it has cost a full session to chase as one. The two
+   causes that are real, in the order to check them:
 
-## 4. Build, then prove it on the board
+   - **The source geometry does not match what the pipeline was built for.**
+     This pipeline is built for **1280x720** — the render stage parses that, the
+     preprocessor's input size is `1280*720*1.5`, and the encoder is configured
+     for it. Feed it anything else and the encoder's async prepare fails on frame
+     one, appsrc reports an internal data stream error, and the container dies
+     with a SIGSEGV. `ffprobe` the clip you are actually streaming **first**.
+   - **The encoder element's property string was re-derived from prose and came
+     out short.** `neatencoder` needs its full set — type, profile, level, pixel
+     format, width, height, frame rate, bitrate, async input mode, rate control —
+     not just a bitrate. Read the exact string out of a deploy that is known to
+     work (`strings` over its encoder library) instead of reconstructing it.
+
+   How this was settled, and why it belongs in a skill: a known-good reference
+   deploy failed **identically** on the same undersized clip. That is proof the
+   symptom is not in the source you are editing. Attaching `GstVideoMeta` before
+   pushing is something the original encoder legitimately does — keep it if you
+   are reconstructing that node — but it is not this message's fix.
+
+## 5. Build, then prove it on the board
 
 Cross-compile with `prepare_ros_build`, naming the build script by its bare
 filename; the container's working directory is already the project directory, so
