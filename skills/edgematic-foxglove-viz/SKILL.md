@@ -49,8 +49,8 @@ Starting/stopping the RTSP input stream is **not** this skill — hand that off 
 
 ## The yolov8_seg ROS2 pipeline contract
 
-The board runs the `yolov8_seg` ROS2 package from `vdp-simaai-ros2`
-(branch `neat_integration`). Once it and `foxglove_bridge` are up, these
+The board runs the `yolov8_seg` ROS2 package from the SiMa ROS 2 client
+workspace it was provisioned with. Once it and `foxglove_bridge` are up, these
 topics are live:
 
 | Topic | Message type | What it is | Renders in |
@@ -72,8 +72,8 @@ fresh connection shows something useful with zero manual panel setup.
 Walk the user through these over the **built-in SSH terminal** (a terminal
 panel connected to the paired DevKit) — you cannot run them yourself:
 
-1. **ROS2 workspace built.** `./build.sh yolov8_seg` (one-time, or after a
-   `vdp-simaai-ros2` update).
+1. **ROS2 workspace built.** `./build.sh yolov8_seg` (one-time, or after the
+   workspace is updated).
 2. **Pipeline started.** `./run.sh yolov8_seg` (foreground) or
    `./run.sh yolov8_seg --bg` (background, so the terminal is free for the
    next command).
