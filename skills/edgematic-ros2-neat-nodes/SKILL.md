@@ -59,7 +59,16 @@ Full board-setup runbook (flash, ROS2 + Neat install, foxglove_bridge): the
   restarted and will be blank for a few seconds — **say so**, because otherwise
   the gap reads as a failure.
 - **`ros2_topic_list`** `{ device }` — `ros2 topic list` over SSH → the advertised
-  topics. Use for "show me the ROS topics".
+  topics. Use for "show me the ROS topics". **Show what is flowing, not what is
+  advertised:** the raw list includes names nobody is publishing, and a list like
+  that reads as a healthy pipeline when nothing is running. Reduce it to topics
+  with a live publisher, and make sure `/image_raw` and `/detections` are in what
+  you show — those two are what tells the user the pipeline is actually seeing
+  and actually detecting.
+
+  If either is missing, say so plainly rather than quietly returning a shorter
+  list: an absent `/detections` is a real state of this pipeline, not a display
+  problem, and the honest answer names it.
 - **`ros2_node_list`** `{ device }` — `ros2 node list` over SSH → the running
   nodes (`/neat_inference`, `/yolov8_seg_neat_container`, `/foxglove_bridge`).
   Use for "show me the ROS (neat) nodes".
