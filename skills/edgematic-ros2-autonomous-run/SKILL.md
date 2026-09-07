@@ -62,6 +62,13 @@ Read `GET /agent/features` and look at the tools you actually have:
   repository by name. Everything is obtained, cross-compiled on the host and
   deployed — the portable path, which works for any sources the user supplies.
 
+**What is already installed on the board decides nothing.** "The workspace is
+pre-provisioned there, so this is the board-side path" is the wrong inference and
+a common one: the path is decided by which tools this deployment advertises, never
+by what a previous session left on the device. A pre-provisioned tree is something
+you may drive when the tools for it exist AND the user asked for that pipeline —
+it is never a reason to skip building the sources you were asked to run.
+
 **A third state exists and is the one that gets misread:** the two probes
 (`ros2_topic_list`, `ros2_node_list`) are present while `run_ros_pipeline` and
 `ros_pipeline_status` are not. That is not a partial rollout, a stale tool
