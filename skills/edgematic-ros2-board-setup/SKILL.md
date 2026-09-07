@@ -122,6 +122,16 @@ with the family switched on and correctly advertised — which reads as a gate
 problem and is not one. Confirm the workspace path on the device before blaming
 anything upstream of it, and point the env vars at it.
 
+**Those same defaults decide whether `run_ros_pipeline` exists at all.** If the
+two probes are advertised and `run_ros_pipeline` / `ros_pipeline_status` are not,
+nothing is broken and nothing needs reloading: this deployment has disowned the
+client repository while its configured commands still enter that repository's
+checkout, so those two are withheld. Point the three overrides above at the
+deployment's own workspace and they return. Until then a pre-provisioned pipeline
+on the board cannot be repointed or relaunched from chat — deploy and launch your
+own build instead, and say that is what you are doing rather than reporting a
+capability as half-loaded.
+
 ### 5. The input stream comes from Edgematic Streams
 
 This is a requirement, not a preference. Start the stream through Studio
