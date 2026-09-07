@@ -62,6 +62,24 @@ Read `GET /agent/features` and look at the tools you actually have:
   repository by name. Everything is obtained, cross-compiled on the host and
   deployed — the portable path, which works for any sources the user supplies.
 
+**A third state exists and is the one that gets misread:** the two probes
+(`ros2_topic_list`, `ros2_node_list`) are present while `run_ros_pipeline` and
+`ros_pipeline_status` are not. That is not a partial rollout, a stale tool
+catalogue or a session that needs reloading — those two drive a board-side
+checkout of the renounced repository, so they are withheld whenever it is
+disowned AND the deployment's ROS commands still enter that checkout. Say that
+plainly and take the portable path. **Never tell the user to start a new chat**:
+a feature flip reaches a running session on its next message, because every turn
+re-reads the gate. If they want those two tools back, the fix is to point
+`EDGEMATIC_ROS_RUN_CMD` / `EDGEMATIC_ROS_RTSP_RUN_TMPL` /
+`EDGEMATIC_ROS_STATUS_TMPL` at the deployment's own workspace — that is exactly
+what those overrides exist for.
+
+The cost of misreading it is concrete: a board already running a pre-provisioned
+pipeline cannot be repointed at a new stream without that tool, so the portable
+path — build, deploy to a directory you own, launch detached — is not a detour,
+it is the only route to a run you can actually steer.
+
 State which path you are on in your first reply. The user cannot see that gate,
 and a plan built on the wrong one wastes the whole run.
 
@@ -138,6 +156,20 @@ decoding to one shape while being fed another, which corrupts memory rather than
 failing cleanly.
 
 ## Step 4 — build
+
+**Build the sources you obtained. Do not adopt whatever is already deployed.**
+A board that has been used before almost always carries an install tree that
+starts cleanly, and starting it is much faster than a build — which is exactly
+why it needs forbidding. That tree's provenance is unknown: built from other
+sources, possibly at another Neat version, possibly by someone else. It may
+predate every change the user is asking you to demonstrate, and a Neat reinstall
+since it was built has invalidated it without marking it. "It started" is not
+"your code ran", and a run reported end-to-end on an adopted binary is a false
+report — the expensive kind, because it looks like success.
+
+Adopt an existing deployment only when the user asks for exactly that ("just
+start what is already there"). Either way, **say which one you did** in the reply
+that reports the run.
 
 Cross-compile in the ROS 2 SDK container. Both outcomes of `prepare_ros_build`
 are that container: Studio starting it, or you handing the user a command that
