@@ -143,7 +143,13 @@ def check_skill(skill: Path) -> None:
 # and the failure is silent, because a hidden skill looks exactly like a skill
 # that was never installed.
 LEGACY_REPO_SLUG = "vdp-simaai-ros2"
-MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO = ("edgematic-ros2-portable-pipeline",)
+MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO = (
+    "edgematic-ros2-portable-pipeline",
+    # The orchestrator runs on BOTH paths and branches on which one it is on, so
+    # it is the one skill that must never be hidden — a deployment that lost it
+    # would lose the flow that tells it the client-repository path is gone.
+    "edgematic-ros2-autonomous-run",
+)
 
 
 def check_legacy_repo_mentions(skill: Path) -> None:

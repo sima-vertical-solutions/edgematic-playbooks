@@ -1,0 +1,8 @@
+id: edgematic-ros2-autonomous-run
+name: Edgematic ROS 2 Autonomous Run
+version: 0.1.0
+agents: [codex, claude]
+description: Get a ROS 2 pipeline running on a paired Modalix DevKit end to end with minimal back-and-forth — establish which of the two ROS 2 paths the deployment is on, obtain the sources, read the application's own code for the input geometry it requires, the params it reads and the topics it publishes, provision that input automatically (library asset, URL, or a research dataset assembled into a stream), then build, deploy, launch, verify against the derived topics and show the output; asking only for a paired device, the board credential once, and a standing reboot policy.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

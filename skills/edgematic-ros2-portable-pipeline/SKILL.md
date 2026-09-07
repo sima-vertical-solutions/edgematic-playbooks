@@ -22,6 +22,11 @@ description: >-
 
 # Running a ROS 2 pipeline the user owns
 
+**Asked to just get it running end to end?** `edgematic-ros2-autonomous-run` is
+the orchestrator — it decides the order, derives the input and the topics from
+the application's own code, and names the only things worth asking. This skill is
+the reference it leans on for the mechanics below.
+
 This skill is for a pipeline that belongs to the user. The only thing it has to
 build against is **sima-core** — the capabilities sibling — plus their own
 bringup package. Everything else here is board mechanics, true of any ROS 2 Neat

@@ -5,6 +5,10 @@ description: Use when the user wants to build, run, or introspect the SiMa ROS2 
 
 # ROS2 Neat Nodes (yolov8_seg) on a Modalix DevKit
 
+**For a full end-to-end run** — sources, input provisioning, build, deploy,
+launch, verify and view, with minimal questions — start from
+`edgematic-ros2-autonomous-run` and come back here for the board-side tools.
+
 The DevKit runs the SiMa **`vdp-simaai-ros2`** workspace (branch
 `neat_integration`), whose `yolov8_seg` package is a single NEAT-native
 **`neat_inference`** lifecycle node — it decodes an RTSP feed, runs YOLOv8
