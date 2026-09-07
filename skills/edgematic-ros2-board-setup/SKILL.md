@@ -81,8 +81,30 @@ this way needs a rebuild before the pipeline is run.
 
 ### 4. The workspace is present and builds
 
-The colcon workspace must exist on the board and build the target package. Two
-build-time traps, both of which look like unrelated compiler noise:
+The colcon workspace must exist on the board and build the target package.
+
+**Where that build happened is not a free choice.** Every ROS 2 build is a
+cross-compile in the ROS 2 SDK container; the board is where the result is
+deployed and run, never where it is produced. This needs saying because the
+DevKit *can* compile natively — the improvisation is available, it appears to
+work, and its cost lands far from the build: it links against whatever that board
+happens to have rather than the pinned sysroot, a root-owned build leaves
+artifacts the pipeline user cannot use, a rebuild swaps shared objects under a
+pipeline that is still running, and a Neat reinstall invalidates the build tree
+without saying so. All four surface as a pipeline that starts and publishes
+nothing — the symptom this skill exists to prevent.
+
+So this step checks a workspace **is** there and builds. It does not license
+creating one there. Missing or stale → cross-compile and deploy
+(`edgematic-ros2-portable-pipeline`); the container missing → put it to the user
+before building on the device, never fall back on your own initiative, and that
+skill carries the wording. The one sanctioned on-device build is the catalogue
+path, where `run_ros_pipeline` builds a Neat-provisioned workspace on the board
+deliberately — a Studio tool doing it on purpose, not a precedent for building
+anything else there.
+
+Two build-time traps, both of which look like unrelated compiler noise and both
+of which bite whichever way the build was reached:
 
 - **`simaai-socpipeline-dev` cannot install alongside the Neat SDK.** Both ship
   identically-named headers into `/usr/include`, and neither declares a conflict,

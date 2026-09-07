@@ -158,6 +158,15 @@ video and run the pipeline on it".
 
 ## Recommended flow for "build and run on device"
 
+**This is the one place a build on the board is correct**, and it is correct
+because a Studio tool does it against a workspace Neat provisioned there — not
+because board builds are acceptable in general. Every other ROS 2 build is a
+cross-compile in the ROS 2 SDK container (`edgematic-ros2-portable-pipeline`); a
+hand-run colcon on the DevKit links against whatever that board happens to have
+instead of the pinned sysroot, and the resulting pipeline starts and publishes
+nothing. Do not read this flow as a precedent for building a user's own workspace
+on the device.
+
 1. Confirm a DevKit is paired (else offer the `/devices` navigate pill).
 2. Call `run_ros_pipeline { device }`. It returns `status:"started"` immediately —
    tell the user the pipeline is building+running on the board.
