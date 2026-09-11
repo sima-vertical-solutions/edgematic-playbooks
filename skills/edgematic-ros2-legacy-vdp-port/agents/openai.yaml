@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 Legacy vdp-simaai-ros2 Port"
+  short_description: "Cross-compile a legacy vdp-simaai-ros2 package and port it onto the board's current Neat runtime"
+  default_prompt: "Use $edgematic-ros2-legacy-vdp-port when a package from the legacy vdp-simaai-ros2 repository has to run on a DevKit — author the thin bringup package open_ros_workspace needs beside sima-core, cross-compile it in the ROS 2 SDK container (prepare_ros_build), and apply the six ports from the 2.1.x socpipeline API onto the board's current Neat runtime, reading each one off the cross sysroot's own headers. Only the first is a compile error; the other five compile clean and fail on the board, so treat a green build as proof of cross-compilation only and verify the first frames on hardware."

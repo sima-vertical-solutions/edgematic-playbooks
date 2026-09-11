@@ -81,8 +81,30 @@ this way needs a rebuild before the pipeline is run.
 
 ### 4. The workspace is present and builds
 
-The colcon workspace must exist on the board and build the target package. Two
-build-time traps, both of which look like unrelated compiler noise:
+The colcon workspace must exist on the board and build the target package.
+
+**Where that build happened is not a free choice.** Every ROS 2 build is a
+cross-compile in the ROS 2 SDK container; the board is where the result is
+deployed and run, never where it is produced. This needs saying because the
+DevKit *can* compile natively — the improvisation is available, it appears to
+work, and its cost lands far from the build: it links against whatever that board
+happens to have rather than the pinned sysroot, a root-owned build leaves
+artifacts the pipeline user cannot use, a rebuild swaps shared objects under a
+pipeline that is still running, and a Neat reinstall invalidates the build tree
+without saying so. All four surface as a pipeline that starts and publishes
+nothing — the symptom this skill exists to prevent.
+
+So this step checks a workspace **is** there and builds. It does not license
+creating one there. Missing or stale → cross-compile and deploy
+(`edgematic-ros2-portable-pipeline`); the container missing → put it to the user
+before building on the device, never fall back on your own initiative, and that
+skill carries the wording. The one sanctioned on-device build is the catalogue
+path, where `run_ros_pipeline` builds a Neat-provisioned workspace on the board
+deliberately — a Studio tool doing it on purpose, not a precedent for building
+anything else there.
+
+Two build-time traps, both of which look like unrelated compiler noise and both
+of which bite whichever way the build was reached:
 
 - **`simaai-socpipeline-dev` cannot install alongside the Neat SDK.** Both ship
   identically-named headers into `/usr/include`, and neither declares a conflict,
@@ -99,6 +121,16 @@ and on a board where the workspace lives somewhere else every ROS2 tool fails
 with the family switched on and correctly advertised — which reads as a gate
 problem and is not one. Confirm the workspace path on the device before blaming
 anything upstream of it, and point the env vars at it.
+
+**Those same defaults decide whether `run_ros_pipeline` exists at all.** If the
+two probes are advertised and `run_ros_pipeline` / `ros_pipeline_status` are not,
+nothing is broken and nothing needs reloading: this deployment has disowned the
+client repository while its configured commands still enter that repository's
+checkout, so those two are withheld. Point the three overrides above at the
+deployment's own workspace and they return. Until then a pre-provisioned pipeline
+on the board cannot be repointed or relaunched from chat — deploy and launch your
+own build instead, and say that is what you are doing rather than reporting a
+capability as half-loaded.
 
 ### 5. The input stream comes from Edgematic Streams
 

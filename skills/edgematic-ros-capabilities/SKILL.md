@@ -60,6 +60,13 @@ Follow it. Each step needs what the one before it returns.
    block with a copy button, so nothing else is needed. When it is `"container"` there is
    no `command`: say that Studio started the build in the container, and go straight to
    step 6. Never render a fenced block with nothing in it.
+   Both branches are the cross-compiler: `"container"` is Studio starting the build
+   inside it, `"host"` is the user starting the same thing by hand. If the container
+   turns out not to exist at all, that is **not** a cue to build on the robot instead —
+   stop and ask the user, with the wording and the three answers
+   `edgematic-ros2-portable-pipeline` carries. Installing the container
+   (`edgematic-ros2-host-container`) is the fix; a device build is a decision only
+   they can make.
 6. **Poll `get_build_status` `{ project_id }`** until it is terminal, and read the result
    as described under "Watching the build". When a failure's cause is not in the returned
    `log_tail`, call it again with `match` — for example
@@ -68,6 +75,7 @@ Follow it. Each step needs what the one before it returns.
    failure prints the missing package's name well above the line that reports the failure.
 7. **Deploy** to the paired device with `deploy_to_device` once — and only once — the
    build reported an observed success.
+
 
 ## 0. Getting the two repositories onto disk
 

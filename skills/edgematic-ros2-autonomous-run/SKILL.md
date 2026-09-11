@@ -1,0 +1,273 @@
+---
+name: edgematic-ros2-autonomous-run
+description: >-
+  Use when asked to get a ROS 2 pipeline running on a DevKit end to end with
+  minimal back-and-forth — "run the pipeline on the device", "build and run it
+  end to end", "run the yolov8_seg demo end to end on <device>", "get the demo
+  up", "run a pipeline over this dataset". A one-sentence request naming the
+  pipeline and the device is the whole intended input. The orchestrator:
+  resolves and checks the device, works out which of the two ROS 2 paths this
+  deployment is on,
+  obtains the sources, READS THE APPLICATION CODE to derive what input the
+  pipeline needs and which topics it publishes, provisions that input itself —
+  a clip, a URL, a research dataset, a live stream — then builds, deploys,
+  launches, verifies against the topics it derived, and shows the output. Names
+  the only two things worth asking the user and answers everything else from
+  the code. Do NOT use it as a reference for the individual steps: the layout,
+  the board traps and the detached launch live in
+  edgematic-ros2-portable-pipeline, the catalogue tools in
+  edgematic-ros2-neat-nodes, rendering in edgematic-foxglove-viz, pairing in
+  edgematic-device-ops. This skill decides the ORDER and what never to ask.
+---
+
+# Running a ROS 2 pipeline end to end, without a wall of instructions
+
+The user asked for a working pipeline, not a conversation. Everything below
+exists to keep you from stopping to ask for something the code already answers,
+and from reporting success you have not verified.
+
+**Finish the job.** If you cannot, say exactly what is blocked, what you tried
+and what you need — never hand back a half-run pipeline as if it were done.
+
+## What you may ask for, and nothing else
+
+Two things genuinely need the user. Resolve everything else yourself.
+
+1. **A device.** Only they have the board's credentials. When the request names
+   one, resolve it with `list_devices` and confirm it is online with
+   `get_device_status` before anything else — an offline board should stop the
+   run here, not after a build. If the named device is not paired, pair it per
+   `edgematic-device-ops`, asking with `ask_user` only for the fields the user
+   did not give; the password travels only through that flow. Ask which device
+   only when none is named and more than one is paired.
+2. **The board SSH credential — once.** Use it to install a key, then never ask
+   again. Check whether key access already works before asking at all.
+
+**Never reboot without a standing rule, and do not ask for one up front.** On a
+shared board a reboot is the only irreversible step, and asking before anything
+has failed puts a question in front of every run for a failure most runs never
+hit. Without a rule the answer is no: when the log reports the segment pool
+exhausted, stop and say so, and ask then — phrased as a rule rather than a
+one-off: *may I reboot when, and only when, the log reports the segment pool
+exhausted AND the robot stack is not running?* Once granted, apply it and report
+afterwards.
+
+Beyond that, two conditional questions and only these: **if the ROS 2
+cross-compiler container is missing**, whether to build on the device instead
+(the user's call, never yours — `edgematic-ros2-portable-pipeline` carries the
+wording); and **if an input source is behind a login**, for the archive itself,
+because you cannot accept a licence on someone's behalf.
+
+Everything else — which video, which stream, which slot, which topics to watch,
+the build, the deploy target, the launch, the viewer — you determine. A question
+about any of those is a failure of this skill, not diligence.
+
+## Step 0 — establish which path this deployment is on, and say so
+
+Read `GET /agent/features` and look at the tools you actually have:
+
+- **`list_ros_examples` available** → the client-repository path. A published
+  catalogue of ready-made pipelines exists; take the package name from it rather
+  than guessing, and `run_ros_pipeline` builds and runs it on the board.
+- **Absent** → this deployment has disowned that repository, deliberately. There
+  is no catalogue to enumerate and you must not invent one or reach for the
+  repository by name. Everything is obtained, cross-compiled on the host and
+  deployed — the portable path, which works for any sources the user supplies.
+
+**What is already installed on the board decides nothing.** "The workspace is
+pre-provisioned there, so this is the board-side path" is the wrong inference and
+a common one: the path is decided by which tools this deployment advertises, never
+by what a previous session left on the device. A pre-provisioned tree is something
+you may drive when the tools for it exist AND the user asked for that pipeline —
+it is never a reason to skip building the sources you were asked to run.
+
+**A third state exists and is the one that gets misread:** the two probes
+(`ros2_topic_list`, `ros2_node_list`) are present while `run_ros_pipeline` and
+`ros_pipeline_status` are not. That is not a partial rollout, a stale tool
+catalogue or a session that needs reloading — those two drive a board-side
+checkout of the renounced repository, so they are withheld whenever it is
+disowned AND the deployment's ROS commands still enter that checkout. Say that
+plainly and take the portable path. **Never tell the user to start a new chat**:
+a feature flip reaches a running session on its next message, because every turn
+re-reads the gate. If they want those two tools back, the fix is to point
+`EDGEMATIC_ROS_RUN_CMD` / `EDGEMATIC_ROS_RTSP_RUN_TMPL` /
+`EDGEMATIC_ROS_STATUS_TMPL` at the deployment's own workspace — that is exactly
+what those overrides exist for.
+
+The cost of misreading it is concrete: a board already running a pre-provisioned
+pipeline cannot be repointed at a new stream without that tool, so the portable
+path — build, deploy to a directory you own, launch detached — is not a detour,
+it is the only route to a run you can actually steer.
+
+State which path you are on in your first reply. The user cannot see that gate,
+and a plan built on the wrong one wastes the whole run.
+
+## Step 1 — obtain the sources
+
+- **Catalogue path:** take the package name from the catalogue listing.
+- **Portable path:** the user names a repository or points at a workspace. Clone
+  it with `clone_repository` — never an improvised shell clone, which puts the
+  credential in the repository config and drops the filters large binary assets
+  depend on. Lay it out and author the bringup package per
+  `edgematic-ros2-portable-pipeline`, and **read the bringup `CMakeLists.txt` to
+  find which sources are actually compiled** before editing any of them.
+
+## Step 2 — read the application's own contract (do not ask, and do not assume)
+
+Everything you need about input and output is already written down in the package
+you just obtained. Read it before touching a stream. Four answers, each with a
+place it actually lives:
+
+1. **Input geometry and frame rate.** Fixed at build time, and stated in several
+   places that must agree: the params file's source width / height / fps, the
+   render stage's configured dimensions, and the preprocessor's input buffer size
+   (a raw NV12 size is `width * height * 1.5`, which is worth computing back to
+   dimensions as a cross-check). Take the geometry from the package, never from
+   the source you happen to have.
+2. **Where the input comes from and where the output goes.** The params file
+   names an input URL and an output sink. Note the parameter names — you will
+   rewrite these, and rewriting the wrong copy is a common way to run a pipeline
+   that ignores your changes. Rewrite both the source copy and the installed one.
+3. **Which topics it publishes, and their types.** Grep the node sources for
+   publisher creation and the launch file for remappings; that gives the real
+   names before anything runs. Note the message types too — a topic carrying a
+   custom message will not render in a stock image viewer however healthy it is,
+   and knowing that up front saves a "the viewer is broken" detour. This derived
+   list is what you verify against later; do not carry a remembered list from
+   another pipeline.
+4. **What the input must contain.** The model and its label file say what the
+   pipeline can detect. A person detector over an empty-road dataset produces a
+   technically perfect run with nothing in it. Match the content to the labels,
+   and if the user's chosen source plainly does not, say so before spending a
+   build on it.
+
+Report these four in one short block when you have them. It is the cheapest way
+for the user to catch a wrong assumption before it costs a run.
+
+## Step 3 — provision the input automatically
+
+Having derived the requirement, satisfy it without asking:
+
+1. **Reuse before fetching.** Check the media library for an asset already at the
+   required geometry. Re-downloading and re-transcoding something already present
+   is the most common wasted step in this flow.
+2. **Otherwise fetch one.** For a URL or a local file, fetch it, transcode to the
+   required geometry and frame rate, upload it through the media upload endpoint,
+   assign a free slot, start the stream. Keep the transcoded asset so the next
+   run reuses it. Where the user named no source at all, choose one that matches
+   the labels from step 2 and say which you chose and why — a stated choice they
+   can override beats a question that stops the run.
+3. **A dataset rather than a video.** Research datasets ship as per-scene image
+   sequences or short per-camera clips, not one stream. Pick the camera whose
+   viewpoint the pipeline expects, assemble that camera's frames into a single
+   H.264 clip at the required geometry, set the frame rate **explicitly** (a
+   dataset's capture rate is rarely the pipeline's), then continue as case 2.
+   If the download needs an account and a licence, ask for the archive — that is
+   the one legitimate question about a source.
+4. **A live camera or existing RTSP source** — use it directly when its geometry
+   matches, and say plainly it must be restreamed if it does not.
+
+**`ffprobe` the asset you actually started**, not the one its name suggests, and
+take the geometry from that.
+
+Then point the pipeline at what you actually started. The streams listing reports
+the host's view of its own address, which is not always one the board can route
+to — a wrong one runs forever with the raw input topic at 0 Hz and no error
+anywhere. **Prove it from the board before launching:** open a TCP connection
+from the board to that address on the RTSP port. If it fails, use the address the
+board actually reaches the host on — the peer of the board's own SSH session is
+one — and test that instead. Never a loopback. Then write the input URL and the
+source geometry fields together, into both copies of the params.
+They move as one unit — a URL changed without the geometry leaves the pipeline
+decoding to one shape while being fed another, which corrupts memory rather than
+failing cleanly.
+
+## Step 4 — build
+
+**Build the sources you obtained. Do not adopt whatever is already deployed.**
+A board that has been used before almost always carries an install tree that
+starts cleanly, and starting it is much faster than a build — which is exactly
+why it needs forbidding. That tree's provenance is unknown: built from other
+sources, possibly at another Neat version, possibly by someone else. It may
+predate every change the user is asking you to demonstrate, and a Neat reinstall
+since it was built has invalidated it without marking it. "It started" is not
+"your code ran", and a run reported end-to-end on an adopted binary is a false
+report — the expensive kind, because it looks like success.
+
+Adopt an existing deployment only when the user asks for exactly that ("just
+start what is already there"). Either way, **say which one you did** in the reply
+that reports the run.
+
+A request that names a deployment on the board ("using the reference deploy at
+<path>") is that ask: skip the build and keep every other step — input,
+pre-flight, detached launch, verification. And if step 2 shows the sources you
+would build do not publish a topic the user expects to see, such as an annotated
+image, say so before building rather than after an empty viewer.
+
+Cross-compile in the ROS 2 SDK container. Both outcomes of `prepare_ros_build`
+are that container: Studio starting it, or you handing the user a command that
+execs into it. If the container is missing, that is the question above — ask; do
+not fall back to the board on your own initiative.
+
+Poll the build to a real terminal state and read its exit marker. A build that
+merely went quiet is not a build that passed.
+
+## Step 5 — deploy, pre-flight, launch
+
+`edgematic-ros2-portable-pipeline` holds the detail. The four that decide whether
+the run works at all:
+
+- **Deploy to a directory the SSH user owns.** A root-owned target fails while
+  the archive restores timestamps, after appearing to copy fine.
+- **Clear prior deployments from EVERY path this board has used**, not just the
+  one you are deploying to. A container left from an older directory holds the
+  accelerator just as firmly, and it is easy to miss because you are looking at
+  the wrong tree. Bracket a character in any process-matching pattern so it
+  cannot match — and kill — your own session. Then clear stale DDS shared
+  memory and check that no container survives with zero components; the
+  pre-flight in `edgematic-ros2-portable-pipeline` has both.
+- **Launch detached**, output to a log file. A backgrounded launch over a
+  non-interactive SSH command dies when that command returns; the tell is real
+  frames for about twenty seconds and then nothing.
+- **Start the visualisation bridge last**, after the deploy and after the
+  pipeline, and **as the same user as the pipeline**. A deploy overwrites it in
+  place and kills it; a bridge under another user lists every topic and relays
+  no data.
+
+If a run crashes, **fix the configuration before relaunching**. Each crashed run
+leaks accelerator segments from a fixed pool, so retrying an unchanged mistake
+makes the next attempt strictly worse — runs dying at ever-lower frame counts are
+the pool going, not the code degrading. The reboot that clears it is the
+destructive act you already have a policy for.
+
+## Step 6 — verify against the topics you derived, then show
+
+A tool reporting `started` has told you a process was spawned, nothing more.
+Before telling the user it works:
+
+- the log is past the point where earlier attempts died and at least a minute
+  of frames in, at the rate the params ask for, with no discarded frames and no
+  input-buffer failure;
+- the process is still alive **from a second session** — that is what proves the
+  detachment held;
+- **the topics from step 2 are actually publishing**, at a non-zero rate, and the
+  output leaves the board (a live rate on the annotated topic, or a non-zero
+  count on the output channel).
+
+Then show it: open the viewer on the annotated image topic **that the code
+publishes**, not one remembered from another pipeline. When listing topics, show
+the ones actually publishing rather than everything advertised, and include the
+raw input and the detections — if one of them is missing, name it plainly rather
+than quietly returning a shorter list. An advertised-but-silent list reads as a
+healthy pipeline, and is how a dead run gets reported as a live one.
+
+**Leave it running.** An end-to-end run is there to be watched, so once it is
+verified do not stop the pipeline or the bridge to tidy up — stop them when the
+user asks.
+
+## Report at the end
+
+What ran — built or adopted, and from which path — the frame count and rate you
+measured, what you skipped and why, what you worked around, and anything the user
+now owns — a board left rebooted, an asset added to the library, a question you
+could not answer. Keep it short: the pipeline is the deliverable, not the prose.
