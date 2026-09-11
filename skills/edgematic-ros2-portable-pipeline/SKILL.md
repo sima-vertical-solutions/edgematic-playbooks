@@ -161,6 +161,14 @@ have cost hours when skipped.
   looking at the wrong tree. When matching a process name, bracket the first
   character of the pattern so the search cannot match the very command that runs
   it and kill the user's own session.
+- **No stale DDS state may survive the old run.** A killed pipeline leaves its
+  shared-memory transport files under `/dev/shm` (`fastrtps_*`), writable only
+  by the user that created them. Left behind by another user, they let a fresh
+  publisher and subscriber discover each other and exchange **no data** — nodes
+  and topics list normally while every rate is zero. Remove them once prior
+  deployments are cleared, and confirm no container survives with **zero**
+  loaded components (`ros2 component list`): that one answers graph queries in
+  place of your launch, so "the node is listed" proves nothing.
 - **The MLA segment pool must not be exhausted.** The board's shared memory is a
   **fixed** pool of segments, and a pipeline that dies with a SIGSEGV does not
   return its own. Crash-and-relaunch cycles therefore eat it, and the tell is a
@@ -241,4 +249,5 @@ exact string out of a working deploy rather than reconstructing it.
   SiMa message types gives Foxglove nothing to draw, so publish a
   `sensor_msgs/Image` overlay from the node holding the finished frame and point
   an Image panel at that. Start `foxglove_bridge` last — after the deploy and
-  after the pipeline.
+  after the pipeline — and as the same user as the pipeline, or it lists every
+  topic and relays nothing (see the DDS pre-flight above).
