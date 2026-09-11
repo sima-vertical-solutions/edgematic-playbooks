@@ -12,7 +12,7 @@ description: >-
   pipeline needs and which topics it publishes, provisions that input itself —
   a clip, a URL, a research dataset, a live stream — then builds, deploys,
   launches, verifies against the topics it derived, and shows the output. Names
-  the only three things worth asking the user and answers everything else from
+  the only two things worth asking the user and answers everything else from
   the code. Do NOT use it as a reference for the individual steps: the layout,
   the board traps and the detached launch live in
   edgematic-ros2-portable-pipeline, the catalogue tools in
