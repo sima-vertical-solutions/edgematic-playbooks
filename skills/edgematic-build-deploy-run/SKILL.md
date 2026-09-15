@@ -1,6 +1,6 @@
 ---
 name: edgematic-build-deploy-run
-description: Use when the user wants to build an Edgematic project, deploy it to a device, run it on the board, pull results back, or DISPLAY/SHOW a pipeline's output image in chat. Covers starting/polling an async build, deploying over SCP or NFS, starting/polling/stopping a run on a paired SiMa DevKit, copying device files into the project, and rendering an output image inline via an `edgematic-image` block. For a VIDEO/streaming pipeline this skill also owns what "deploy it" actually means — deploy AND run AND verify the streams are live and STABLE AND show them in chat via edgematic-view-streams, none of which the user has to ask for separately. A deployed-but-not-running pipeline produces no video, and a run reporting `running` is not evidence that video works. For device pairing/listing/removal use edgematic-device-ops. Do not use for Neat Library C++/Python application development, model compilation, canvas/graph editing, or web-ui React work.
+description: Use when the user wants to build an Edgematic project, deploy it to a device, run it on the board, pull results back, or DISPLAY/SHOW a pipeline's output image in chat. Covers starting/polling an async build, deploying over SCP or NFS, starting/polling/stopping a run on a paired SiMa DevKit, copying device files into the project, and rendering an output image inline via an `edgematic-image` block. For a VIDEO/streaming pipeline this skill also owns what "deploy it" actually means — make sure the input streams it reads are playing, then deploy AND run AND verify the streams are live and STABLE AND show them in chat via edgematic-view-streams, none of which the user has to ask for separately. A deployed-but-not-running pipeline produces no video, and a run reporting `running` is not evidence that video works. For device pairing/listing/removal use edgematic-device-ops. Do not use for Neat Library C++/Python application development, model compilation, canvas/graph editing, or web-ui React work.
 ---
 
 # Edgematic Build, Deploy & Run
@@ -28,15 +28,18 @@ Manually re-running the parser in a shell for those duplicates the card's work.
 
 **A video pipeline is not delivered until you have SEEN the video.** For any
 pipeline that produces live output channels (RTSP, a camera, a multi-stream or
-otherwise continuous pipeline), three steps are MANDATORY, in this order, every
+otherwise continuous pipeline), four steps are MANDATORY, in this order, every
 time — the user does not have to ask for any of them:
 
-1. **Run it.** A deployed-but-not-running video pipeline produces no video. See
+1. **Provision its inputs — before the build.** Every Insight slot the config's
+   `streams:` list reads must be playing, and its address written into
+   `common/config.yaml`. See *Provisioning input streams*.
+2. **Run it.** A deployed-but-not-running video pipeline produces no video. See
    *"Deploy" means deploy AND run* below — this is not an extra the user must
    request separately.
-2. **Verify stream stability** — confirm the device is actually pushing frames
+3. **Verify stream stability** — confirm the device is actually pushing frames
    and is *still* pushing them a moment later. See *Verifying video stability*.
-3. **Show the streams** — invoke `edgematic-view-streams` and emit the
+4. **Show the streams** — invoke `edgematic-view-streams` and emit the
    `edgematic-streams` block as the LAST element of your reply, so the user sees
    the live grid of what they just deployed.
 
@@ -175,33 +178,40 @@ Full request/response and error-code detail: `references/build-deploy-run-api.md
 
 1. **Identify the project + device.** You need the `project_id`; deploy/run/fetch
    also need a `device` (name or id — see `edgematic-device-ops` to pick/pair one).
-2. **Build.** `build_project`, then poll `get_build_status` until `ok` or `failed`.
+2. **Streaming — provision the input streams BEFORE the build.** If the
+   project is a video pipeline (its `common/config.yaml` has a `streams:` list),
+   make sure every input it reads is actually playing and written into the
+   config — see *Provisioning input streams* below. Do this unprompted: the
+   deployed workspace ships the config as it stood at build time, and a pipeline
+   pointed at a slot that is not playing starts, reports `running`, and never
+   emits a frame. Skip it for Model-View and other non-video projects.
+3. **Build.** `build_project`, then poll `get_build_status` until `ok` or `failed`.
    On `failed`, report `last_error` + `log_tail` and stop — do not deploy.
-3. **Deploy.** On a green build, `deploy_to_device`. If a run of this project is
+4. **Deploy.** On a green build, `deploy_to_device`. If a run of this project is
    already live it holds the device slot and the build/deploy is refused with
    `device_busy_by_session` — stop it, say so, and **note that you now owe the
    user a restart** (see *"Deploy" means deploy AND run*).
-4. **Run** — for a video pipeline this is part of the deploy, not a separate
-   request, and it is also how you repay a run you stopped in step 3. Call
+5. **Run** — for a video pipeline this is part of the deploy, not a separate
+   request, and it is also how you repay a run you stopped in step 4. Call
    `run_pipeline`, then branch on what the pipeline produces:
    - **Single-shot** (one image, Model-View): poll `get_pipeline_status` until it
-     settles (running → exited_ok / exited_error / killed), then go to step 7.
+     settles (running → exited_ok / exited_error / killed), then go to step 8.
    - **Streaming** (RTSP, camera, multi-stream, anything continuous): it will
      **never** settle — `running` IS the steady state, and polling for a terminal
-     status is how a healthy video run gets mistaken for a hang. Go to step 5.
+     status is how a healthy video run gets mistaken for a hang. Go to step 6.
 
    Tell the user you're waiting; don't spam polls. For a **Model-View project**
    (`active_view: "model"`) omit `entry_point` — it auto-resolves to the model
    pipeline (`model/main.py`); see the entry-point rule below.
-5. **Streaming — verify video stability (MANDATORY).** Work the ladder in
+6. **Streaming — verify video stability (MANDATORY).** Work the ladder in
    *Verifying video stability* below: run alive → channels up → channel set holds
    across a second sample → `output_fps` flowing → sender `active`. Do this
    unprompted, before you report anything, and report what you measured.
-6. **Streaming — show the streams (MANDATORY).** Invoke `edgematic-view-streams`
+7. **Streaming — show the streams (MANDATORY).** Invoke `edgematic-view-streams`
    and emit its `edgematic-streams` block as the last element of your reply. Tell
    the user the grid idles when they reply and how to bring it back. Only show
-   channels the step-5 ladder found live.
-7. **Report.** For a **single-shot** run reaching `exited_ok`: the card shows the
+   channels the step-6 ladder found live.
+8. **Report.** For a **single-shot** run reaching `exited_ok`: the card shows the
    output — tell the user it renders the image / stream immediately (there is no
    "view results" step to click), and summarise the run: exit code and a one-line
    read of `log_tail` (e.g. "produced the detection tensors"). For a **streaming**
@@ -211,7 +221,7 @@ Full request/response and error-code detail: `references/build-deploy-run-api.md
    `fetch_from_device` + parse the primary output yourself — the card renders it.
    Use `fetch_from_device` only if the user asks for a *raw file or log* in the
    workspace.
-8. **Stop only when asked.** `stop_pipeline` halts a running pipeline. Whether it
+9. **Stop only when asked.** `stop_pipeline` halts a running pipeline. Whether it
    prompts first is up to the user's approval posture, so do NOT treat a prompt as
    your safety net — under a pre-authorised posture the kill goes through
    silently. Don't reach for it to "restart" a run that is merely still
@@ -222,9 +232,9 @@ Full request/response and error-code detail: `references/build-deploy-run-api.md
 A user who asks you to "build and deploy" a **video** pipeline is asking to see
 video. "Deployed, not running" is a state that produces nothing, looks identical
 to a broken pipeline from the user's seat, and is almost never what they meant.
-So for a streaming pipeline, treat *deploy* as **deploy → run → verify → show**,
-and say that you are doing it. Stopping at deploy is the single most common way
-this flow fails.
+So for a streaming pipeline, treat *deploy* as **deploy → run → verify → show**
+(with the inputs provisioned before the build), and say that you are doing it.
+Stopping at deploy is the single most common way this flow fails.
 
 The narrow exception is when the user explicitly says not to start it ("deploy
 but don't run", "just stage it"). Silence is not that instruction.
@@ -247,6 +257,52 @@ creates a debt:
 
 If the run you stopped was healthy and the new deploy fails, restart the previous
 deployment rather than leaving the device idle, and say why.
+
+## Provisioning input streams (before the build)
+
+A video pipeline reads its inputs from the `streams:` list in
+`common/config.yaml`, and on this Studio those are usually Insight slots served
+at `rtsp://<server-ip>:8554/src<N>`. A slot serves video only while something is
+playing in it, and slots are shared by every project — a stream stopped for one
+pipeline is gone for all of them. Nothing refuses a build, a deploy or a run
+over a dark slot: the pipeline starts, reports `running`, and simply never
+produces a frame. So check the inputs yourself, before `build_project`, every
+time you take a video pipeline to a device:
+
+1. **Read the config** with `read_file` (`common/config.yaml`). No `streams:`
+   list, or `output.video_enabled: false` → not a video pipeline; skip this.
+2. **See what is playing** — `list_input_streams` (slots are 1-based, 1–16).
+3. **Walk `streams:` in order and fix each entry in place:**
+   - An Insight slot URL whose slot **is playing** → leave it.
+   - An Insight slot URL whose slot is **not playing** → `start_stream` with
+     that `index` and a video, then write back the `rtsp` the tool returns. The
+     host part can differ from what the file holds; the returned one is right.
+   - A `<...>` placeholder or an empty value → `start_stream` without `index`
+     (lowest free slot) and write the returned `rtsp` there.
+   - Any other URL (a real camera, another RTSP server) → **leave it alone**.
+     It is the user's source, not a slot you own.
+4. **Pick the video.** Use the one the user named. Otherwise take a
+   `downloaded` entry from `list_videos`; if the library holds fewer videos than
+   there are slots to fill, reuse one video across them. If the library is
+   empty, stop and offer `add_video` (a curated clip by name, or no arguments to
+   upload a file) — a video pipeline with no input has nothing to show.
+5. **Keep positions.** `streams[N]` feeds output channel `N`. Replace entries in
+   place; never reorder, drop or append to tidy the list — that silently
+   rewires every later channel. If the list is empty and nothing in the config
+   says how many inputs the pipeline takes, ask with `ask_user` rather than
+   guessing a count.
+6. **Fill the sink host.** If `output.insight.host` (or `output.optiview.host`,
+   whichever key the config uses) is a placeholder or empty, set it to
+   `server_ip` from `list_output_streams`. A host the user wrote explicitly
+   stays as it is.
+7. **Write it back** with `write_file`, changing only the values above and
+   preserving every comment and every other key.
+8. **Say what you did** in one line — which slots you started with which video,
+   and which entries you left as they were.
+
+Never `stop_stream` with `all: true` to reset before provisioning: another
+pipeline, or a stream the user is watching, may be reading those slots. Start
+what is missing; leave what is playing.
 
 ## Verifying video stability
 
@@ -288,7 +344,7 @@ pushing frames, and is it still pushing them a moment later?*
 finding.** A 4-camera pipeline showing 1 channel is a demux/config fault, not a
 rounding error — state how many you expected against how many you saw.
 
-Then show the grid (step 6) and report concretely: how many channels, at what
+Then show the grid (step 7) and report concretely: how many channels, at what
 fps, observed over what window. "Deployed and running" is not a report.
 
 **The browser leg is out of scope here.** If this whole ladder is green and the
@@ -298,9 +354,10 @@ rebuild, redeploy, restart or stop a healthy run to fix a viewing problem.
 
 ## Key rules
 
-- **For a video pipeline the order is build (green) → deploy → run → VERIFY →
-  SHOW, and "deploy it" means all five.** Running, verifying stability and
-  emitting the streams grid are steps OF the deploy, not extras the user requests
+- **For a video pipeline the order is provision inputs → build (green) → deploy
+  → run → VERIFY → SHOW, and "deploy it" means all six.** Provisioning the
+  inputs, running, verifying stability and emitting the streams grid are steps
+  OF the deploy, not extras the user requests
   afterwards — a request that names only "build and deploy" still ends with live
   streams on screen. Stopping at "deployed" leaves a dark device; stopping at
   "it's running" ships an unverified pipeline with nothing to look at.
@@ -308,7 +365,10 @@ rebuild, redeploy, restart or stop a healthy run to fix a viewing problem.
   channels appear only after the first annotated frame (up to ~2 min). Poll
   before concluding — and never answer a zero count by starting an input stream:
   slots 1–16 (in) and channels 0–79 (out) are different namespaces, and
-  `start_stream` cannot create the latter.
+  `start_stream` cannot create the latter. An Insight slot that `streams:` names
+  and that is NOT playing starves the pipeline just as surely — but that is
+  checked BEFORE the build (*Provisioning input streams*), not reached for as a
+  remedy for a zero output count.
 - **One sample is not stability, and 10 s of held video is enough.** Two
   `count_streams` readings **10 s** apart with a non-shrinking channel set,
   backed by `output_fps` from `log_tail`, is the bar — meet it, then move on.
@@ -397,7 +457,8 @@ error — read `last_error` / `log_tail` from the record.
 | `device_unreachable` | Device offline | Check power/network and retry. |
 | `nfs_unavailable` | NFS device left the LAN | Offer to switch it to SCP and retry. |
 | `deploy_failed` / `fetch_failed` | An scp step failed | Report the message and offer to retry. |
-| run `running` but `count_streams: 0` after ~2 min of polling | The pipeline started but never emitted an output frame | Report it as such with `log_tail` (model/source/config fault). Do NOT start an input stream and do NOT redeploy blindly. |
+| run `running`, `count_streams: 0`, and `list_input_streams` shows a slot that `streams:` names is NOT playing | The input pre-flight was skipped, or the slot was stopped since | Name the dark slot; `start_stream` it at that `index`, then restart the run — a missing input is a run fault, not a viewing one. |
+| run `running` but `count_streams: 0` after ~2 min of polling, every configured input slot playing | The pipeline started but never emitted an output frame | Report it as such with `log_tail` (model/source/config fault). Do NOT start extra input streams and do NOT redeploy blindly. |
 | channel set SHRINKS between two `count_streams` samples | The pipeline is dying mid-run | Name the channels lost and show `log_tail` — a run fault, not a viewing one. |
 | fewer output channels than input streams | Demux / per-stream output config fault | State expected vs seen (e.g. "4 cameras, 1 output channel") and point at the pipeline's output config. |
 | ladder green but the user sees blank/frozen tiles | The insight→browser leg | Triage with `edgematic-view-streams` → `sima-use-neat-insight`. Never restart the pipeline. |

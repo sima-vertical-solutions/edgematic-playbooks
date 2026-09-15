@@ -113,6 +113,17 @@ addresses for an input stream so they can pick whichever their viewer supports.
   (`count_streams` twice across **10 s**, non-shrinking — the ladder in
   `edgematic-build-deploy-run`), then emit the grid via `edgematic-view-streams`.
   Remember the namespaces differ: slot `N` in does NOT imply channel `N` out.
+- **A video pipeline's inputs are provisioned before its build — by
+  `edgematic-build-deploy-run`, not here.** When you take a video pipeline to a
+  device, that skill checks every Insight slot its `common/config.yaml`
+  `streams:` list names is playing and writes the addresses back
+  (*Provisioning input streams*). If the user only asks you to start a stream,
+  start it and report it; write it into a project's config only when they ask
+  to feed that pipeline with it — and then replace the entry in place, because
+  `streams[N]` feeds output channel `N`.
+- **Stopping a stream can starve a running pipeline.** Slots are shared by
+  every project. When you stop one — and always before `all: true` — say that
+  any pipeline reading it stops receiving frames.
 - **Report every address the tool returns.** A stream isn't useful without its
   playback URL — surface RTSP + WebRTC (and UDP host/port for outputs).
 - **Be sure of the TARGET before removing a video or stopping a stream — but
