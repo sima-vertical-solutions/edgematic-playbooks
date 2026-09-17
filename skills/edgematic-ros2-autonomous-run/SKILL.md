@@ -211,6 +211,9 @@ not fall back to the board on your own initiative.
 
 Poll the build to a real terminal state and read its exit marker. A build that
 merely went quiet is not a build that passed.
+Pace those checks with the table in `edgematic-ros2-portable-pipeline` §9: the
+first at 60 s, then every 60 s under emulation, and one progress line per
+finished package rather than one per check.
 
 ## Step 5 — deploy, pre-flight, launch
 
@@ -243,7 +246,8 @@ destructive act you already have a policy for.
 ## Step 6 — verify against the topics you derived, then show
 
 A tool reporting `started` has told you a process was spawned, nothing more.
-Before telling the user it works:
+Check at 10 s, 30 s and 60 s after launch (portable-pipeline §9), then stop
+polling. Before telling the user it works:
 
 - the log is past the point where earlier attempts died and at least a minute
   of frames in, at the rate the params ask for, with no discarded frames and no

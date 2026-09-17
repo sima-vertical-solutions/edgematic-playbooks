@@ -251,3 +251,23 @@ exact string out of a working deploy rather than reconstructing it.
   an Image panel at that. Start `foxglove_bridge` last — after the deploy and
   after the pipeline — and as the same user as the pipeline, or it lists every
   topic and relays nothing (see the DDS pre-flight above).
+
+## 9. How often to check
+
+Every check is a tool call and a turn. A chat that re-reads a log every few
+seconds buries the progress the user is waiting for and spends the budget the
+run needs. Set the pace by how long the step really takes, and tell the user
+once per phase change, not once per check.
+
+| Step | First check | Then | Measured (x86 host, arm64 under emulation) | Stop or escalate |
+|---|---|---|---|---|
+| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | Every 60 s, or every 30 s on an arm64 host | Clean build of the sima-core perception set: 7–8 min. Incremental: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
+| Neat or ROS install on the board | 30 s | Every 30 s | A few minutes | The installer's own completion line |
+| Deploy | Once, when it returns | — | Seconds for a few MB | — |
+| Launch | 10 s: the process is alive and the node is `activated` | 30 s: detections are being decoded and nothing died. 60 s: alive from a second session, topics at non-zero rates | Model load to `activated`: about 7 s | A crash inside 30 s is a configuration or code fault. Stop, fix it, and never relaunch unchanged (§4) |
+| `foxglove_bridge` | 10 s: its port is listening | — | Seconds | — |
+| After verification | Stop polling | Check again only when the user asks or a viewer goes blank | — | — |
+
+While waiting, never start a second build or relaunch "to see if it helps".
+Read the tail of a log, not the whole file. Report progress as one line when
+a package or phase finishes ("neat_engine built, 2 of 5"), not on every check.
