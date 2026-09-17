@@ -17,7 +17,10 @@ description: >-
   the board traps and the detached launch live in
   edgematic-ros2-portable-pipeline, the catalogue tools in
   edgematic-ros2-neat-nodes, rendering in edgematic-foxglove-viz, pairing in
-  edgematic-device-ops. This skill decides the ORDER and what never to ask.
+  edgematic-device-ops. This skill decides the ORDER and what never to ask. Do
+  NOT use for an explicit hello-world or smoke-test request (use
+  edgematic-ros2-demo), or when the user points to an existing repository,
+  package.xml or launch file (use edgematic-ros2-user-package).
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
@@ -25,6 +28,10 @@ description: >-
 The user asked for a working pipeline, not a conversation. Everything below
 exists to keep you from stopping to ask for something the code already answers,
 and from reporting success you have not verified.
+
+When the request is already classifiable, route before using this general
+orchestrator: `edgematic-ros2-demo` owns standard and minimal demos;
+`edgematic-ros2-user-package` owns existing user-supplied packages.
 
 **Finish the job.** If you cannot, say exactly what is blocked, what you tried
 and what you need — never hand back a half-run pipeline as if it were done.

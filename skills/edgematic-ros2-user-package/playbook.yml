@@ -1,0 +1,8 @@
+id: edgematic-ros2-user-package
+name: Edgematic ROS 2 User Package
+version: 0.1.0
+agents: [codex, claude]
+description: Preserve and run the real contract of an existing user-supplied ROS 2 repository or package through Edgematic Studio — inspect its package and launch graph, cross-build its sources, deploy and launch durably on the paired DevKit, and prove advertised, active, and visible output without replacing it with a reference demo.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

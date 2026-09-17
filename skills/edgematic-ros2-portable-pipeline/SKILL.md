@@ -1,9 +1,10 @@
 ---
 name: edgematic-ros2-portable-pipeline
 description: >-
-  Use when building, deploying and RUNNING a ROS 2 Neat pipeline on a paired
-  Modalix DevKit from a workspace of the user's own — a package they wrote, or
-  one they are porting — rather than from a SiMa client repository. Covers the
+  Use as the detailed mechanics reference when edgematic-ros2-user-package is
+  building, deploying and RUNNING a ROS 2 Neat pipeline on a paired Modalix
+  DevKit from a workspace of the user's own — a package they wrote, or one they
+  are porting — rather than from a SiMa client repository. Covers the
   minimal colcon layout whose only fixed sibling is sima-core, cross-compiling
   in the ROS 2 SDK container, the sima-owned deploy target, the board
   environment that merge-install breaks, and the detached launch that keeps a
@@ -17,15 +18,16 @@ description: >-
   ROS 2 container (see edgematic-ros2-host-container), choosing capabilities in a
   client workspace (see edgematic-ros-capabilities), the pre-built yolov8_seg
   pipeline (see edgematic-ros2-neat-nodes), or Foxglove/Flora rendering itself
-  (see edgematic-foxglove-viz).
+  (see edgematic-foxglove-viz). Do not use as the initial router for an explicit
+  existing user package; use edgematic-ros2-user-package first.
 ---
 
 # Running a ROS 2 pipeline the user owns
 
-**Asked to just get it running end to end?** `edgematic-ros2-autonomous-run` is
-the orchestrator — it decides the order, derives the input and the topics from
-the application's own code, and names the only things worth asking. This skill is
-the reference it leans on for the mechanics below.
+**Asked to run an existing user repository or package?**
+`edgematic-ros2-user-package` is the entrypoint — it preserves the package's
+real contract and defines the proof required before success. This skill is the
+detailed mechanics reference it loads for workspace, build, deploy, and launch.
 
 This skill is for a pipeline that belongs to the user. The only thing it has to
 build against is **sima-core** — the capabilities sibling — plus their own

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 User Package"
+  short_description: "Build and run an existing user's ROS 2 package without replacing its contract"
+  default_prompt: "Use $edgematic-ros2-user-package for the existing user-supplied ROS 2 repository or package. Read its package, build, launch, parameter, and topic contract first; preserve its sources and inputs; cross-build on the host; deploy and launch durably on the paired DevKit; then prove the expected topics are advertised, active now, and visibly subscribed and rendered in Edgematic."
