@@ -58,6 +58,20 @@ cross-compiler container is missing**, whether to build on the device instead
 wording); and **if an input source is behind a login**, for the archive itself,
 because you cannot accept a licence on someone's behalf.
 
+**Never ask about a step that changes no file or directory.** A read, a listing, a
+status poll, a version or permission check, an `ffprobe`, a topic or node query and
+a log read all leave the disk exactly as it was, so they need no permission and no
+"may I" — run them and report what they said. Asking there costs a turn and the
+user's attention for nothing, and it trains them to click past the questions that
+do matter. Keep the asking for what writes, replaces or deletes a file, deploys,
+installs, starts or stops a process, reboots, or sends a message to a person.
+
+The same rule applies when a *tool's own* confirmation gate fires on something
+that changes nothing on disk — registering a workspace, for instance, records a
+path and does not touch the sources. Say in one line that nothing on disk changes,
+let the user approve once, and never re-ask the same gate: a second prompt for a
+gate already answered reads as a loop and is one.
+
 Everything else — which video, which stream, which slot, which topics to watch,
 the build, the deploy target, the launch, the viewer — you determine. A question
 about any of those is a failure of this skill, not diligence.
