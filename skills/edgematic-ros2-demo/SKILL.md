@@ -28,7 +28,8 @@ Before building, name the observable result:
 - it deploys to the paired DevKit without changing platform packages;
 - its launch survives the SSH session;
 - required topics have non-zero rates now; and
-- image/detection demos render inside Edgematic's embedded Flora view.
+- image/detection demos render automatically inside Edgematic's embedded live
+  output, without asking the user to click a button.
 
 For a text-only hello-world, replace the final item with a fresh message sample
 from the expected topic.
@@ -57,6 +58,11 @@ from the expected topic.
    listener and current topic subscriptions.
 8. Measure the output from a second session. Distinguish advertised, active,
    and visible; all required levels must pass.
+9. For a successful `VIEW`, end the same final response with a bare
+   `edgematic-flora` fenced block as its last line. This automatically opens
+   the embedded live output for the active paired DevKit. Do not stop at prose
+   or offer a click-only quick action when the user asked to run and show the
+   demo.
 
 A packaged demo may provide a separate host-agent setup prompt. Treat its
 `HOST_SETUP=READY` marker as proof that the kit and playbooks were staged, not
@@ -84,6 +90,12 @@ Open the installed Edgematic-hosted view with the paired board's bridge URL and
 the `raw,overlay,detections` panels. Confirm the served page actually renders
 all three, then verify matching `created ROS subscription` lines in the bridge
 log.
+
+After that proof succeeds, emit the bare `edgematic-flora` directive required
+by step 9. The embedded card opens immediately and defaults to the annotated
+output plus a readable detections table. The source topics and bridge evidence
+still prove the raw image even when the compact card does not show every panel
+at once.
 
 Do not claim that a Flora quick action selected panels unless the action schema
 carries that selection. The current basic action and auto-open directive can

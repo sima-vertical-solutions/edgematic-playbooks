@@ -1,4 +1,4 @@
 interface:
   display_name: "Edgematic ROS 2 Demo"
   short_description: "Run a standard ROS 2 proof from HELLO through live VIEW"
-  default_prompt: "Use $edgematic-ros2-demo to choose and run the smallest standard ROS 2 demo level that proves the requested claim: READY, HELLO, LAUNCH, DEPLOY, or VIEW. Prefer a verified prebuilt kit under /workspace/edgematic-demos when one matches; build only when needed. Deploy and launch durably, then prove current activity and visible output instead of reporting success from a PID or advertised topic."
+  default_prompt: "Use $edgematic-ros2-demo to run the smallest sufficient READY, HELLO, LAUNCH, DEPLOY, or VIEW proof; prefer a verified kit under /workspace/edgematic-demos, and for VIEW automatically open the embedded live output without requiring a click."
