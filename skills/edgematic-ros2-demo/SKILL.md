@@ -54,10 +54,10 @@ from the expected topic.
    install system packages on the board as part of a demo.
 6. Launch with a saved PID, detached session, closed stdin, and a log file. Use
    the same ROS domain for publishers, probes, the bridge, and Studio.
-7. Start `foxglove_bridge` last, after the demo publishes. Verify the bridge
-   listener and current topic subscriptions.
-8. Measure the output from a second session. Distinguish advertised, active,
-   and visible; all required levels must pass.
+7. Start `foxglove_bridge` last, after the demo publishes. Verify its listener
+   and advertised viewer channels.
+8. Measure the output from a second session. Fresh non-zero rates are the
+   pre-open data proof; do not manufacture a browser connection from the shell.
 9. For a successful `VIEW`, end the same final response with a bare
    `edgematic-flora` fenced block as its last line. This automatically opens
    the embedded live output for the active paired DevKit. Do not stop at prose
@@ -86,16 +86,17 @@ emits only raw BGR8 images, use `scripts/jpeg_republisher.py` on the board to
 publish the two JPEG topics at a paced rate. This is a viewer adapter; it must
 not replace or rename the pipeline's source topics.
 
-Open the installed Edgematic-hosted view with the paired board's bridge URL and
-the `raw,overlay,detections` panels. Confirm the served page actually renders
-all three, then verify matching `created ROS subscription` lines in the bridge
-log.
+After the source and compressed viewer topics have fresh non-zero rates and the
+bridge listener is ready, emit the bare `edgematic-flora` directive required by
+step 9 immediately. The embedded output is the real browser client; opening it
+creates the subscriptions. Never search for a browser binary, launch a headless
+browser, or hand-write a WebSocket client as a precondition. Subscription log
+lines are post-open diagnostic evidence to inspect on a later turn only if the
+visible output is blank.
 
-After that proof succeeds, emit the bare `edgematic-flora` directive required
-by step 9. The embedded card opens immediately and defaults to the annotated
-output plus a readable detections table. The source topics and bridge evidence
-still prove the raw image even when the compact card does not show every panel
-at once.
+The embedded card defaults to the annotated output plus a readable detections
+table. The source-topic rates still prove the raw image even when the compact
+card does not show every panel at once.
 
 Do not claim that a Flora quick action selected panels unless the action schema
 carries that selection. The current basic action and auto-open directive can
