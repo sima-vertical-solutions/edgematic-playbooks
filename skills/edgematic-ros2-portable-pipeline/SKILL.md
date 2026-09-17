@@ -261,12 +261,33 @@ once per phase change, not once per check.
 
 | Step | First check | Then | Measured (x86 host, arm64 under emulation) | Stop or escalate |
 |---|---|---|---|---|
-| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | Every 60 s, or every 30 s on an arm64 host | Clean build of the sima-core perception set: 7–8 min. Incremental: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
+| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | Adaptive, see below | Clean build of the sima-core perception set: 7–8 min. Incremental with no source change: under 1 min. A few edited files: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
 | Neat or ROS install on the board | 30 s | Every 30 s | A few minutes | The installer's own completion line |
 | Deploy | Once, when it returns | — | Seconds for a few MB | — |
 | Launch | 10 s: the process is alive and the node is `activated` | 30 s: detections are being decoded and nothing died. 60 s: alive from a second session, topics at non-zero rates | Model load to `activated`: about 7 s | A crash inside 30 s is a configuration or code fault. Stop, fix it, and never relaunch unchanged (§4) |
 | `foxglove_bridge` | 10 s: its port is listening | — | Seconds | — |
 | After verification | Stop polling | Check again only when the user asks or a viewer goes blank | — | — |
+
+**Adaptive pacing for builds and runs.** Wait longer when there's a lot of time left
+and check sooner as the expected end approaches:
+
+1. **Estimate the duration before the first check.** Use the last successful build of
+   the same workspace if you know it. Otherwise use the table: under 1 min when no
+   source changed since the last successful build, about 3 min when a few files
+   changed, 7–8 min when build/ was cleaned or Neat changed. Halve these on an arm64
+   host.
+2. **Wait about half of the remaining time, between 10 s and 60 s:**
+   `wait = min(60, max(10, (expected − elapsed) / 2))`. Once elapsed passes the
+   estimate, check every 15 s, and every 60 s once the log shows the last package
+   has started.
+3. **If the status tool offers `wait_secs` and returns `next_check_secs`, use those
+   instead.** Pass `wait_secs` equal to the previous `next_check_secs`, so one call
+   covers the whole wait and returns early on a status change. Don't add your own
+   delay on top.
+
+Checking a build that is still running is progress, not a loop. Don't ask the user
+whether to continue because the same status call repeated. Only a build that has
+already finished and keeps being polled is a loop.
 
 While waiting, never start a second build or relaunch "to see if it helps".
 Read the tail of a log, not the whole file. Report progress as one line when
