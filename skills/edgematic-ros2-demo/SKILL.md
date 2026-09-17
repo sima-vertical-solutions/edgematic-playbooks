@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-demo
-description: Create or run a deliberately simple ROS 2 hello-world, smoke-test, or SiMa reference demo end to end in Edgematic Studio on a paired Modalix DevKit. Use for demo requests, first-pipeline validation, and small user-defined packages where speed and a known-good path matter more than generality. Do not use for an existing substantial user repository; use edgematic-ros2-user-package instead.
+description: Create or run a deliberately simple ROS 2 hello-world, smoke-test, standard demo, demo-ladder VIEW run, or verified packaged payload under /workspace/edgematic-demos end to end in Edgematic Studio on a paired Modalix DevKit. Use for demo requests, first-pipeline validation, and small user-defined packages where speed and a known-good path matter more than generality. Do not use for an existing substantial user repository; use edgematic-ros2-user-package instead.
 ---
 
 # Edgematic ROS 2 Demo

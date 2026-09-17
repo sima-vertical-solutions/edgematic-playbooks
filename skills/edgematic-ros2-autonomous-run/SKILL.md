@@ -18,9 +18,11 @@ description: >-
   edgematic-ros2-portable-pipeline, the catalogue tools in
   edgematic-ros2-neat-nodes, rendering in edgematic-foxglove-viz, pairing in
   edgematic-device-ops. This skill decides the ORDER and what never to ask. Do
-  NOT use for an explicit hello-world or smoke-test request (use
-  edgematic-ros2-demo), or when the user points to an existing repository,
-  package.xml or launch file (use edgematic-ros2-user-package).
+  NOT use for an explicit hello-world, smoke-test, standard demo, demo-ladder
+  VIEW run, or a request that names a verified packaged payload under
+  `/workspace/edgematic-demos` (use edgematic-ros2-demo), or when the user
+  points to an existing repository, package.xml or launch file (use
+  edgematic-ros2-user-package).
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
