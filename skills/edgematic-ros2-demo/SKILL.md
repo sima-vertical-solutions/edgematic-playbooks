@@ -37,20 +37,31 @@ from the expected topic.
 
 1. Check Studio `/version`, ROS feature availability, paired-device status,
    board reachability, ROS domain, and whether another workload owns the MLA.
-2. Reuse an existing checked-in demo or template when it matches. For a new
-   simple package, create only the package, launch/config files, and dependencies
-   needed for the stated output. Do not pull a large robotics repository into a
-   smoke test.
-3. Build on the host in the ROS 2 SDK container. Verify the expected installed
+2. Look under `/workspace/edgematic-demos` for a verified packaged demo. When
+   one matches the request, use its prebuilt payload and documented runner; do
+   not require an ROS build container or rebuild it. The host preparation step
+   must discover the host directory actually mounted at `/workspace`, never
+   assume a username or home path.
+3. Otherwise reuse an existing checked-in demo or template when it matches. For
+   a new simple package, create only the package, launch/config files, and
+   dependencies needed for the stated output. Do not pull a large robotics
+   repository into a smoke test.
+4. When source building is required, build on the host in the ROS 2 SDK
+   container. Verify the expected installed
    package, launch file, component registration, and linked runtime libraries.
-4. Deploy under the paired SSH user's home. Do not compile or install system
-   packages on the board as part of a demo.
-5. Launch with a saved PID, detached session, closed stdin, and a log file. Use
+5. Deploy under the packaged or project-defined board path. Do not compile or
+   install system packages on the board as part of a demo.
+6. Launch with a saved PID, detached session, closed stdin, and a log file. Use
    the same ROS domain for publishers, probes, the bridge, and Studio.
-6. Start `foxglove_bridge` last, after the demo publishes. Verify the bridge
+7. Start `foxglove_bridge` last, after the demo publishes. Verify the bridge
    listener and current topic subscriptions.
-7. Measure the output from a second session. Distinguish advertised, active,
+8. Measure the output from a second session. Distinguish advertised, active,
    and visible; all required levels must pass.
+
+A packaged demo may provide a separate host-agent setup prompt. Treat its
+`HOST_SETUP=READY` marker as proof that the kit and playbooks were staged, not
+as proof that the board is free or that the pipeline is live. Credentials still
+belong in the secure pairing form.
 
 Use `edgematic-ros2-portable-pipeline` for the detailed build, deploy, board,
 and detached-launch mechanics, and `edgematic-foxglove-viz` for the viewer.
