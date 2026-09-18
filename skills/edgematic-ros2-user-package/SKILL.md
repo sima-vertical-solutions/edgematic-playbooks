@@ -12,6 +12,19 @@ Load `edgematic-ros2-portable-pipeline` for the detailed workspace, build,
 deploy, board, and detached-launch mechanics. This skill owns routing, the
 package contract, and the evidence required before reporting success.
 
+## Keep one workspace
+
+Use the workspace the user configured; do not create another workspace beneath
+it. Keep the shared capability repository once at `<workspace>/sima-core` and
+place each application repository or package beside it as
+`<workspace>/<application>`. Do not introduce dated validation directories,
+`hello/view` grouping layers, or per-application copies of `sima-core`.
+
+Preserve an existing user repository's internal structure. The direct-child rule
+controls where that repository is placed, not how its source tree is rewritten.
+Only use a different root when the user explicitly points to an existing
+workspace elsewhere.
+
 ## Establish the real package contract
 
 1. Identify the source repository, ROS workspace root, package name, package
@@ -30,6 +43,10 @@ package contract, and the evidence required before reporting success.
 
 - Build on the host in Edgematic's ROS 2 SDK container. The board is a runtime
   target, not a compiler.
+- For a running ROS build, poll `get_build_status` every 120 seconds. Report
+  elapsed time, completed/total packages, active package or phase, log activity,
+  failures, and ETA from `ros_progress`; label an ETA provisional when the
+  package total or first completion is not yet available.
 - Use Studio's ROS workspace/build/deploy tools when they support the package.
   Otherwise use the repository's checked-in scripts rather than inventing a
   parallel build wrapper.

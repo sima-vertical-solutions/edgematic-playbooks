@@ -44,6 +44,11 @@ it and only then opens Flora. So **do not** walk the user through
 `ros2 launch foxglove_bridge …` as a prerequisite unless they ask, or unless a
 pill has already reported that the bridge could not be started.
 
+For a packaged demo or clean-board QA, "Studio can start it" is not evidence
+that the package exists. Before an expensive build/deploy, verify the payload
+supplies `foxglove_bridge` or that the target image guarantees it. A bridge
+found on one previously used board must not become an undeclared prerequisite.
+
 Starting/stopping the RTSP input stream is **not** this skill — hand that off to
 `edgematic-media-streams`.
 

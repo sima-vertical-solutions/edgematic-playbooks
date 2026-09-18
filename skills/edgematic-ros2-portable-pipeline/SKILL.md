@@ -257,36 +257,32 @@ once per phase change, not once per check.
 
 | Step | First check | Then | Measured (x86 host, arm64 under emulation) | Stop or escalate |
 |---|---|---|---|---|
-| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | At measured milestones; never three identical status calls | Clean build of the sima-core perception set: 7–9 min. Incremental with no source change: under 1 min. A few edited files: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
+| Cross-compile (`prepare_ros_build`) | Immediately record the provisional ETA, then poll at 120 s | Every 120 s until terminal | Clean build of the sima-core perception set: 7–9 min. Incremental with no source change: under 1 min. A few edited files: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. Report `ros_progress` each poll. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile quietly. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
 | Neat or ROS install on the board | 30 s | Every 30 s | A few minutes | The installer's own completion line |
 | Deploy | Once, when it returns | — | Seconds for a few MB | — |
 | Launch | 10 s: the process is alive and the node is `activated` | 30 s: detections are being decoded and nothing died. 60 s: alive from a second session, topics at non-zero rates | Model load to `activated`: about 7 s | A crash inside 30 s is a configuration or code fault. Stop, fix it, and never relaunch unchanged (§4) |
 | `foxglove_bridge` | 10 s: its port is listening | — | Seconds | — |
 | After verification | Stop polling | Check again only when the user asks or a viewer goes blank | — | — |
 
-**Adaptive pacing for builds and runs.** Wait longer when there's a lot of time left
-and check sooner as the expected end approaches:
+**Build progress contract.** Give the user an initial estimate, then poll
+`get_build_status` every 120 seconds until terminal. On each poll report:
 
-1. **Estimate the duration before the first check.** Use the last successful build of
-   the same workspace if you know it. Otherwise use the table: under 1 min when no
-   source changed since the last successful build, about 3 min when a few files
-   changed, 7–8 min when build/ was cleaned or Neat changed. Halve these on an arm64
-   host.
-2. **Use milestone checks, not a heartbeat loop.** For a clean x86 build, check a
-   short tail after about one minute, query `match: "Finished <<<"` near the
-   midpoint, and query `match: "EDGEMATIC_BUILD_EXIT="` near the 8–9 minute
-   finish. For incremental work, scale those milestones to the estimate. Never
-   call `get_build_status` three times with identical parameters; that is
-   indistinguishable from an agent loop to the UI. Do not pass `match: ""`.
-3. **If the status tool offers `wait_secs` and returns `next_check_secs`, use those
-   instead.** Pass `wait_secs` equal to the previous `next_check_secs`, so one call
-   covers the whole wait and returns early on a status change. Don't add your own
-   delay on top.
+1. elapsed time and persisted build status;
+2. completed/total packages and completion percentage;
+3. active package or phase and any failed packages;
+4. log bytes or seconds since its last update; and
+5. ETA plus its basis.
+
+Prefer `ros_progress.eta_seconds`, whose basis is observed package throughput.
+Until the build declares `EDGEMATIC_BUILD_TOTAL=<n>` and one package completes,
+use the same-workspace history or the table above and label the ETA provisional.
+Do not invent package counts from the visible tail. A quiet compile at high CPU
+is still active; a quiet log is not a terminal signal.
 
 Checking a build that is still running is progress, not a loop. Don't ask the user
 whether to continue because the same status call repeated. Only a build that has
 already finished and keeps being polled is a loop.
 
 While waiting, never start a second build or relaunch "to see if it helps".
-Read the tail of a log, not the whole file. Report progress as one line when
-a package or phase finishes ("neat_engine built, 2 of 5"), not on every check.
+Read the structured progress on normal polls and request a larger tail or match
+only to diagnose failure. Report one compact line per two-minute check.

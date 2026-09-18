@@ -16,6 +16,11 @@ creating a standard demo template. The mnemonic progression is:
 
 `READY → HELLO → LAUNCH → DEPLOY → VIEW`
 
+For a clean acceptance run, use
+[`references/qa-test-prompt.md`](references/qa-test-prompt.md). It is the
+copy-ready QA contract for a fresh board and includes the evidence that must be
+captured before VIEW is accepted.
+
 Do not jump to `VIEW` when `HELLO` answers the question, and do not present
 `HELLO` as proof that cross-build, board deployment, or Edgematic visualization
 works.
@@ -80,12 +85,20 @@ and detached-launch mechanics, and `edgematic-foxglove-viz` for the viewer.
 
 When `/workspace/edgematic-demo` already contains `build.sh`, `deploy.yaml`,
 `stage_payload.sh`, `run_demos.py`, and both packages under `src/`, treat it as
-the standard prepared demo. Keep this path deliberately short:
+the standard prepared demo. QA must not be handed separate host-setup or
+board-setup commands: `build.sh` owns the SDK-local dependency/build setup,
+`stage_payload.sh` owns the self-contained board payload, and the packaged
+runner owns board preflight, launch, verification, and soak. Studio supplies
+the paired-device transport between those boundaries. Keep this path
+deliberately short:
 
 1. Read only those four control files, check the named device once, and inspect
    the two package directories. Do not enumerate the entire workspace, load
    media-stream or capability-catalogue skills, configure input streams, or
-   look for `common/config.yaml`; VIEW uses the packaged local clip.
+   look for `common/config.yaml`; VIEW uses the packaged local clip. Before the
+   expensive build, prove `foxglove_bridge` is either in the workspace build
+   graph or already present in the staged runtime. A clean board is the target;
+   finding it on one previously used board is not a packaging plan.
 2. Call `prepare_ros_build` exactly once with bare script name `build.sh`. When
    it returns `run_on: container`, the build is already running: do not ask for
    permission, look for a command, start another build, or say that the agent is
@@ -98,7 +111,7 @@ the standard prepared demo. Keep this path deliberately short:
    of this demo. Run the packaged `stop_runtime.py` against the declared
    `remote_dir`; it must re-read each recorded PID and validate its owner,
    exact working directory, expected command tokens, and `PGID == PID`. Stop
-   the HELLO, detector, JPEG adapter, and viewer bridge groups first, then the
+   the HELLO, detector, real-image compressor, and viewer bridge groups first, then the
    VIEW supervisor and `run_demos.py` parent groups. Require that no process is
    left using the demo root before continuing. If the remote root does not
    exist, continue as a clean first run. If any PID or unrecorded process fails
@@ -113,15 +126,17 @@ the standard prepared demo. Keep this path deliberately short:
    the paired device's existing SSH execution path.
 6. Wait for `HELLO_VERIFIED=1` and `PIPELINE_VERIFIED=1`, then verify current
    VIEW topic rates. Emit the Flora directive immediately after success and
-   leave `run_demos.py`, the VIEW pipeline, JPEG adapter, and bridge alive.
+   leave `run_demos.py`, the VIEW pipeline, any real-image compressor, and the
+   bridge alive.
 
-For a clean x86 build, use at most three meaningful build checks, never three
-identical calls: one tail check after the build has had time to start, one
-`match: "Finished <<<"` progress check near the measured midpoint, and one
-`match: "EDGEMATIC_BUILD_EXIT="` terminal check near the normal 8–9 minute
-finish. If the terminal marker is not present, wait longer before one fresh tail
-check. Empty `match` values and rapid 10-second polling are forbidden because
-the UI correctly treats repeated identical calls as a possible agent loop.
+Poll a running ROS build every 120 seconds. Each update must include elapsed
+time, completed/total packages, the active package or phase, log-growth age,
+failures, and ETA from `get_build_status.ros_progress`. Before the first package
+finishes, use the measured clean-build baseline (normally 8–9 minutes under x86
+ARM emulation) and label it provisional. Recompute from observed package
+throughput once the tool supplies an ETA. A terminal build still requires the
+persisted `ok`/`failed` state backed by `EDGEMATIC_BUILD_EXIT=`; do not infer
+success from a quiet log. Never start a second build while one is running.
 
 The only expected confirmation boundary is the deployment/run policy selected
 for the Studio session. Do not manufacture additional approval questions for
@@ -137,17 +152,18 @@ Use this stable viewer contract when the demo has camera/detection output:
 
 Edgematic's embedded layout may select `/image_raw/compressed` and
 `/detections_overlay/compressed` to stay within VPN bandwidth. If the pipeline
-emits only raw BGR8 images, use `scripts/jpeg_republisher.py` on the board to
-publish the two JPEG topics at a paced rate. This is a viewer adapter; it must
-not replace or rename the pipeline's source topics.
+emits only raw BGR8 images, a compressor may subscribe to those live inference
+topics and publish their compressed transports at a paced rate. It must not
+read or loop the source video, draw detections itself, synthesize timestamps, or
+replace/rename the pipeline's source topics. Synthetic media replay is never
+evidence for VIEW.
 
 After the source and compressed viewer topics have fresh non-zero rates and the
 bridge listener is ready, emit the bare `edgematic-flora` directive required by
 step 9 immediately. The embedded output is the real browser client; opening it
-creates the subscriptions. Never search for a browser binary, launch a headless
-browser, or hand-write a WebSocket client as a precondition. Subscription log
-lines are post-open diagnostic evidence to inspect on a later turn only if the
-visible output is blank.
+creates the subscriptions. QA acceptance then requires current bridge
+subscription lines for the selected topics and a visibly advancing rendered
+frame. Never substitute a hand-written WebSocket client for that browser proof.
 
 The embedded card defaults to the annotated output plus a readable detections
 table. The source-topic rates still prove the raw image even when the compact
