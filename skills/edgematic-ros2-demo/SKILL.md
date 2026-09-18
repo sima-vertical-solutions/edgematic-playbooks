@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-demo
-description: Create or run a deliberately simple ROS 2 hello-world, smoke-test, standard demo, demo-ladder VIEW run, or verified packaged payload under /workspace/edgematic-demos end to end in Edgematic Studio on a paired Modalix DevKit. Use for demo requests, first-pipeline validation, and small user-defined packages where speed and a known-good path matter more than generality. Do not use for an existing substantial user repository; use edgematic-ros2-user-package instead.
+description: Create or run a deliberately simple ROS 2 hello-world, smoke-test, standard demo, demo-ladder VIEW run, or verified packaged payload end to end in Edgematic Studio on a paired Modalix DevKit. Use for demo requests, first-pipeline validation, and small user-defined packages where speed and a known-good path matter more than generality. Do not use for an existing substantial user repository; use edgematic-ros2-user-package instead.
 ---
 
 # Edgematic ROS 2 Demo
@@ -38,15 +38,19 @@ from the expected topic.
 
 1. Check Studio `/version`, ROS feature availability, paired-device status,
    board reachability, ROS domain, and whether another workload owns the MLA.
-2. Look under `/workspace/edgematic-demos` for a verified packaged demo. When
-   one matches the request, use its prebuilt payload and documented runner; do
-   not require an ROS build container or rebuild it. The host preparation step
-   must discover the host directory actually mounted at `/workspace`, never
-   assume a username or home path.
-3. Otherwise reuse an existing checked-in demo or template when it matches. For
-   a new simple package, create only the package, launch/config files, and
-   dependencies needed for the stated output. Do not pull a large robotics
-   repository into a smoke test.
+2. Treat the configured `/workspace` as the one shared ROS workspace. Keep one
+   `/workspace/sima-core` and one demo application directory such as
+   `/workspace/edgematic-demo`; put the HELLO, VIEW, and other demo packages
+   together under that application's `src/`. Never create a dated validation
+   root, an extra demo wrapper, `hello/view` workspace layers, another
+   client repository for each level, or another copy of `sima-core`.
+3. Reuse a matching package already under the demo application's `src/`. If it
+   is absent, materialize the smallest matching template there on demand. A
+   verified packaged payload may be used when the user asks for it explicitly,
+   but do not copy or unpack it into another workspace hierarchy. For a new
+   simple package, create only the package, launch/config files, and dependencies
+   needed for the stated output. Do not pull a large robotics repository into a
+   smoke test.
 4. When source building is required, build on the host in the ROS 2 SDK
    container. Verify the expected installed
    package, launch file, component registration, and linked runtime libraries.
@@ -71,6 +75,48 @@ belong in the secure pairing form.
 
 Use `edgematic-ros2-portable-pipeline` for the detailed build, deploy, board,
 and detached-launch mechanics, and `edgematic-foxglove-viz` for the viewer.
+
+## Prepared HELLO + VIEW fast path
+
+When `/workspace/edgematic-demo` already contains `build.sh`, `deploy.yaml`,
+`stage_payload.sh`, `run_demos.py`, and both packages under `src/`, treat it as
+the standard prepared demo. Keep this path deliberately short:
+
+1. Read only those four control files, check the named device once, and inspect
+   the two package directories. Do not enumerate the entire workspace, load
+   media-stream or capability-catalogue skills, configure input streams, or
+   look for `common/config.yaml`; VIEW uses the packaged local clip.
+2. Call `prepare_ros_build` exactly once with bare script name `build.sh`. When
+   it returns `run_on: container`, the build is already running: do not ask for
+   permission, look for a command, start another build, or say that the agent is
+   blocked. Follow the ROS-only status cadence below.
+3. Run `bash edgematic-demo/stage_payload.sh` once after the build succeeds.
+   Deploy exactly `edgematic-demo/payload`. Never pass `payload: ""`, never
+   deploy the whole `edgematic-demo` directory, and never rewrite a verified
+   launcher or staging script during the run.
+4. The generic runner currently derives its board working directory from the
+   Studio project name, not from `deploy.yaml`. A workspace registered as
+   `workspace` would therefore run under `/data/simaai/applications/workspace`
+   and miss this demo's fixed `/data/simaai/applications/ros-demo` deployment.
+   Detect that mismatch before launch. Do not rename the project, create another
+   host directory, add a board symlink, or invent a second deployment path;
+   launch the staged `run_demos.py` once at the declared `remote_dir` through
+   the paired device's existing SSH execution path.
+5. Wait for `HELLO_VERIFIED=1` and `PIPELINE_VERIFIED=1`, then verify current
+   VIEW topic rates. Emit the Flora directive immediately after success and
+   leave `run_demos.py`, the VIEW pipeline, JPEG adapter, and bridge alive.
+
+For a clean x86 build, use at most three meaningful build checks, never three
+identical calls: one tail check after the build has had time to start, one
+`match: "Finished <<<"` progress check near the measured midpoint, and one
+`match: "EDGEMATIC_BUILD_EXIT="` terminal check near the normal 8–9 minute
+finish. If the terminal marker is not present, wait longer before one fresh tail
+check. Empty `match` values and rapid 10-second polling are forbidden because
+the UI correctly treats repeated identical calls as a possible agent loop.
+
+The only expected confirmation boundary is the deployment/run policy selected
+for the Studio session. Do not manufacture additional approval questions for
+the build, status checks, reads, verification, or automatic viewer open.
 
 ## Image and detection demo contract
 

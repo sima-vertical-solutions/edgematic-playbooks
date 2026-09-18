@@ -1,28 +1,13 @@
 ---
 name: edgematic-ros2-autonomous-run
 description: >-
-  Use when asked to get a ROS 2 pipeline running on a DevKit end to end with
-  minimal back-and-forth — "run the pipeline on the device", "build and run it
-  end to end", "run the yolov8_seg demo end to end on <device>", "get the demo
-  up", "run a pipeline over this dataset". A one-sentence request naming the
-  pipeline and the device is the whole intended input. The orchestrator:
-  resolves and checks the device, works out which of the two ROS 2 paths this
-  deployment is on,
-  obtains the sources, READS THE APPLICATION CODE to derive what input the
-  pipeline needs and which topics it publishes, provisions that input itself —
-  a clip, a URL, a research dataset, a live stream — then builds, deploys,
-  launches, verifies against the topics it derived, and shows the output. Names
-  the only two things worth asking the user and answers everything else from
-  the code. Do NOT use it as a reference for the individual steps: the layout,
-  the board traps and the detached launch live in
-  edgematic-ros2-portable-pipeline, the catalogue tools in
-  edgematic-ros2-neat-nodes, rendering in edgematic-foxglove-viz, pairing in
-  edgematic-device-ops. This skill decides the ORDER and what never to ask. Do
-  NOT use for an explicit hello-world, smoke-test, standard demo, demo-ladder
-  VIEW run, or a request that names a verified packaged payload under
-  `/workspace/edgematic-demos` (use edgematic-ros2-demo), or when the user
-  points to an existing repository, package.xml or launch file (use
-  edgematic-ros2-user-package).
+  Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end
+  with minimal back-and-forth. Resolve the device, choose the supported ROS
+  path, derive input and topic contracts from the application, provision input,
+  cross-build, deploy, launch, verify, and show output. Use a one-sentence
+  pipeline-and-device request. Route standard HELLO, smoke-test, demo-ladder,
+  and packaged VIEW work to edgematic-ros2-demo; route an existing repository,
+  package.xml, or launch file to edgematic-ros2-user-package.
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
@@ -233,9 +218,10 @@ execs into it. If the container is missing, that is the question above — ask; 
 not fall back to the board on your own initiative.
 
 Poll the build to a real terminal state and read its exit marker. A build that
-merely went quiet is not a build that passed.
-Pace those checks with the table in `edgematic-ros2-portable-pipeline` §9: the
-first at 60 s, then every 60 s under emulation, and one progress line per
+merely went quiet is not a build that passed. Pace checks with the milestone
+sequence in `edgematic-ros2-portable-pipeline` §9. Never issue three identical
+`get_build_status` calls: use a tail once, a meaningful finished-package match,
+and the final `EDGEMATIC_BUILD_EXIT=` match. Report one progress line per
 finished package rather than one per check.
 
 ## Step 5 — deploy, pre-flight, launch

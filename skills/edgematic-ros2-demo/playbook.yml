@@ -1,6 +1,6 @@
 id: edgematic-ros2-demo
 name: Edgematic ROS 2 Demo
-version: 0.2.3
+version: 0.2.4
 agents: [codex, claude]
 description: Run the smallest standard ROS 2 proof that answers the user's question in Edgematic Studio — READY environment preflight, HELLO typed pub/sub, LAUNCH installed launch and parameters, DEPLOY host cross-build plus durable DevKit launch, or VIEW live image/detection output in the embedded Flora viewer.
 compatibility:

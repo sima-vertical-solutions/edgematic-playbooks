@@ -1,25 +1,13 @@
 ---
 name: edgematic-ros2-portable-pipeline
 description: >-
-  Use as the detailed mechanics reference when edgematic-ros2-user-package is
-  building, deploying and RUNNING a ROS 2 Neat pipeline on a paired Modalix
-  DevKit from a workspace of the user's own — a package they wrote, or one they
-  are porting — rather than from a SiMa client repository. Covers the
-  minimal colcon layout whose only fixed sibling is sima-core, cross-compiling
-  in the ROS 2 SDK container, the sima-owned deploy target, the board
-  environment that merge-install breaks, and the detached launch that keeps a
-  run alive after the SSH command returns. Trigger on "run my own ROS 2
-  pipeline", "build a standalone pipeline for the DevKit", or a pipeline that
-  starts, shows real frames for about twenty seconds and then goes dark, or one
-  that dies on frame one with "Failed to prepare input buffer". Also covers the
-  two board-side failures that read as code bugs and are not: a source whose
-  geometry does not match what the pipeline was built for, and an MLA segment
-  pool exhausted by repeated crashes. Do NOT use for creating or provisioning the
-  ROS 2 container (see edgematic-ros2-host-container), choosing capabilities in a
-  client workspace (see edgematic-ros-capabilities), the pre-built yolov8_seg
-  pipeline (see edgematic-ros2-neat-nodes), or Foxglove/Flora rendering itself
-  (see edgematic-foxglove-viz). Do not use as the initial router for an explicit
-  existing user package; use edgematic-ros2-user-package first.
+  Detailed mechanics for building, deploying, and running a user-owned ROS 2
+  Neat pipeline on a paired Modalix DevKit. Covers the minimal sima-core sibling
+  layout, ROS SDK cross-build, exact staged-payload deployment, board preflight,
+  merge-install environment, detached launch, input geometry failures, and MLA
+  segment exhaustion. Use through edgematic-ros2-user-package for an existing
+  repository or package. Do not use for host-container provisioning, catalogue
+  pipelines, capability selection, or Flora rendering.
 ---
 
 # Running a ROS 2 pipeline the user owns
@@ -137,6 +125,12 @@ and fails at runtime. Verify on the board, and say which of the two you have.
 
 `deploy_to_device` places the merge-install tree at the `remote_dir` from
 `deploy.yaml`.
+
+The optional `payload` parameter is not a placeholder. Omit the key entirely
+for the normal staged install tree; never pass an empty string. When a prepared
+ROS app has assembled a complete payload directory, pass that exact directory
+relative to the shared workspace (for example `edgematic-demo/payload`), not the
+application source directory above it.
 
 - **`remote_dir` must be owned by the SSH user** (`sima`). A root-owned target
   fails while `tar` restores the directory's timestamps ("utime: Operation not
@@ -263,7 +257,7 @@ once per phase change, not once per check.
 
 | Step | First check | Then | Measured (x86 host, arm64 under emulation) | Stop or escalate |
 |---|---|---|---|---|
-| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | Adaptive, see below | Clean build of the sima-core perception set: 7–8 min. Incremental with no source change: under 1 min. A few edited files: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
+| Cross-compile (`prepare_ros_build`) | 60 s: the log exists and colcon has started | At measured milestones; never three identical status calls | Clean build of the sima-core perception set: 7–9 min. Incremental with no source change: under 1 min. A few edited files: about 3 min | Terminal only on `EDGEMATIC_BUILD_EXIT=`. If the log hasn't grown for 5 min, say so, but don't cancel on silence alone, because one package can compile for 2 min without a line. Use `cancel_ros_build` only when the user asks or the build deadline (default 2 h) is near |
 | Neat or ROS install on the board | 30 s | Every 30 s | A few minutes | The installer's own completion line |
 | Deploy | Once, when it returns | — | Seconds for a few MB | — |
 | Launch | 10 s: the process is alive and the node is `activated` | 30 s: detections are being decoded and nothing died. 60 s: alive from a second session, topics at non-zero rates | Model load to `activated`: about 7 s | A crash inside 30 s is a configuration or code fault. Stop, fix it, and never relaunch unchanged (§4) |
@@ -278,10 +272,12 @@ and check sooner as the expected end approaches:
    source changed since the last successful build, about 3 min when a few files
    changed, 7–8 min when build/ was cleaned or Neat changed. Halve these on an arm64
    host.
-2. **Wait about half of the remaining time, between 10 s and 60 s:**
-   `wait = min(60, max(10, (expected − elapsed) / 2))`. Once elapsed passes the
-   estimate, check every 15 s, and every 60 s once the log shows the last package
-   has started.
+2. **Use milestone checks, not a heartbeat loop.** For a clean x86 build, check a
+   short tail after about one minute, query `match: "Finished <<<"` near the
+   midpoint, and query `match: "EDGEMATIC_BUILD_EXIT="` near the 8–9 minute
+   finish. For incremental work, scale those milestones to the estimate. Never
+   call `get_build_status` three times with identical parameters; that is
+   indistinguishable from an agent loop to the UI. Do not pass `match: ""`.
 3. **If the status tool offers `wait_secs` and returns `next_check_secs`, use those
    instead.** Pass `wait_secs` equal to the previous `next_check_secs`, so one call
    covers the whole wait and returns early on a status change. Don't add your own
