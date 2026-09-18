@@ -1,13 +1,6 @@
 ---
 name: edgematic-ros2-integration
-description: >-
-  Use when working on running SiMa ROS2 pipelines (e.g. yolov8_seg) on a Modalix
-  SoM/devkit and wiring them into Edgematic Studio's agentic chat. Covers
-  flashing the SoC, installing ROS2 + Neat, building and running the
-  vdp-simaai-ros2 pipelines, Foxglove/Flora visualization, and installing the
-  Edgematic Studio skills (playbooks) into the Neat SDK container so Claude/Codex
-  can drive Edgematic features. Trigger on mentions of ROS2, Neat, SoM/Modalix,
-  yolov8_seg, foxglove/flora, or "edgematic skills / playbooks".
+description: Use when running SiMa ROS 2 pipelines such as yolov8_seg on a Modalix SoM/DevKit and wiring them into Edgematic Studio chat. Covers flashing the SoC, installing ROS 2 and Neat, building and running vdp-simaai-ros2 pipelines, Foxglove/Flora visualization, and installing Edgematic Studio playbooks into the Neat SDK container. Trigger on ROS 2, Neat, SoM/Modalix, yolov8_seg, Foxglove/Flora, or Edgematic skills/playbooks.
 ---
 
 # ROS2 + Edgematic Integration

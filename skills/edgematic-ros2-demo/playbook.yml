@@ -1,0 +1,8 @@
+id: edgematic-ros2-demo
+name: Edgematic ROS 2 Demo
+version: 0.2.6
+agents: [codex, claude]
+description: Run a clean-board ROS 2 proof in Edgematic Studio — fail-fast bridge packaging, one serialized build with structured two-minute progress and ETA, durable DevKit launch, and VIEW acceptance from genuine live image/detection topics plus current browser subscriptions and rendered frames.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

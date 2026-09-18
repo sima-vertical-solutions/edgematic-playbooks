@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 Demo"
+  short_description: "Run a standard ROS 2 proof from HELLO through live VIEW"
+  default_prompt: "Use $edgematic-ros2-demo to run the smallest sufficient READY, HELLO, LAUNCH, DEPLOY, or VIEW proof. For the prepared HELLO + VIEW demo, use its fast path, deploy only edgematic-demo/payload, automatically open the embedded output, and leave the verified run alive."
