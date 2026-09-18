@@ -1,19 +1,6 @@
 ---
 name: edgematic-ros2-legacy-vdp-port
-description: >-
-  Use when cross-compiling a package from the legacy vdp-simaai-ros2 client
-  repository for a Modalix DevKit and porting its develop-branch sources, which
-  were written against simaai-socpipeline 2.1.x, onto the board's current Neat
-  runtime. Covers finding the tree the build actually compiles before editing
-  anything, the sibling sima-core layout that repository needs, the bringup
-  package colcon expects, and the six runtime fixes — only one of which is a
-  compile error, so a green build is necessary and nowhere near sufficient. Trigger on a vdp-simaai-ros2 package that builds cleanly and then
-  dies on the board with a bad_alloc, a segfault on the first frame, an
-  unsupported-operation dispatcher error, or an encoder failing to prepare its
-  input buffer. Do NOT use for a pipeline the user owns (see
-  edgematic-ros2-portable-pipeline), for choosing capabilities in a workspace
-  (see edgematic-ros-capabilities), or for compiling anything on the board — that
-  never happens.
+description: Use when cross-compiling a package from the legacy vdp-simaai-ros2 client repository for a Modalix DevKit and porting its develop-branch sources from simaai-socpipeline 2.1.x to the board's current Neat runtime. Covers finding the tree actually compiled, the required sibling sima-core layout, the bringup package colcon expects, and runtime fixes that a green build alone cannot prove. Trigger when a vdp-simaai-ros2 package builds but dies on the board with bad_alloc, a first-frame segfault, an unsupported-operation dispatcher error, or an encoder input-buffer failure. Do not use for a user-owned pipeline, capability selection, or compiling on the board.
 ---
 
 # Porting a legacy vdp-simaai-ros2 pipeline to the current Neat runtime

@@ -1,13 +1,6 @@
 ---
 name: edgematic-ros2-portable-pipeline
-description: >-
-  Detailed mechanics for building, deploying, and running a user-owned ROS 2
-  Neat pipeline on a paired Modalix DevKit. Covers the minimal sima-core sibling
-  layout, ROS SDK cross-build, exact staged-payload deployment, board preflight,
-  merge-install environment, detached launch, input geometry failures, and MLA
-  segment exhaustion. Use through edgematic-ros2-user-package for an existing
-  repository or package. Do not use for host-container provisioning, catalogue
-  pipelines, capability selection, or Flora rendering.
+description: Detailed mechanics for building, deploying, and running a user-owned ROS 2 Neat pipeline on a paired Modalix DevKit. Covers the minimal sima-core sibling layout, ROS SDK cross-build, exact staged-payload deployment, board preflight, merge-install environment, detached launch, input geometry failures, and MLA segment exhaustion. Use through edgematic-ros2-user-package for an existing repository or package. Do not use for host-container provisioning, catalogue pipelines, capability selection, or Flora rendering.
 ---
 
 # Running a ROS 2 pipeline the user owns

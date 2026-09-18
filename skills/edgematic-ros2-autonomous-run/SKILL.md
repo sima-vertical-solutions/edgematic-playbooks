@@ -1,13 +1,6 @@
 ---
 name: edgematic-ros2-autonomous-run
-description: >-
-  Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end
-  with minimal back-and-forth. Resolve the device, choose the supported ROS
-  path, derive input and topic contracts from the application, provision input,
-  cross-build, deploy, launch, verify, and show output. Use a one-sentence
-  pipeline-and-device request. Route standard HELLO, smoke-test, demo-ladder,
-  and packaged VIEW work to edgematic-ros2-demo; route an existing repository,
-  package.xml, or launch file to edgematic-ros2-user-package.
+description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end with minimal back-and-forth. Resolve the device, choose the supported ROS path, derive input and topic contracts from the application, provision input, cross-build, deploy, launch, verify, and show output. Use a one-sentence pipeline-and-device request. Route standard HELLO, smoke-test, demo-ladder, and packaged VIEW work to edgematic-ros2-demo; route an existing repository, package.xml, or launch file to edgematic-ros2-user-package.
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions

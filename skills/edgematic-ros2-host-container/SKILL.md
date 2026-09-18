@@ -1,21 +1,6 @@
 ---
 name: edgematic-ros2-host-container
-description: >-
-  Use when the ROS 2 container has to be created, provisioned or repaired on the
-  user's own host before any ROS 2 work can start — there is no ROS 2 SDK
-  container yet, the container was recreated and lost what was installed into
-  it, or a workspace build dies within seconds on a build dependency the
-  container does not carry (GTSAM, socpipeline, shapely). Covers the three
-  steps: the install command the user runs on the host because Edgematic Studio
-  cannot, cloning sima-core into the directory Studio and the ROS container both
-  mount, and running sima-core's in-place provisioning script inside the
-  container. Trigger on "install ROS2", "set up the ROS container", "I have no
-  ros2-sdk container", "provision the container", or a build that fails on a
-  missing build dependency. Do NOT use for choosing capabilities or building an
-  existing workspace (see edgematic-ros-capabilities), preparing a DevKit before
-  a run (see edgematic-ros2-board-setup), running a pipeline on the board (see
-  edgematic-ros2-neat-nodes), or SoC flashing and board-side ROS 2 (see
-  edgematic-ros2-integration).
+description: Use when the ROS 2 container has to be created, provisioned or repaired on the user's own host before any ROS 2 work can start — there is no ROS 2 SDK container yet, the container was recreated and lost what was installed into it, or a workspace build dies within seconds on a build dependency the container does not carry (GTSAM, socpipeline, shapely). Covers the host install command, cloning sima-core into the directory shared by Studio and the ROS container, and running sima-core's in-place container provisioning. Trigger on "install ROS2", "set up the ROS container", "I have no ros2-sdk container", "provision the container", or an early missing-build-dependency failure. Do not use for capability selection/building, DevKit preflight, running a prepared pipeline, or SoC flashing.
 ---
 
 # Standing up the ROS 2 container on the host
