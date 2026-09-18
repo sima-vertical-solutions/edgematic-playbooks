@@ -133,8 +133,9 @@ deliberately short:
 Poll a running ROS build every 120 seconds. Each update must include elapsed
 time, completed/total packages, the active package or phase, log-growth age,
 failures, and ETA from `get_build_status.ros_progress`. Before the first package
-finishes, use the measured clean-build baseline (normally 8–9 minutes under x86
-ARM emulation) and label it provisional. Recompute from observed package
+finishes, use the measured clean-build baseline (about 35–45 minutes for this
+seven-package workspace under x86 ARM emulation) and label it provisional.
+Recompute from observed package
 throughput once the tool supplies an ETA. A terminal build still requires the
 persisted `ok`/`failed` state backed by `EDGEMATIC_BUILD_EXIT=`; do not infer
 success from a quiet log. Never start a second build while one is running.
