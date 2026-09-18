@@ -35,11 +35,13 @@ step that was supposed to produce them worked.
    `/etc/sdk-release` reports `SDK Type = ros2-sdk` — that line is the
    machine-readable discriminator, and it is what tells this container apart
    from the Neat cross-compilation SDK.
-2. The host directory Studio mounts is mounted into it **at the same absolute
-   path** — `/workspace` on both sides by default. Everything downstream depends
-   on this: Studio resolves paths and hands them to the container untranslated.
-3. `sima-core` is cloned inside that shared directory, and its provisioning
-   script has been run in the container.
+2. The same host directory Studio mounts is mounted into it at `/workspace`.
+   Everything downstream depends on this: Studio resolves paths and hands them
+   to the container untranslated.
+3. The shared root contains one `/workspace/sima-core` and one application
+   directory such as `/workspace/edgematic-demo`; there is no dated wrapper or
+   second ROS workspace. `sima-core`'s provisioning script has been run in the
+   container.
 4. The **build channel** is running and has published its address. That is what
    lets Studio start builds itself instead of handing the user a command to
    paste, and it is the difference between `prepare_ros_build` answering
@@ -76,12 +78,27 @@ sima-cli sdk ros2      # open a shell in the ROS 2 container
 ```
 
 **The published package is arm64-only.** On an arm64 host it installs natively.
-On x86_64 the compatibility check refuses — that is the package being honest,
-not a broken install, so read the refusal back rather than retrying it. The
-image can be run under emulation once arm64 binfmt is registered on the host
-(`docker run --rm --privileged tonistiigi/binfmt --install arm64`, then install
-with `--force`), at a large cost in build time. Offer that as the unsupported
-escape hatch it is; do not present it as the path.
+On x86_64 the `sima-cli` compatibility check correctly refuses the native
+installer. For the internally verified Edgematic demo path, do not use
+`sima-cli ... --force`. Register arm64 binfmt, then run the published arm64
+container explicitly with Docker and mount Studio's selected workspace at the
+same `/workspace` path:
+
+```bash
+docker run --rm --privileged tonistiigi/binfmt --install arm64
+test -e /proc/sys/fs/binfmt_misc/qemu-aarch64
+docker run -dit --platform linux/arm64 \
+  --name ros2-sdk-edgematic-ws \
+  --network simasdkbridge \
+  -v "$HOME/edgematic-workspace:/workspace" \
+  ghcr.io/sima-vertical-solutions/ros2-sdk:latest bash
+```
+
+This is an AMD64 host running an ARM64 SDK container under qemu/binfmt, and it
+produces ARM64 artifacts for Modalix. It is slower than a native ARM64 build;
+it is not ARM64-to-AMD64 compilation. Use it only after Studio has created the
+`simasdkbridge` network and the user has selected that exact workspace. Verify
+`uname -m` inside the container reports `aarch64` before provisioning.
 
 **Do not assume the container is named `ros2-sdk`.** `sima-cli sdk setup` names
 containers after the image reference, so the real name is usually longer. Read
@@ -92,11 +109,12 @@ that is an operator change — say so rather than renaming things to fit.
 
 ## Step 2 — clone sima-core into the shared directory
 
-Use `clone_repository`. Set `repo` to `sima-vertical-solutions/sima-core` and
-`parent` to an absolute path **inside the directory Studio and the ROS container
-both mount, and not Studio's projects root itself** — a subdirectory of that
-mount. `parent` does not have to exist; a single missing level is created for
-you, so name one and get on with it.
+Use `clone_repository`. Set `repo` to `sima-vertical-solutions/sima-core` and,
+for the standard demo, set `parent` to `/workspace` so the result is exactly
+`/workspace/sima-core`. Keep the application beside it at
+`/workspace/edgematic-demo`, with all HELLO and VIEW packages under that one
+application's `src/`. Do not create another `ros-demo`, dated validation,
+`hello`, or `view` wrapper directory.
 
 Cloned outside that shared mount, everything looks fine until the build, which
 then fails on a path the container cannot see.
@@ -144,7 +162,16 @@ step 1:
 
 ```bash
 docker exec -u 0 -it <container> \
-  bash /workspace/sima-core/tools/edgematic/provision-modalix-deps.sh
+  bash /workspace/sima-core/tools/edgematic/provision-modalix-deps.sh --skip-gtsam
+```
+
+`--skip-gtsam` is the standard HELLO + VIEW demo path. Remove it only when the
+selected capability actually needs visual odometry. On the verified AMD64
+path, also make `sima-cli` non-interactive before the first build:
+
+```bash
+docker exec -u 0 <container> bash -c \
+  'printf "export SIMA_CLI_CHECK_FOR_UPDATE=0\n" > /etc/profile.d/99-sima-cli-noninteractive.sh'
 ```
 
 **Do not tell the user to reach for `sudo`.** `sima-cli sdk ros2` attaches as

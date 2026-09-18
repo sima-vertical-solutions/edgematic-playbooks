@@ -94,7 +94,16 @@ the standard prepared demo. Keep this path deliberately short:
    Deploy exactly `edgematic-demo/payload`. Never pass `payload: ""`, never
    deploy the whole `edgematic-demo` directory, and never rewrite a verified
    launcher or staging script during the run.
-4. The generic runner currently derives its board working directory from the
+4. Before replacing the payload or launching, clean only an earlier instance
+   of this demo. Run the packaged `stop_runtime.py` against the declared
+   `remote_dir`; it must re-read each recorded PID and validate its owner,
+   exact working directory, expected command tokens, and `PGID == PID`. Stop
+   the HELLO, detector, JPEG adapter, and viewer bridge groups first, then the
+   VIEW supervisor and `run_demos.py` parent groups. Require that no process is
+   left using the demo root before continuing. If the remote root does not
+   exist, continue as a clean first run. If any PID or unrecorded process fails
+   validation, stop and report the exact conflict instead of killing it.
+5. The generic runner currently derives its board working directory from the
    Studio project name, not from `deploy.yaml`. A workspace registered as
    `workspace` would therefore run under `/data/simaai/applications/workspace`
    and miss this demo's fixed `/data/simaai/applications/ros-demo` deployment.
@@ -102,7 +111,7 @@ the standard prepared demo. Keep this path deliberately short:
    host directory, add a board symlink, or invent a second deployment path;
    launch the staged `run_demos.py` once at the declared `remote_dir` through
    the paired device's existing SSH execution path.
-5. Wait for `HELLO_VERIFIED=1` and `PIPELINE_VERIFIED=1`, then verify current
+6. Wait for `HELLO_VERIFIED=1` and `PIPELINE_VERIFIED=1`, then verify current
    VIEW topic rates. Emit the Flora directive immediately after success and
    leave `run_demos.py`, the VIEW pipeline, JPEG adapter, and bridge alive.
 
@@ -176,6 +185,14 @@ plus rendered frames prove the result.
   shows inference itself is stale.
 
 ## Safety boundary
+
+Demo-scoped cleanup immediately before a prepared run is part of the requested
+run, not a separate workflow. When the user has already identified the device
+and said the board is reserved, do not create another approval prompt for this
+validated cleanup. Cleanup must never broad-match process names or SSH command
+lines, remove global `/dev/shm/fastrtps_*` entries, stop ROS/decoder/system
+daemons, or reboot. Do not delete or replace the remote payload until the
+scoped cleanup has passed.
 
 Pairing credentials belong in Studio's secure form. Reboots, platform or Neat
 Library changes, and interruption of another robot workload require explicit
