@@ -51,6 +51,10 @@ headroom has not degraded. Require zero decoder replays and no new kernel CMA,
 DMA-allocation, or OOM failures. Leave the verified demo and bridge running for
 recording.
 
+For each publisher-identity check, use a no-daemon graph probe with at least two
+seconds of discovery spin and retry a failed count at most three times. Do not
+accept a persistent zero, duplicate, or wrong publisher.
+
 Do not report success from a PID, advertised topic, old rate sample, channel
 list, or synthetic image. If any gate fails, stop at that gate and report the
 exact command/evidence and the smallest corrective action. Do not silently

@@ -193,6 +193,11 @@ plus rendered frames prove the result.
   compressed overlay and re-check their sole expected publishers at 5-minute
   intervals. Require zero decoder replays, no new kernel CMA/OOM errors, and
   adequate CMA headroom through the final checkpoint.
+- A fresh no-daemon ROS graph probe can discover a subscriber before its
+  publisher. Give publisher-identity probes at least two seconds of discovery
+  spin and retry a failed count up to three times. A persistent zero, duplicate,
+  or wrong publisher still fails; a prior non-zero topic-rate sample does not
+  waive the identity check.
 - A YAML field is not a control until the node declares and reads it. Verify
   parameter use in the implementation before relying on it.
 - A topic can be advertised but silent, and a bridge channel can exist without
