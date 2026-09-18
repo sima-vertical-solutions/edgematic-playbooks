@@ -125,9 +125,10 @@ deliberately short:
    launch the staged `run_demos.py` once at the declared `remote_dir` through
    the paired device's existing SSH execution path.
 6. Wait for `HELLO_VERIFIED=1` and `PIPELINE_VERIFIED=1`, then verify current
-   VIEW topic rates. Emit the Flora directive immediately after success and
-   leave `run_demos.py`, the VIEW pipeline, any real-image compressor, and the
-   bridge alive.
+   VIEW topic rates. Open Flora after this live-data gate, but do not call the
+   run accepted until its packaged long-run soak also passes. Leave
+   `run_demos.py`, the VIEW pipeline, any real-image compressor, and the bridge
+   alive after acceptance.
 
 Poll a running ROS build every 120 seconds. Each update must include elapsed
 time, completed/total packages, the active package or phase, log-growth age,
@@ -177,9 +178,20 @@ plus rendered frames prove the result.
 
 ## Failure rules that prevent long detours
 
-- A finite MP4 can be consumed faster than wall-clock time. Compare the current
-  topic rate with the media FPS and inspect logs for `pull: route closed`; an
+- For an unattended file-source demo, stage media longer than the intended run,
+  keep decoder replay disabled, and verify the staged duration and content
+  hash. Reopening a hardware-decoder route can retain contiguous memory on
+  affected platform releases; repeated replay may then fail only after many
+  apparently healthy loops. Do not treat looping a short clip as soak coverage.
+- A finite MP4 can still be consumed faster than wall-clock time. Compare the
+  current topic rate with the media FPS and reject any EOF, replay, closed-route,
+  decoder-allocation, CMA-allocation, or `runtime.element_failed` evidence; an
   alive PID after EOF is not a live demo.
+- Soak VIEW for at least 30 minutes. Check process identity and fatal logs at
+  10, 30, 60, and 120 seconds, then re-measure detections and the selected
+  compressed overlay and re-check their sole expected publishers at 5-minute
+  intervals. Require zero decoder replays, no new kernel CMA/OOM errors, and
+  adequate CMA headroom through the final checkpoint.
 - A YAML field is not a control until the node declares and reads it. Verify
   parameter use in the implementation before relying on it.
 - A topic can be advertised but silent, and a bridge channel can exist without
