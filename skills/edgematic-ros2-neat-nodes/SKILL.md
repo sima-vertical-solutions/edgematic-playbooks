@@ -5,6 +5,10 @@ description: Use when the user wants to build, run, or introspect the SiMa ROS2 
 
 # ROS2 Neat Nodes (yolov8_seg) on a Modalix DevKit
 
+**For a full end-to-end run** — sources, input provisioning, build, deploy,
+launch, verify and view, with minimal questions — start from
+`edgematic-ros2-autonomous-run` and come back here for the board-side tools.
+
 The DevKit runs the SiMa **`vdp-simaai-ros2`** workspace (branch
 `neat_integration`), whose `yolov8_seg` package is a single NEAT-native
 **`neat_inference`** lifecycle node — it decodes an RTSP feed, runs YOLOv8
@@ -59,7 +63,16 @@ Full board-setup runbook (flash, ROS2 + Neat install, foxglove_bridge): the
   restarted and will be blank for a few seconds — **say so**, because otherwise
   the gap reads as a failure.
 - **`ros2_topic_list`** `{ device }` — `ros2 topic list` over SSH → the advertised
-  topics. Use for "show me the ROS topics".
+  topics. Use for "show me the ROS topics". **Show what is flowing, not what is
+  advertised:** the raw list includes names nobody is publishing, and a list like
+  that reads as a healthy pipeline when nothing is running. Reduce it to topics
+  with a live publisher, and make sure `/image_raw` and `/detections` are in what
+  you show — those two are what tells the user the pipeline is actually seeing
+  and actually detecting.
+
+  If either is missing, say so plainly rather than quietly returning a shorter
+  list: an absent `/detections` is a real state of this pipeline, not a display
+  problem, and the honest answer names it.
 - **`ros2_node_list`** `{ device }` — `ros2 node list` over SSH → the running
   nodes (`/neat_inference`, `/yolov8_seg_neat_container`, `/foxglove_bridge`).
   Use for "show me the ROS (neat) nodes".
@@ -144,6 +157,15 @@ URL and pass that. Everything is automatic from one prompt like "stream a sample
 video and run the pipeline on it".
 
 ## Recommended flow for "build and run on device"
+
+**This is the one place a build on the board is correct**, and it is correct
+because a Studio tool does it against a workspace Neat provisioned there — not
+because board builds are acceptable in general. Every other ROS 2 build is a
+cross-compile in the ROS 2 SDK container (`edgematic-ros2-portable-pipeline`); a
+hand-run colcon on the DevKit links against whatever that board happens to have
+instead of the pinned sysroot, and the resulting pipeline starts and publishes
+nothing. Do not read this flow as a precedent for building a user's own workspace
+on the device.
 
 1. Confirm a DevKit is paired (else offer the `/devices` navigate pill).
 2. Call `run_ros_pipeline { device }`. It returns `status:"started"` immediately —

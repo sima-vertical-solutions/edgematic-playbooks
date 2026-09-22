@@ -8,3 +8,7 @@
 
 # Shell/script runtime logs
 *.log
+
+# Python validation artifacts
+__pycache__/
+*.pyc

@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros-capabilities
-description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio and work on which capabilities its robot builds with — "clone the robot repositories", "set up the ROS workspace", "open this ROS workspace", "what capabilities does this build include?", "add/remove/turn off <capability>", "build the ROS workspace", "deploy it to the robot". Covers the agent tools clone_repository / open_ros_workspace / list_ros_capabilities / set_ros_capabilities / prepare_ros_build / cancel_ros_build, cloning the client repository and sima-core into one parent directory before opening it (and why that clone must never be improvised in a shell), the rule that the selection is only the bringup package's exec_depend entries, completing the third-party sources the workspace declares in its dependencies.repos files (with the revision each one pins) before any build, working out and naming the build script since prepare_ros_build has no default for it, searching a build log past its tail with get_build_status's match, the build handoff (Studio starts the build itself where a build channel is configured and otherwise hands the user a command to run, and watches the log either way — branch on the run_on the tool returns), and how to read the two build failures that really happen. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit (run_ros_pipeline / ros2_topic_list / ros2_node_list — see ros2-neat-nodes), Foxglove/Flora rendering (see edgematic-foxglove-viz), board bring-up and flashing (see ros2-edgematic-integration), or EdgeMatic model-archive projects (build_project / run_pipeline — a DIFFERENT, non-ROS flow, see edgematic-build-deploy-run).
+description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio; clone the robot repositories; inspect, add, remove, or turn off build capabilities; build the ROS workspace; or deploy it to the robot. Covers clone_repository, open_ros_workspace, list_ros_capabilities, set_ros_capabilities, prepare_ros_build, cancel_ros_build, and build-log monitoring. Ensures the client repository and sima-core share one parent, only bringup exec_depend entries select capabilities, declared third-party sources are complete, the build script is explicit, and the run_on result controls the build handoff. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit, Foxglove or Flora rendering, board bring-up and flashing, or non-ROS EdgeMatic model-archive projects.
 ---
 
 # ROS Workspace Capabilities, Build & Deploy
@@ -60,6 +60,13 @@ Follow it. Each step needs what the one before it returns.
    block with a copy button, so nothing else is needed. When it is `"container"` there is
    no `command`: say that Studio started the build in the container, and go straight to
    step 6. Never render a fenced block with nothing in it.
+   Both branches are the cross-compiler: `"container"` is Studio starting the build
+   inside it, `"host"` is the user starting the same thing by hand. If the container
+   turns out not to exist at all, that is **not** a cue to build on the robot instead —
+   stop and ask the user, with the wording and the three answers
+   `edgematic-ros2-portable-pipeline` carries. Installing the container
+   (`edgematic-ros2-host-container`) is the fix; a device build is a decision only
+   they can make.
 6. **Poll `get_build_status` `{ project_id }`** until it is terminal, and read the result
    as described under "Watching the build". When a failure's cause is not in the returned
    `log_tail`, call it again with `match` — for example
@@ -68,6 +75,7 @@ Follow it. Each step needs what the one before it returns.
    failure prints the missing package's name well above the line that reports the failure.
 7. **Deploy** to the paired device with `deploy_to_device` once — and only once — the
    build reported an observed success.
+
 
 ## 0. Getting the two repositories onto disk
 
