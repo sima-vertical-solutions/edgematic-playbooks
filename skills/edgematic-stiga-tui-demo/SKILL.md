@@ -1,118 +1,106 @@
 ---
 name: edgematic-stiga-tui-demo
-description: Prepare and verify a Modalix or ROSBOT board for the Stiga operator TUI demo in EdgeMatic Studio. Use when the user asks to pair the board, build or deploy Stiga, install its board runtime, create the TUI launcher, or test the Open Robot TUI action end to end. Do not use for generic ROS demos, arbitrary ROS packages, or production mowing.
+description: Automatically build, stage, deploy, and open the Stiga operator TUI demo on a paired Modalix or ROSBOT through EdgeMatic Studio. Use when the user wants the Studio agent to set up the selected board and show the Robot TUI end to end. Do not use for generic ROS packages or production mowing.
 ---
 
 # EdgeMatic Stiga TUI Demo
 
-Prepare the selected board with Stiga's own deployment tooling, then prove that
-EdgeMatic can open and control the interactive TUI session. Keep board setup,
-Studio integration, and safety evidence distinct.
+Drive this workflow with EdgeMatic tools. Do not hand the operator host-side
+build, deploy, or SSH commands: after Studio installation and device pairing,
+the agent owns repository setup, build, payload assembly, deployment, and TUI
+open.
 
 ## Definition of done
 
-Do not call the demo ready until all of these are true:
+The demo is ready only when:
 
 - the intended board is paired, selected, reachable, and identified by name;
-- the requested Stiga revision was built on the host, never on the board;
-- Stiga was deployed to `/root/sima_ws` with the hardware-appropriate flags;
-- `/root/sima_ws/run_stiga_tui.sh` exists and is executable on the board;
-- EdgeMatic's ROS Pipelines feature is enabled and its TUI command resolves to
-  that launcher;
-- **Terminal > Open Robot TUI** creates one interactive panel for the selected
-  device, accepts resize, coexists with a normal local shell, and can be closed
-  and reopened; and
-- the session exits cleanly without issuing a robot movement command.
+- the checked-in non-interactive provisioner reports the board ready for the
+  EdgeMatic TUI payload through Studio's managed pairing key;
+- the requested Stiga and sima-core revisions are recorded;
+- Stiga's managed ROS build has a persisted successful result;
+- the checked-in EdgeMatic staging script produced the complete named payload;
+- that payload was deployed to `/root/sima_ws` through the paired device;
+- the selected board's singleton Robot TUI panel opened automatically; and
+- the session can exit without issuing a movement command or leaving a Stiga
+  process unintentionally running.
 
-Record the exact revision, board, deployment flags, and observable checks. A
-successful build alone is not a successful demo.
+A successful compile is not a successful demo. A pre-existing launcher is not
+proof that the requested revision was deployed.
 
-## Fixed workflow
+## Execute the workflow
 
-1. Use `list_devices` and `get_device_status` to identify the selected board and
-   confirm that it is reachable. If it is not paired, use `add_device`; request
-   a password only through the secure pairing flow and never repeat it in chat
-   or evidence.
-2. Establish one shared host workspace containing sibling `stiga` and
-   `sima-core` repositories. Reuse matching repositories. Otherwise use
-   `clone_repository`, then `open_ros_workspace` for the Stiga workspace and
-   honor its session-rebind boundary before continuing.
-3. Build with `prepare_ros_build` using Stiga's checked-in `build.sh`. Poll
-   `get_build_status` until it reaches a persisted terminal result. Never build
-   Stiga on the board and never replace its build script with an ad hoc colcon
-   command. The script owns the CPU policy and reserves two logical CPUs for
-   other work.
-4. At the host setup boundary, read
-   [`references/host-setup.md`](references/host-setup.md). Stiga provisioning
-   and deployment must run from an attended host terminal because they use
-   Docker, interactive `sima-cli` setup, and SSH. Give the user the exact
-   command for their board and wait for its result. Do not claim that Studio's
-   container-scoped `run_command` performed a host operation.
-5. Use Stiga's checked-in `deploy.sh` as the authoritative packager and
-   installer. Do **not** substitute the generic `deploy_to_device` tool: that
-   path stages a conventional ROS install tree but does not vendor every Stiga
-   runtime dependency or generate `run_stiga_tui.sh`.
-6. After deployment succeeds, verify that the launcher is executable. In
-   EdgeMatic, enable ROS Pipelines, keep the TUI command at
-   `/root/sima_ws/run_stiga_tui.sh`, select the paired device, and open
-   **Terminal > Open Robot TUI**.
-7. Run the acceptance checks below. Preserve evidence from the newest run and
-   report failures at the boundary where they occurred: host build, board
-   provisioning, board deployment, SSH/PTTY launch, or Studio terminal bridge.
+Read [`references/automatic-flow.md`](references/automatic-flow.md), then carry
+out its tool sequence. Important invariants:
+
+- Build in the SDK container, never on the board.
+- Provision with checked-in
+  `tools/deploy/provision.sh --non-interactive --tui-demo`; never give the
+  agent a device password or private-key path.
+- Let Stiga's `build.sh` use all online logical CPUs except two; do not cap it
+  further or multiply package-level and compiler-level parallelism.
+- Stage with checked-in `tools/deploy/stage-edgematic-tui.sh` after the build.
+- Deploy only its `edgematic-tui-payload` through `deploy_to_device`. The named
+  payload contains Stiga's otherwise-missing runtime libraries, vendored Python
+  packages, setup files, and generated launch wrappers.
+- Open the panel with the `edgematic-robot-tui` response directive only after
+  deployment succeeds. The directive selects the backend's fixed
+  `/root/sima_ws/run_stiga_tui.sh`; it never contains a command.
+
+The user may need to approve the build/deploy mutations and send a continuation
+after enabling ROS tools or rebinding the cloned workspace. Those are product
+authorization/session boundaries, not manual setup work. Do not ask the user to
+run shell commands that the flow's tools can execute.
 
 ## Hardware and storage boundary
 
-NVMe is not required for EdgeMatic's TUI transport or the
-`run_stiga_tui.sh` launcher. It is required by the full Stiga stack because
-RTAB-Map maps, bags, captures, and logs belong on NVMe-backed `/media`, not the
-board's small eMMC root.
+NVMe is not required for EdgeMatic's TUI transport, the 467 MiB Stiga overlay,
+or `run_stiga_tui.sh`. The full Stiga mapping stack requires NVMe-backed
+`/media` because RTAB-Map persists maps, bags, captures, and logs there rather
+than saturating the board's eMMC root.
 
-For a ROSBOT without the supported SPI IMU, deploy with `--no-imu`. A board
-without NVMe-backed `/media` may use `--skip-provision-check` only for the
-operator TUI transport demo after the missing prerequisite has been stated.
-That waiver does not make RTAB-Map, mapping, or production navigation
-supported. Never describe eMMC-only storage as full Stiga readiness.
+For an eMMC-only ROSBOT, accept the TUI demo while reporting that RTAB-Map,
+mapping, and production navigation remain unvalidated. A missing supported SPI
+IMU has the same boundary: it does not prevent rendering the operator menu, but
+hardware-dependent modes are not accepted.
 
-Do not use `deploy.sh --run` for this workflow. It launches Stiga's headless
-stack, while this demo requires the interactive `run_stiga_tui.sh` entrypoint.
+## Safe TUI acceptance
 
-## TUI acceptance
-
-Check each item rather than treating the first rendered screen as completion:
+Check each item:
 
 | Check | Required evidence |
 | --- | --- |
-| Selected target | Panel names or otherwise identifies the paired board that was requested. |
-| Single session | Repeated open actions focus the existing TUI instead of creating duplicates. |
-| Interactivity | The display responds to a harmless key such as `q`; no movement mode is entered. |
-| Resize | The remote PTY follows at least one panel resize without corrupting or terminating the session. |
-| Coexistence | A normal local terminal can remain open beside the robot TUI. |
-| Lifecycle | Closing the panel ends its remote session; reopening starts a fresh usable session. |
-| Cleanup | No Stiga process started by the test is left unintentionally running. |
+| Selected target | The panel resolves the paired board requested by the user. |
+| Single session | Reopening focuses the existing Robot TUI instead of creating a duplicate. |
+| Render | The Stiga operator menu renders through the remote PTY. |
+| Resize | The display follows a panel resize without exiting or corrupting. |
+| Coexistence | A normal local shell remains usable beside the Robot TUI. |
+| Lifecycle | Closing and reopening creates a fresh usable session. |
+| Cleanup | Exiting leaves no stack started by the test unintentionally running. |
 
 The robot may move when mode keys are used. Never send `e`, `b`, `m`, `t`, or
 `D` during automated or unattended verification. Use `q` to leave a menu. If a
-mode was started manually, send `i` to request idle/stop before `q`.
+mode was started manually, request idle/stop with `i` before `q`.
 
 ## Diagnose by boundary
 
-- If `run_stiga_tui.sh` is missing, the Stiga deployment did not complete or
-  used the wrong remote root. Re-run the host deployment; do not point Studio
-  at a fabricated replacement script.
-- If the board is reachable over SSH but Studio rejects the session, confirm
-  that the same paired device is selected and refresh its status.
-- If **Open Robot TUI** is absent, confirm that the installed EdgeMatic build
-  contains the feature and that ROS Pipelines is enabled.
-- If the panel opens and immediately exits, run the direct PTY smoke test from
-  the host reference and inspect that run's board-side error before changing
-  EdgeMatic.
-- If Stiga is already running, stop only the known Stiga session through its
-  own controls or recorded process identity. Do not use broad `pkill` or stop
-  unrelated board workloads.
+- No ROS tools: enable them with `set_ros_pipelines` and resume next turn.
+- Build failure: report the persisted package/phase failure; do not deploy an
+  older install tree.
+- Missing staging script: the selected Stiga revision does not support this
+  automatic flow; do not reconstruct the payload ad hoc.
+- Missing ready marker: staging failed. Preserve its bounded stderr and stop.
+- Deploy refusal: report the paired-device, transport, build, or payload error
+  returned by `deploy_to_device`; do not bypass it with raw SSH.
+- Provision refusal: report the exact sanitized gap and stop. Re-pair when the
+  managed key fails; never fall back to interactive password authentication.
+- Panel exits immediately: distinguish a missing base runtime from a launcher
+  or PTY failure using the newest panel error. Do not restart unrelated board
+  workloads.
 
 ## Handoff record
 
-Report the selected device, board address without credentials, Stiga revision,
-host build result and active duration, deployment flags, remote root, launcher
-check, Studio acceptance table, and any NVMe/IMU limitation. Do not include
+Report the selected device, board address without credentials, source
+revisions, active build duration, staging marker, deployed payload size/remote
+root, TUI acceptance table, and any NVMe/IMU limitation. Never include
 passwords, private keys, tokens, or an unredacted terminal transcript.
