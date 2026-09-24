@@ -1,0 +1,4 @@
+interface:
+  display_name: "EdgeMatic Stiga TUI Demo"
+  short_description: "Set up and verify a Stiga board TUI demo"
+  default_prompt: "Use $edgematic-stiga-tui-demo to prepare my Modalix board, deploy Stiga, and verify the operator TUI in EdgeMatic Studio."

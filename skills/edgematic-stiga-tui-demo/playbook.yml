@@ -1,0 +1,8 @@
+id: edgematic-stiga-tui-demo
+name: EdgeMatic Stiga TUI Demo
+version: 0.1.0
+agents: [codex, claude]
+description: Prepare, deploy, and verify the Stiga operator TUI on a paired Modalix or ROSBOT board through EdgeMatic Studio.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
