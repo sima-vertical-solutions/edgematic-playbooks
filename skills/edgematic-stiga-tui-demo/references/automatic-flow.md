@@ -7,7 +7,11 @@ DevKit, and approving the agent's mutation confirmations.
 ## Tool sequence
 
 1. Resolve the selected paired device with `list_devices` and
-   `get_device_status`.
+   `get_device_status`. Require its SSH user to be `root`, because Stiga's
+   platform provisioning and declared `/root/sima_ws` deployment cannot run
+   through an unprivileged `sima` pairing. If it is not root, ask the operator
+   to remove and re-pair that board as root; never request or repeat its
+   password in chat.
 2. If ROS Pipelines is off, call `set_ros_pipelines` with `enabled: true`, tell
    the operator the tools become available on their next message, and stop this
    turn. Do not ask them to start a new chat.

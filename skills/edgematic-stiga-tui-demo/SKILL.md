@@ -14,7 +14,8 @@ open.
 
 The demo is ready only when:
 
-- the intended board is paired, selected, reachable, and identified by name;
+- the intended board is paired as `root`, selected, reachable, and identified
+  by name;
 - the checked-in non-interactive provisioner reports the board ready for the
   EdgeMatic TUI payload through Studio's managed pairing key;
 - the requested Stiga and sima-core revisions are recorded;
