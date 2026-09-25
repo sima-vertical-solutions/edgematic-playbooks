@@ -57,6 +57,7 @@ sima-cli playbooks remove edgematic-device-ops
 | [`edgematic-ros2-host-container`](skills/edgematic-ros2-host-container) | Install the ROS 2 SDK container on the user's own host and provision it to build — the host-only install command, cloning sima-core into the shared mount, and the in-place provisioning script. |
 | [`edgematic-ros2-demo`](skills/edgematic-ros2-demo) | Run a standard ROS 2 proof at the smallest useful level: READY, HELLO, LAUNCH, DEPLOY, or live VIEW. |
 | [`edgematic-ros2-user-package`](skills/edgematic-ros2-user-package) | Preserve, build, deploy, run, and verify an existing user-supplied ROS 2 package or workspace. |
+| [`edgematic-stiga-tui-demo`](skills/edgematic-stiga-tui-demo) | Automatically build and deploy Stiga to a paired board, then open its interactive operator TUI in EdgeMatic Studio. |
 
 ## Layout
 
