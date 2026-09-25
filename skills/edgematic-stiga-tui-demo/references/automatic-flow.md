@@ -42,12 +42,12 @@ must omit the temporary Stiga feature ref; the operator still supplies nothing.
    checkouts. If it returns a rebind instruction, end the turn exactly as
    instructed; continue from the rebound project on the operator's next
    message.
-5. Prepare the paired board from the bound Stiga project with the advertised
+5. Prepare the paired board from the bound shared workspace with the advertised
    confirm-gated shell tool (`run_command` for in-process providers, or the
    provider's native project shell when that is the only shell it exposes):
 
    ```text
-   tools/deploy/provision.sh --board <ssh-user>@<board-host> --non-interactive --tui-demo
+   cd stiga && tools/deploy/provision.sh --board <ssh-user>@<board-host> --non-interactive --tui-demo
    ```
 
    Set `timeout_ms` to `600000` when using `run_command`. Do not pass a
@@ -62,11 +62,11 @@ must omit the temporary Stiga feature ref; the operator still supplies nothing.
 7. Poll `get_build_status` until its persisted state is terminal. Report actual
    active elapsed time; never include time while the machine or job was
    suspended.
-8. Run the following command in the Stiga project using the same advertised
-   shell capability as step 4:
+8. Run the following command from the bound shared workspace using the same
+   advertised shell capability as step 5:
 
    ```text
-   tools/deploy/stage-edgematic-tui.sh
+   cd stiga && tools/deploy/stage-edgematic-tui.sh
    ```
 
    Set `timeout_ms` to `600000`. Success must include
