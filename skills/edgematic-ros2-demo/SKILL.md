@@ -25,6 +25,20 @@ Do not jump to `VIEW` when `HELLO` answers the question, and do not present
 `HELLO` as proof that cross-build, board deployment, or Edgematic visualization
 works.
 
+## Resolve the demo device
+
+Use the active Studio device from the current turn's `[context: device_id=…]`
+prefix. Resolve that UUID with `list_devices` or `get_device_status` and carry
+the returned identity through every board, deployment, run, and viewer call. If
+the user names a different target in the same request, resolve that target
+instead. With no active or named target, use the sole paired device; when
+several devices exist, stop for a selection rather than guessing.
+
+Never reuse a device name, UUID, host, or address from an example, earlier turn,
+agent history, log, or another workspace. A demo prompt may contain a
+`[DEVICE]` placeholder, but a reusable skill never supplies a fixed value for
+it.
+
 ## Definition of done
 
 Before building, name the observable result:

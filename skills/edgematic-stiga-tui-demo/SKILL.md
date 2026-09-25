@@ -1,6 +1,6 @@
 ---
 name: edgematic-stiga-tui-demo
-description: Automatically build, stage, deploy, and open the Stiga operator TUI demo on a paired Modalix or ROSBOT through EdgeMatic Studio. Use when the user wants the Studio agent to set up the selected board and show the Robot TUI end to end. Do not use for generic ROS packages or production mowing.
+description: Automatically set up the host and paired Modalix or ROSBOT, build and deploy the supported robot operator demo, and open its TUI through EdgeMatic Studio. Use for requests such as "set up this robot demo" or "show the Robot TUI" even when the user does not know the Stiga codename, repositories, ROS dependencies, or commands. Do not use for generic ROS packages or production mowing.
 ---
 
 # EdgeMatic Stiga TUI Demo
@@ -9,6 +9,12 @@ Drive this workflow with EdgeMatic tools. Do not hand the operator host-side
 build, deploy, or SSH commands: after Studio installation and device pairing,
 the agent owns repository setup, build, payload assembly, deployment, and TUI
 open.
+
+The operator does not need to know that the supported demo application is
+Stiga. Treat a request for the paired robot's operator/TUI demo as this workflow
+and choose the repositories, revisions, workspace layout, provisioner, and
+payload yourself. Do not ask the operator for an application name, repository,
+branch, workspace path, package list, or board-side install commands.
 
 ## Definition of done
 
