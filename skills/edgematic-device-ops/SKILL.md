@@ -92,7 +92,7 @@ useful, suggest the next step. Do not paraphrase away the actionable detail.
 | `device_already_exists` | Host already paired | That host is already paired — no action needed (or remove it first). |
 | `device_in_use_by_other` | DevKit claimed by another Edgematic instance | In use by another instance. Report it and OFFER the `force: true` retry — never take it over on your own initiative. |
 | `nfs_host_setup_required` | NFS chosen but no workspace mounted | Surface the message **verbatim** — it contains the exact `sima-cli sdk setup --devkit <ip>` command to run on the host. See `references/nfs-setup.md`. |
-| `nfs_workspace_mismatch` | Mounted, but wrong workspace | Operator/config issue — the mounted workspace isn't the one Studio writes to. |
+| `nfs_workspace_mismatch` | Mounted, but wrong workspace | User/config issue — the mounted workspace isn't the one Studio writes to. |
 | `nfs_unavailable` | NFS device left the LAN at deploy | Device is off the shared network; offer to switch it to SCP and retry. |
 | `device_in_use` | Removing a device with deploy/run history | Removing it also drops that history — offer the `force: true` retry and let the user pick. |
 | `project_not_built` / `device_not_paired` | Deploy precondition unmet | Build the project first / pair the device first, then deploy. |

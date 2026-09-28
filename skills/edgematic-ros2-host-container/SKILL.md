@@ -90,7 +90,7 @@ containers after the image reference, so the real name is usually longer. Read
 it from `sima-cli sdk ls` or `docker ps` before using it anywhere. Studio's ROS
 build tools address the container by a configured name that defaults to
 `ros2-sdk`; when the real name differs, that setting has to point at it, and
-that is an operator change — say so rather than renaming things to fit.
+that is a user change — say so rather than renaming things to fit.
 
 ## Step 2 — clone sima-core into the shared directory
 
@@ -124,7 +124,7 @@ only; `requirement` exists inside the server and never reaches you. A missing
 token says so in the message and offers an `ask_user` fix carrying the exact
 question to put. Opening a container setup
 with a secret prompt asks for a secret before showing that it is needed. The
-other `requirement` values, `git` and `git_lfs`, are an operator's to fix:
+other `requirement` values, `git` and `git_lfs`, are the user's to fix:
 report which one, and stop.
 
 The provisioning script the next step runs is on sima-core's default branch, so
