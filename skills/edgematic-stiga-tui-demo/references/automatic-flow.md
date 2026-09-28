@@ -11,12 +11,13 @@ the Stiga codename or any repository, branch, dependency, workspace, build, or
 deployment detail. Do not ask for those values. For this VP-15782 acceptance
 bundle, use Studio's shared `/workspace` root and these known-compatible sources:
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace", "ref": "feature/vp-15782-board-bootstrap" }`
+1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
 2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace", "ref": "develop" }`
 
 Reuse them only when the existing checkouts match those revisions. Once the
 Stiga bootstrap change is merged into its default branch, the released skill
-must omit the temporary Stiga feature ref; the user still supplies nothing.
+must omit the temporary Stiga acceptance revision; the user still supplies
+nothing.
 
 ## Tool sequence
 
