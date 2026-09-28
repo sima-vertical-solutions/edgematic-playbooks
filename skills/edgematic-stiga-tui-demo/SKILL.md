@@ -41,6 +41,10 @@ Read [`references/automatic-flow.md`](references/automatic-flow.md), then carry
 out its tool sequence. Important invariants:
 
 - Build in the SDK container, never on the board.
+- Before the first build, import every source in the core capability and
+  Stiga dependency manifests, plus the Stiga manifest repository that provides
+  its selected sensor packages, at declared revisions through
+  `clone_repository`. A clean checkout does not vendor those sources.
 - Provision with checked-in
   `tools/deploy/provision.sh --non-interactive --tui-demo`; never give the
   agent a device password or private-key path.

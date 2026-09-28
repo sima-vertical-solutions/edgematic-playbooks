@@ -11,8 +11,8 @@ the Stiga codename or any repository, branch, dependency, workspace, build, or
 deployment detail. Do not ask for those values. For this VP-15782 acceptance
 bundle, use Studio's shared `/workspace` root and these known-compatible sources:
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
-2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace", "ref": "develop" }`
+1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace", "name": "stiga", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
+2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace", "name": "sima-core", "ref": "develop" }`
 
 Reuse them only when the existing checkouts match those revisions. Once the
 Stiga bootstrap change is merged into its default branch, the released skill
@@ -43,7 +43,28 @@ nothing.
    checkouts. If it returns a rebind instruction, end the turn exactly as
    instructed; continue from the rebound project on the user's next
    message.
-5. Prepare the paired board from the bound shared workspace with the advertised
+5. Complete the clean checkout's declared source dependencies before the first
+   build. Read every `dependencies.repos` beneath `sima-core/capabilities/` and
+   `stiga/dependencies.repos`. For each declared repository missing beneath
+   `stiga/src/`, call `clone_repository` with:
+
+   - `repo`: the manifest's `url`;
+   - `parent`: `/workspace/stiga/src`;
+   - `name`: the manifest repository key; and
+   - `ref`: the manifest's exact `version`.
+
+   Do not run a build merely to discover these omissions. A fresh checkout is
+   expected to lack them; `build.sh` warns but does not fetch them. Preserve
+   every pin, including branches and raw commits. Do not replace these calls
+   with `vcs import`, shell `git clone`, default branches, or package-manager
+   substitutes. Also read `stiga/src/stiga_bringup/package.xml` and
+   `stiga/manifest.repos`. Import each non-core manifest repository that
+   provides one of the bringup package's selected dependencies and is absent
+   from `stiga/src/`, using the same `name`/`ref` rules. In this acceptance
+   revision that includes the repository providing the selected sensor stack;
+   cloning only the nine dependency-manifest repositories still leaves the
+   build incomplete.
+6. Prepare the paired board from the bound shared workspace with the advertised
    confirm-gated shell tool (`run_command` for in-process providers, or the
    provider's native project shell when that is the only shell it exposes):
 
@@ -57,14 +78,14 @@ nothing.
    TUI-demo IMU/NVMe boundary explicit, obtains package specs from the running
    SDK, and fails if board verification has gaps. Success must include
    `RESULT: board READY for the EdgeMatic TUI payload`.
-6. Call `prepare_ros_build` with bare script name `build.sh` once. The checked-in
+7. Call `prepare_ros_build` with bare script name `build.sh` once. The checked-in
    script builds one package at a time with all online logical CPUs except two
    assigned to that active package. Do not override its job variables.
-7. Poll `get_build_status` until its persisted state is terminal. Report actual
+8. Poll `get_build_status` until its persisted state is terminal. Report actual
    active elapsed time; never include time while the machine or job was
    suspended.
-8. Run the following command from the bound shared workspace using the same
-   advertised shell capability as step 5:
+9. Run the following command from the bound shared workspace using the same
+   advertised shell capability as step 6:
 
    ```text
    cd stiga && tools/deploy/stage-edgematic-tui.sh
@@ -75,12 +96,12 @@ nothing.
    script vendors Stiga's Python dependencies, native libraries, overlay setup,
    DDS profile, version evidence, and safe run wrappers. Do not rewrite or
    reproduce those staging steps in chat.
-9. Call `deploy_to_device` for the selected board with
+10. Call `deploy_to_device` for the selected board with
    `payload: "edgematic-tui-payload"`. This named payload is the exception to
    the ordinary Stiga warning about generic ROS staging: EdgeMatic transfers the
    complete Stiga-authored payload as assembled, using the paired device key and
    the `/root/sima_ws` remote root from `deploy.yaml`.
-10. After deployment succeeds, end the response with the bare directive below
+11. After deployment succeeds, end the response with the bare directive below
    as its final line. It opens or focuses the selected device's fixed Robot TUI
    panel; it carries neither a command nor credentials.
 
@@ -92,6 +113,10 @@ nothing.
 ## Stop conditions
 
 - Do not start a second build while one is pending or running.
+- Do not start the first build until every repository declared by the core
+  capability and Stiga dependency manifests, plus each selected bringup
+  dependency's non-core provider from `stiga/manifest.repos`, is present at its
+  pinned revision.
 - Do not build or deploy when board provisioning failed or timed out. Do not
   replace its paired-key authentication with a password prompt.
 - Do not deploy after a failed or indeterminate build.
