@@ -1,19 +1,19 @@
 ---
 name: edgematic-stiga-tui-demo
-description: Automatically set up the host and paired Modalix or ROSBOT, build and deploy the supported robot operator demo, and open its TUI through EdgeMatic Studio. Use for requests such as "set up this robot demo" or "show the Robot TUI" even when the user does not know the Stiga codename, repositories, ROS dependencies, or commands. Do not use for generic ROS packages or production mowing.
+description: Automatically set up the host and paired Modalix or ROSBOT, build and deploy the supported Robot TUI demo, and open it through EdgeMatic Studio. Use for requests such as "set up this robot demo" or "show the Robot TUI" even when the user does not know the Stiga codename, repositories, ROS dependencies, or commands. Do not use for generic ROS packages or production mowing.
 ---
 
 # EdgeMatic Stiga TUI Demo
 
-Drive this workflow with EdgeMatic tools. Do not hand the operator host-side
+Drive this workflow with EdgeMatic tools. Do not hand the user host-side
 build, deploy, or SSH commands: after Studio installation and device pairing,
 the agent owns repository setup, build, payload assembly, deployment, and TUI
 open.
 
-The operator does not need to know that the supported demo application is
-Stiga. Treat a request for the paired robot's operator/TUI demo as this workflow
+The user does not need to know that the supported demo application is Stiga.
+Treat a request for the paired robot's TUI demo as this workflow
 and choose the repositories, revisions, workspace layout, provisioner, and
-payload yourself. Do not ask the operator for an application name, repository,
+payload yourself. Do not ask the user for an application name, repository,
 branch, workspace path, package list, or board-side install commands.
 
 ## Definition of done
@@ -68,7 +68,7 @@ than saturating the board's eMMC root.
 
 For an eMMC-only ROSBOT, accept the TUI demo while reporting that RTAB-Map,
 mapping, and production navigation remain unvalidated. A missing supported SPI
-IMU has the same boundary: it does not prevent rendering the operator menu, but
+IMU has the same boundary: it does not prevent rendering the robot menu, but
 hardware-dependent modes are not accepted.
 
 ## Safe TUI acceptance
@@ -79,7 +79,7 @@ Check each item:
 | --- | --- |
 | Selected target | The panel resolves the paired board requested by the user. |
 | Single session | Reopening focuses the existing Robot TUI instead of creating a duplicate. |
-| Render | The Stiga operator menu renders through the remote PTY. |
+| Render | The Stiga robot menu renders through the remote PTY. |
 | Resize | The display follows a panel resize without exiting or corrupting. |
 | Coexistence | A normal local shell remains usable beside the Robot TUI. |
 | Lifecycle | Closing and reopening creates a fresh usable session. |

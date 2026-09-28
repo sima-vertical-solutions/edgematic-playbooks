@@ -1,12 +1,12 @@
 # Automatic EdgeMatic flow
 
 Read this reference when executing the demo, not merely explaining it. The
-operator's only required setup is installing Studio, pairing/selecting the
+user's only required setup is installing Studio, pairing/selecting the
 DevKit, and approving the agent's mutation confirmations.
 
-## Operator contract
+## User contract
 
-The operator may ask only for "the robot TUI demo" and is not expected to know
+The user may ask only for "the robot TUI demo" and is not expected to know
 the Stiga codename or any repository, branch, dependency, workspace, build, or
 deployment detail. Do not ask for those values. For this VP-15782 acceptance
 bundle, use Studio's shared `/workspace` root and these known-compatible sources:
@@ -16,7 +16,7 @@ bundle, use Studio's shared `/workspace` root and these known-compatible sources
 
 Reuse them only when the existing checkouts match those revisions. Once the
 Stiga bootstrap change is merged into its default branch, the released skill
-must omit the temporary Stiga feature ref; the operator still supplies nothing.
+must omit the temporary Stiga feature ref; the user still supplies nothing.
 
 ## Tool sequence
 
@@ -29,18 +29,18 @@ must omit the temporary Stiga feature ref; the operator still supplies nothing.
    example, earlier turn, agent history, log, or another workspace. Require the
    resolved device's SSH user to be `root`, because Stiga's platform
    provisioning and declared `/root/sima_ws` deployment cannot run through an
-   unprivileged `sima` pairing. If it is not root, ask the operator to remove
+   unprivileged `sima` pairing. If it is not root, ask the user to remove
    and re-pair that board as root; never request or repeat its password in chat.
 2. If ROS Pipelines is off, call `set_ros_pipelines` with `enabled: true`, tell
-   the operator the tools become available on their next message, and stop this
+   the user the tools become available on their next message, and stop this
    turn. Do not ask them to start a new chat.
 3. Reuse an existing Stiga project only when its remote and revision match the
-   operator-contract sources above. Otherwise make the two `clone_repository`
+   user-contract sources above. Otherwise make the two `clone_repository`
    calls exactly as shown so Stiga and `sima-core` are siblings. Never ask the
-   operator for those sources, and never clone either repository onto the board.
+   user for those sources, and never clone either repository onto the board.
 4. Call `open_ros_workspace` on the shared `/workspace` parent holding both
    checkouts. If it returns a rebind instruction, end the turn exactly as
-   instructed; continue from the rebound project on the operator's next
+   instructed; continue from the rebound project on the user's next
    message.
 5. Prepare the paired board from the bound shared workspace with the advertised
    confirm-gated shell tool (`run_command` for in-process providers, or the
