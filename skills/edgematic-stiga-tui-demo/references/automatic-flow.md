@@ -35,15 +35,23 @@ nothing.
 2. If ROS Pipelines is off, call `set_ros_pipelines` with `enabled: true`, tell
    the user the tools become available on their next message, and stop this
    turn. Do not ask them to start a new chat.
-3. Reuse an existing Stiga project only when its remote and revision match the
+3. Confirm the host workspace tools `open_ros_workspace` and
+   `prepare_ros_build` are advertised on that next turn. If ROS Pipelines is on
+   but either tool is absent, the Studio installation was created without its
+   ROS 2 SDK/build channel. Do not ask which Robot TUI repository to use and do
+   not substitute a generic ROS demo. State this installation boundary and use
+   the `edgematic-ros2-host-container` remedy; on a clean Apple Silicon install,
+   the installer must have been launched with `--workspace <dir> --ros2`, which
+   requires no QEMU or follow-up host provisioning.
+4. Reuse an existing Stiga project only when its remote and revision match the
    user-contract sources above. Otherwise make the two `clone_repository`
    calls exactly as shown so Stiga and `sima-core` are siblings. Never ask the
    user for those sources, and never clone either repository onto the board.
-4. Call `open_ros_workspace` on the shared `/workspace` parent holding both
+5. Call `open_ros_workspace` on the shared `/workspace` parent holding both
    checkouts. If it returns a rebind instruction, end the turn exactly as
    instructed; continue from the rebound project on the user's next
    message.
-5. Complete the clean checkout's declared source dependencies before the first
+6. Complete the clean checkout's declared source dependencies before the first
    build. Read every `dependencies.repos` beneath `sima-core/capabilities/` and
    `stiga/dependencies.repos`. For each declared repository missing beneath
    `stiga/src/`, call `clone_repository` with:
@@ -64,7 +72,7 @@ nothing.
    revision that includes the repository providing the selected sensor stack;
    cloning only the nine dependency-manifest repositories still leaves the
    build incomplete.
-6. Prepare the paired board from the bound shared workspace with the advertised
+7. Prepare the paired board from the bound shared workspace with the advertised
    confirm-gated shell tool (`run_command` for in-process providers, or the
    provider's native project shell when that is the only shell it exposes):
 
@@ -78,14 +86,14 @@ nothing.
    TUI-demo IMU/NVMe boundary explicit, obtains package specs from the running
    SDK, and fails if board verification has gaps. Success must include
    `RESULT: board READY for the EdgeMatic TUI payload`.
-7. Call `prepare_ros_build` with bare script name `build.sh` once. The checked-in
+8. Call `prepare_ros_build` with bare script name `build.sh` once. The checked-in
    script builds one package at a time with all online logical CPUs except two
    assigned to that active package. Do not override its job variables.
-8. Poll `get_build_status` until its persisted state is terminal. Report actual
+9. Poll `get_build_status` until its persisted state is terminal. Report actual
    active elapsed time; never include time while the machine or job was
    suspended.
-9. Run the following command from the bound shared workspace using the same
-   advertised shell capability as step 6:
+10. Run the following command from the bound shared workspace using the same
+   advertised shell capability as step 7:
 
    ```text
    cd stiga && tools/deploy/stage-edgematic-tui.sh
@@ -96,12 +104,12 @@ nothing.
    script vendors Stiga's Python dependencies, native libraries, overlay setup,
    DDS profile, version evidence, and safe run wrappers. Do not rewrite or
    reproduce those staging steps in chat.
-10. Call `deploy_to_device` for the selected board with
+11. Call `deploy_to_device` for the selected board with
    `payload: "edgematic-tui-payload"`. This named payload is the exception to
    the ordinary Stiga warning about generic ROS staging: EdgeMatic transfers the
    complete Stiga-authored payload as assembled, using the paired device key and
    the `/root/sima_ws` remote root from `deploy.yaml`.
-11. After deployment succeeds, end the response with the bare directive below
+12. After deployment succeeds, end the response with the bare directive below
    as its final line. It opens or focuses the selected device's fixed Robot TUI
    panel; it carries neither a command nor credentials.
 
