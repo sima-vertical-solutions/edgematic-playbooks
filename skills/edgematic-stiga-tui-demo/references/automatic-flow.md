@@ -9,10 +9,22 @@ DevKit, and approving the agent's mutation confirmations.
 The user may ask only for "the robot TUI demo" and is not expected to know
 the Stiga codename or any repository, branch, dependency, workspace, build, or
 deployment detail. Do not ask for those values. For this VP-15782 acceptance
-bundle, use Studio's shared `/workspace` root and these known-compatible sources:
+bundle, use a dedicated one-level workspace beneath Studio's shared
+`/workspace` root. Start with `/workspace/robot-tui-demo`; the clone tool can
+create that one missing directory. Never use `/workspace` itself: Studio keeps
+managed projects directly beneath that root, so registering the root as one ROS
+workspace is correctly refused as an overlap. Never use `/workspace/stiga`
+either, because it cannot also contain `sima-core` as a sibling.
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace", "name": "stiga", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
-2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace", "name": "sima-core", "ref": "develop" }`
+Use the same selected workspace parent for these known-compatible sources:
+
+1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace/robot-tui-demo", "name": "stiga", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
+2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace/robot-tui-demo", "name": "sima-core", "ref": "develop" }`
+
+If either destination overlaps an existing Studio-managed project, retry both
+clones in the next unused one-level sibling such as
+`/workspace/robot-tui-demo-2`; do not move, delete, or repoint the existing
+project. Carry that selected parent through every later path in this flow.
 
 Reuse them only when the existing checkouts match those revisions. Once the
 Stiga bootstrap change is merged into its default branch, the released skill
@@ -43,21 +55,25 @@ nothing.
    the `edgematic-ros2-host-container` remedy; on a clean Apple Silicon install,
    the installer must have been launched with `--workspace <dir> --ros2`, which
    requires no QEMU or follow-up host provisioning.
-4. Reuse an existing Stiga project only when its remote and revision match the
-   user-contract sources above. Otherwise make the two `clone_repository`
-   calls exactly as shown so Stiga and `sima-core` are siblings. Never ask the
-   user for those sources, and never clone either repository onto the board.
-5. Call `open_ros_workspace` on the shared `/workspace` parent holding both
-   checkouts. If it returns a rebind instruction, end the turn exactly as
-   instructed; continue from the rebound project on the user's next
-   message.
+4. Reuse an existing Stiga workspace only when its two repositories and their
+   revisions match the user-contract sources above. Otherwise make the two
+   `clone_repository` calls with one selected dedicated parent so Stiga and
+   `sima-core` are siblings. The first call may create that parent one level
+   beneath `/workspace`. If a destination returns
+   `folder_contains_managed_projects`, select the next unused sibling parent
+   and repeat there; do not fall back to `/workspace`. Never ask the user for
+   those sources, and never clone either repository onto the board.
+5. Call `open_ros_workspace` on the selected dedicated parent holding both
+   checkouts, for example `/workspace/robot-tui-demo`. If it returns a rebind
+   instruction, end the turn exactly as instructed; continue from the rebound
+   project on the user's next message.
 6. Complete the clean checkout's declared source dependencies before the first
    build. Read every `dependencies.repos` beneath `sima-core/capabilities/` and
    `stiga/dependencies.repos`. For each declared repository missing beneath
    `stiga/src/`, call `clone_repository` with:
 
    - `repo`: the manifest's `url`;
-   - `parent`: `/workspace/stiga/src`;
+   - `parent`: `<selected-workspace-parent>/stiga/src`;
    - `name`: the manifest repository key; and
    - `ref`: the manifest's exact `version`.
 
