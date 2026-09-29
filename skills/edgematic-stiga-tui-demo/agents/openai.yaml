@@ -1,0 +1,4 @@
+interface:
+  display_name: "EdgeMatic Stiga TUI Demo"
+  short_description: "Automatically deploy and open the Stiga board TUI"
+  default_prompt: "Use $edgematic-stiga-tui-demo to build Stiga, deploy the complete demo payload to my paired board, and open the Robot TUI in EdgeMatic Studio."

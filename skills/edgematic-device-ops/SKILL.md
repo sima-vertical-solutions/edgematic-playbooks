@@ -32,10 +32,13 @@ Full request/response and error-code detail: `references/device-api.md`.
 2. **Adding a device (see *Adding a device*).** Gather `name`, `host`/IP, `user`,
    and `password` with `ask_user` for any missing field (transport only if the
    user raised it), then call `add_device`. Never invent a host.
-3. **Resolve devices by name.** `remove_device`, `get_device_status`, and
-   `deploy_to_device` accept a device *name* or *id* in the `device` field, so
-   you can pass what the user said ("Edge-01"). If the name is ambiguous or
-   unknown, call `list_devices` first and confirm which one.
+3. **Resolve the current target, never a remembered one.** When the turn has a
+   `[context: device_id=…]` prefix, that UUID is the active Studio selection and
+   is authoritative unless the user explicitly names a different target in the
+   same request. Otherwise call `list_devices`: use the sole paired device, or
+   ask the user to select/name one when several exist. The tools accept a device
+   *name* or *id* in the `device` field, but names, UUIDs, and addresses copied
+   from examples, earlier turns, logs, or another workspace are never defaults.
 4. **Confirm the destructive action.** `remove_device` prompts for confirmation
    before running — make sure the device is the one the user means.
 5. **Report the result** as a short, formatted summary (device list as a table;
@@ -64,6 +67,10 @@ pair directly from chat:
   for a transport argument on deploy.
 - **A device must be built and paired before deploy.** Deploy fails with a clear
   precondition error if the latest build isn't green or the device isn't paired.
+- **Device aliases are data, not configuration.** Never embed a board name,
+  UUID, host, or address in a reusable prompt, command template, or skill. Read
+  the current selection/list result at execution time and carry its returned
+  identity through status, deploy, run, and viewer calls.
 - **Don't ask for permission — but `force: true` is a CHOICE, not a permission.**
   Every gated tool here is already governed by the runtime approval policy, which
   prompts (or doesn't) according to the user's posture, so never stack your own
@@ -85,7 +92,7 @@ useful, suggest the next step. Do not paraphrase away the actionable detail.
 | `device_already_exists` | Host already paired | That host is already paired — no action needed (or remove it first). |
 | `device_in_use_by_other` | DevKit claimed by another Edgematic instance | In use by another instance. Report it and OFFER the `force: true` retry — never take it over on your own initiative. |
 | `nfs_host_setup_required` | NFS chosen but no workspace mounted | Surface the message **verbatim** — it contains the exact `sima-cli sdk setup --devkit <ip>` command to run on the host. See `references/nfs-setup.md`. |
-| `nfs_workspace_mismatch` | Mounted, but wrong workspace | Operator/config issue — the mounted workspace isn't the one Studio writes to. |
+| `nfs_workspace_mismatch` | Mounted, but wrong workspace | User/config issue — the mounted workspace isn't the one Studio writes to. |
 | `nfs_unavailable` | NFS device left the LAN at deploy | Device is off the shared network; offer to switch it to SCP and retry. |
 | `device_in_use` | Removing a device with deploy/run history | Removing it also drops that history — offer the `force: true` retry and let the user pick. |
 | `project_not_built` / `device_not_paired` | Deploy precondition unmet | Build the project first / pair the device first, then deploy. |
