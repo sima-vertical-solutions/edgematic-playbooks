@@ -18,7 +18,7 @@ either, because it cannot also contain `sima-core` as a sibling.
 
 Use the same selected workspace parent for these known-compatible sources:
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace/robot-tui-demo", "name": "stiga", "ref": "63289bb08f2a259d916ad9c1bcadcf04c481daaf" }`
+1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "/workspace/robot-tui-demo", "name": "stiga", "ref": "ffffd7d8f9906c851ee197916cd8f3f9a68e93ff" }`
 2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "/workspace/robot-tui-demo", "name": "sima-core", "ref": "develop" }`
 
 If either destination overlaps an existing Studio-managed project, retry both
