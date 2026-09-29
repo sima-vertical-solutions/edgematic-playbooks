@@ -1,6 +1,6 @@
 id: edgematic-stiga-tui-demo
 name: EdgeMatic Stiga TUI Demo
-version: 0.1.1
+version: 0.1.2
 agents: [codex, claude]
 description: Automatically build, stage, deploy, and open the Stiga Robot TUI on a paired Modalix or ROSBOT board through EdgeMatic Studio.
 compatibility:

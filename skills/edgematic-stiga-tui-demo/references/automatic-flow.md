@@ -44,9 +44,10 @@ nothing.
    provisioning and declared `/root/sima_ws` deployment cannot run through an
    unprivileged `sima` pairing. If it is not root, ask the user to remove
    and re-pair that board as root; never request or repeat its password in chat.
-2. If ROS Pipelines is off, call `set_ros_pipelines` with `enabled: true`, tell
-   the user the tools become available on their next message, and stop this
-   turn. Do not ask them to start a new chat.
+2. If ROS Pipelines is off, ask the user to enable **ROS Pipelines** in Studio
+   Settings, tell them the tools become available on their next message, and
+   stop this turn. Do not ask them to start a new chat. The CLI agent is not
+   given the internal toggle tool, so do not try to call it by name.
 3. Confirm the host workspace tools `open_ros_workspace` and
    `prepare_ros_build` are advertised on that next turn. If ROS Pipelines is on
    but either tool is absent, the Studio installation was created without its
@@ -88,15 +89,17 @@ nothing.
    revision that includes the repository providing the selected sensor stack;
    cloning only the nine dependency-manifest repositories still leaves the
    build incomplete.
-7. Prepare the paired board from the bound shared workspace with the advertised
-   confirm-gated shell tool (`run_command` for in-process providers, or the
-   provider's native project shell when that is the only shell it exposes):
+7. Prepare the paired board from the bound shared workspace with the shell
+   capability advertised in the current turn. CLI providers use their native
+   project shell; an in-process provider may advertise Studio's confirm-gated
+   project shell. Do not invent a shell tool name that is absent from the
+   current catalog:
 
    ```text
    cd stiga && tools/deploy/provision.sh --board <ssh-user>@<board-host> --non-interactive --tui-demo
    ```
 
-   Set `timeout_ms` to `600000` when using `run_command`. Do not pass a
+   Use a 600000 ms timeout when the advertised shell accepts one. Do not pass a
    password, private-key path, package override, `--no-imu`, or NVMe override.
    The checked-in script auto-detects Studio's pairing key, makes the narrow
    TUI-demo IMU/NVMe boundary explicit, obtains package specs from the running

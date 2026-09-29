@@ -144,6 +144,8 @@ def check_stiga_tui_workspace_contract() -> None:
         return
 
     text = flow.read_text(encoding="utf-8")
+    skill = flow.parents[1] / "SKILL.md"
+    combined = text + "\n" + skill.read_text(encoding="utf-8")
     required = (
         '"parent": "/workspace/robot-tui-demo"',
         "Never use `/workspace` itself",
@@ -161,11 +163,13 @@ def check_stiga_tui_workspace_contract() -> None:
         '"parent": "/workspace",',
         "on the shared `/workspace` parent",
         "`parent`: `/workspace/stiga/src`",
+        "`set_ros_pipelines`",
+        "`run_command`",
     )
     for phrase in forbidden:
-        if phrase in text:
+        if phrase in combined:
             fail(
-                f"{flow.relative_to(REPO)}: unsafe projects-root workspace "
+                f"{flow.relative_to(REPO)}: unsafe or unavailable Robot TUI "
                 f"instruction remains: {phrase!r}"
             )
 

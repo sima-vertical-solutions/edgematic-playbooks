@@ -95,7 +95,9 @@ mode was started manually, request idle/stop with `i` before `q`.
 
 ## Diagnose by boundary
 
-- No ROS tools: enable them with `set_ros_pipelines` and resume next turn.
+- No ROS tools: ask the user to enable **ROS Pipelines** in Studio Settings and
+  resume on their next message; the CLI agent is not given the internal toggle
+  tool.
 - Build failure: report the persisted package/phase failure; do not deploy an
   older install tree.
 - Missing staging script: the selected Stiga revision does not support this
