@@ -1,6 +1,6 @@
 ---
 name: edgematic-netron-view
-description: Use when the user asks to see, show, open, view, inspect or visualize a model's graph, layers or architecture in Edgematic Studio — "show me a netron view of the current model", "open resnet50 in Netron", "what does yolov8.onnx look like", "show me the model graph". Covers opening a model the user attached in chat straight from the absolute path its attachment message states, locating a model file in the project workspace by the name the user typed or the one the conversation establishes when they say "the current model", widening to every .onnx in the project and asking the user to choose when nothing matches, and opening the Netron viewer on the file that was found. Only uncompiled .onnx models can be opened — either a file in the project workspace or a model attached in chat. Do not use for compiled .sima / *_mpk.tar.gz artifacts (Netron cannot read them), for compiling or quantizing a model (see edgematic-model-compile), for a running pipeline's live video or detections (see edgematic-view-streams and edgematic-foxglove-viz), or for the pipeline canvas.
+description: Use when the user asks to see, show, open, view, inspect or visualize a model's graph, layers or architecture in Edgematic Studio — "show me a netron view of the current model", "open resnet50 in Netron", "what does yolov8.onnx look like", "show me the model graph" — and ALSO the moment a model has just been attached or uploaded in chat, to offer the user a look at its graph before anything else is decided about it. Covers opening a model the user attached in chat straight from the absolute path its attachment message states, locating a model file in the project workspace by the name the user typed or the one the conversation establishes when they say "the current model", widening to every .onnx in the project and asking the user to choose when nothing matches, opening the Netron viewer on the file that was found, and offering the view as a quick-action button rather than opening it unasked. Only uncompiled .onnx models can be opened — either a file in the project workspace or a model attached in chat. Offering or opening a view is the whole of this skill: a request to compile or quantize a model belongs to edgematic-model-compile even when that same model was just attached. Do not use for compiled .sima / *_mpk.tar.gz artifacts (Netron cannot read them), for a running pipeline's live video or detections (see edgematic-view-streams and edgematic-foxglove-viz), or for the pipeline canvas.
 ---
 
 # Edgematic Netron View
@@ -64,6 +64,15 @@ exact path, copied character for character** from the attachment message.
 If the user is asking about a project file rather than about the attachment, or
 no attachment message appears in this conversation, continue at step 1.
 
+**If the attachment is the newest thing in the conversation and the user has
+not asked to see it,** do not open anything. Answer whatever they actually
+asked, and — when the attached file is an uncompiled `.onnx` — end the reply
+with an offer to view it; see *Offering the view* below. An attachment is the
+moment a look at the graph is most useful and least often asked for, which is
+what an offer is for; opening a tab they did not ask for takes over their
+editor column instead. An attached archive gets no offer: the paragraph below
+says why.
+
 **If the attached model is a `.tar.gz` archive,** the viewer refuses it and
 states both the reason and the recovery. Relay that sentence to the user as it
 was given. Do not unpack the archive, do not look for an `.onnx` inside the
@@ -124,6 +133,62 @@ A search result carries `truncated`. When it is `true` there may be more
 matches than the ones you were shown, so **say so** rather than reporting that
 nothing exists. Narrow the search first — a `path` to search under, or a
 tighter `pattern` — and search again.
+
+## Offering the view
+
+A reply can end with a **quick-action button** the user clicks. One button type
+opens the Netron viewer directly, with no further turn:
+
+```quick-actions
+[{"type":"netron","label":"Show in Netron","path":"models/yolov8n.onnx"}]
+```
+
+**The button is an OFFER.** Emitting it opens nothing; the click does. So emit
+it *instead of* calling the viewer tool, never as well — doing both takes over
+the editor column and then offers to do it again.
+
+Give **exactly one** model reference. Both, or neither, and the whole block
+degrades to plain text: the user reads the JSON instead of clicking a button,
+and no error says why.
+
+- `path` — project-relative, for a file in the project's working directory.
+  Copy it from a search result, exactly as the rule above requires. An absolute
+  path is rejected.
+- `modelPath` — the absolute path of a model attached in chat, copied character
+  for character from the attachment message. This is the form to use right after
+  an upload: Studio resolves the path against the models it holds, and refuses
+  the button if nothing matches, so a path it does not recognise never reaches
+  the viewer.
+- `userModelId` together with `filename` — for a model attached in chat whose
+  `user_model_id` an earlier `open_netron_viewer` result already returned. Use
+  `modelPath` when you have only the attachment message.
+
+Offer the button whenever a look at the graph would help and the user has not
+asked for one: a model was just attached, a search turned up exactly one model,
+or the work you just finished produced or referenced one. When they *did* ask,
+open it — an offer in answer to a request reads as a refusal.
+
+**Never offer it for a `.tar.gz` or a `.sima` artifact.** Netron reads model
+graphs, not compiled packages, so the button would fail on the click. An offer
+that cannot work is worse than no offer.
+
+### The button for a model that was just attached
+
+This is the common case: the user uploads a model, their message states its
+absolute path, and the reply should end with the button rather than make them
+ask a second time. Use `modelPath`, copied character for character from that
+message:
+
+```quick-actions
+[{"type":"netron","label":"Show in Netron view","modelPath":"/abs/path/from/the/message.onnx"}]
+```
+
+Do not retype the path, do not tidy it, and do not search for the model first —
+the path in the message is the only handle either of you has on that file, and
+an approximation is how a different model gets opened.
+
+If the attachment message is no longer in view, ask for the path. Do not offer
+the button for a model you cannot name.
 
 ## What cannot be opened
 
