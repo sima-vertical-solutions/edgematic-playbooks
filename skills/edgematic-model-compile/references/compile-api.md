@@ -24,6 +24,11 @@ with the row in `compiling`; poll `GET /user-models` for the terminal state.
   `{ id, name, location, metadata, created_by, created_at, artifact:{filename, sha1, size_bytes}, compile_status:"none", compiled_artifact:null }`.
 - Errors: `400` (missing/invalid fields), `413` (over the upload body limit).
 
+The `file=@…` below is an illustration of the wire call, not an instruction to
+ask the user for a path. When the model is in the project's working directory,
+find it with `find_project_files` (`extension` `onnx`, plus the name the user
+typed as `pattern`) and upload the path it returns.
+
 ```bash
 UP=$(curl -s -F 'name=resnet50' -F 'file=@/path/model.onnx' $BASE/user-models)
 MID=$(echo "$UP" | python3 -c 'import json,sys;print(json.load(sys.stdin)["id"])')

@@ -40,8 +40,12 @@ contract, and error codes: `references/compile-api.md`.
 
 ## Workflow
 
-1. **Upload the ONNX.** `POST /user-models` with `name` + `file`; capture the
-   returned `id`.
+1. **Upload the ONNX.** Locate the file first: when the model lives in the
+   project's working directory, find it with `find_project_files` (`extension`
+   `onnx`, plus the name the user typed as `pattern`) rather than asking the
+   user to type a filesystem path — a path they dictate is a path that can be
+   wrong. Then `POST /user-models` with `name` + `file`; capture the returned
+   `id`.
 2. **Inspect the input shape.** If the ONNX has a symbolic (named) **non-batch**
    dim — e.g. a channels dim named `sequence` — you MUST override it at compile
    time; otherwise auto-detect pins every symbolic dim to 1 and produces a
