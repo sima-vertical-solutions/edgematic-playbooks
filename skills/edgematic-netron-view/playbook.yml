@@ -1,0 +1,8 @@
+id: edgematic-netron-view
+name: Edgematic Netron View
+version: 0.1.0
+agents: [codex, claude]
+description: Open an uncompiled ONNX model's graph in Edgematic Studio's bundled Netron viewer — resolve the model the user means (the exact path of a model attached in chat, or a file found in the project's working directory), then open it as a tab in the editor column.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
