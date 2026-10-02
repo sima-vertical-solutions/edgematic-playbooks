@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 Contract Builder"
+  short_description: "Generate and prove a new ROS 2 package from four contract files"
+  default_prompt: "Use $edgematic-ros2-contract-builder with my prompt and the four files under input/ to discover the relevant robot hardware from allowed evidence, generate the ROS 2 package, build and deploy it, prove live Flora output, and run its read-only status TUI."
