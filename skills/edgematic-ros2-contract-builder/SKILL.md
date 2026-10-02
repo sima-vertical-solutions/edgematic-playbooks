@@ -138,11 +138,14 @@ list_transports`) and prove both publisher and subscriber transports resolve
 from the staged environment. Pin and record public bridge/plugin dependencies
 and build-only system packages so CI and a clean board follow the same path.
 
-Stage only the declared payload, deploy to a user-owned board directory, and
-record the source revision and build manifest. Before launch, follow the board
-setup and portable-pipeline preflight. Stop only a previously recorded instance
-of this deployment. Launch detached with durable logs, then start
-`foxglove_bridge` after the publishers are live.
+Stage only the declared payload. Apply the portable-pipeline storage rule before
+deployment: select a writable NVMe-backed application directory from live
+`lsblk`/`findmnt` evidence, and use `/data/simaai/applications/<application>`
+only when the board has no writable NVMe filesystem. Persist the selected path
+in `deploy.yaml` and record its backing device with the source revision and build
+manifest. Before launch, follow the board setup and portable-pipeline preflight.
+Stop only a previously recorded instance of this deployment. Launch detached
+with durable logs, then start `foxglove_bridge` after the publishers are live.
 
 ## 5. Acceptance is advertised, active, visible, and operable
 
