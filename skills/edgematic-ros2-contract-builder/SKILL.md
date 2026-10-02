@@ -94,6 +94,11 @@ self-contained package or workspace with at least:
 - the expanded URDF and `robot_state_publisher` wiring;
 - replay/file input adapters chosen by the contract;
 - perception publishers for both a renderable image and structured results;
+- every runtime-loaded ROS plugin selected by the graph (for example the
+  `compressed_image_transport` publisher/subscriber plugin), with an official
+  upstream source pinned and cross-built into the payload when the target SDK
+  or image does not guarantee it; declaring the client API package alone is not
+  dependency closure;
 - `/tf`, `/tf_static`, odometry, and joint-state wiring required by acceptance;
 - `foxglove_bridge` topic configuration limited to the accepted allowlist, plus
   an explicit runtime source for the bridge: either prove the target image
@@ -127,7 +132,10 @@ compile the target package on the board. Poll to a terminal exit marker and
 inspect installed package indexes, executables, launch/config assets, and linked
 libraries. A zero exit code alone is insufficient. Before deployment, verify
 that `ros2 pkg prefix foxglove_bridge` resolves from the staged payload when the
-target image does not supply it. Pin and record any public bridge dependencies
+target image does not supply it. Also enumerate each selected runtime plugin
+with its package's discovery command (for example `ros2 run image_transport
+list_transports`) and prove both publisher and subscriber transports resolve
+from the staged environment. Pin and record public bridge/plugin dependencies
 and build-only system packages so CI and a clean board follow the same path.
 
 Stage only the declared payload, deploy to a user-owned board directory, and
