@@ -95,7 +95,10 @@ self-contained package or workspace with at least:
 - replay/file input adapters chosen by the contract;
 - perception publishers for both a renderable image and structured results;
 - `/tf`, `/tf_static`, odometry, and joint-state wiring required by acceptance;
-- `foxglove_bridge` topic configuration limited to the accepted allowlist;
+- `foxglove_bridge` topic configuration limited to the accepted allowlist, plus
+  an explicit runtime source for the bridge: either prove the target image
+  guarantees it or fetch an official upstream revision and cross-build it into
+  the deploy payload; a bridge found on a previously used board is not proof;
 - a read-only TUI executable showing node presence, topic type/rate, lifecycle,
   and recent log state; the only interactive actions may be refresh, help, and
   quit — never velocity or actuator commands;
@@ -122,7 +125,10 @@ binds motion-control messages.
 Build in the ROS 2 SDK container selected by `input/build_target.yaml`; never
 compile the target package on the board. Poll to a terminal exit marker and
 inspect installed package indexes, executables, launch/config assets, and linked
-libraries. A zero exit code alone is insufficient.
+libraries. A zero exit code alone is insufficient. Before deployment, verify
+that `ros2 pkg prefix foxglove_bridge` resolves from the staged payload when the
+target image does not supply it. Pin and record any public bridge dependencies
+and build-only system packages so CI and a clean board follow the same path.
 
 Stage only the declared payload, deploy to a user-owned board directory, and
 record the source revision and build manifest. Before launch, follow the board
