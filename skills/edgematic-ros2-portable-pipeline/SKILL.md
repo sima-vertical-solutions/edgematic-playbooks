@@ -119,15 +119,31 @@ and fails at runtime. Verify on the board, and say which of the two you have.
 `deploy_to_device` places the merge-install tree at the `remote_dir` from
 `deploy.yaml`.
 
+Select `remote_dir` from the live board before deploying. Inspect block devices
+and mounted filesystems (`lsblk` plus `findmnt`); if a writable filesystem is
+backed by a device whose transport/source is NVMe, set `remote_dir` to
+`<nvme-mount>/simaai/applications/<application>`. Verify the chosen path with
+`findmnt -T` and record its source, filesystem, free space, and resolved path.
+Do not treat a directory named `/media` as NVMe evidence by itself. Only when no
+writable NVMe-backed filesystem exists may the agent use
+`/data/simaai/applications/<application>` as the fallback, and it must report
+that fallback. Never deploy to both locations in one attempt.
+
+Studio resolves `remote_dir` from the active project's client `deploy.yaml`,
+not from a second manifest nested only inside the directory passed as
+`payload`. Synchronize the project-level manifest to the selected storage path
+before calling `deploy_to_device`, then reject the result if its returned
+`remote_path` differs from that path.
+
 The optional `payload` parameter is not a placeholder. Omit the key entirely
 for the normal staged install tree; never pass an empty string. When a prepared
 ROS app has assembled a complete payload directory, pass that exact directory
 relative to the shared workspace (for example `edgematic-demo/payload`), not the
 application source directory above it.
 
-- **`remote_dir` must be owned by the SSH user** (`sima`). A root-owned target
-  fails while `tar` restores the directory's timestamps ("utime: Operation not
-  permitted"), after appearing to copy fine.
+- **`remote_dir` must be writable by the configured SSH user.** For the common
+  `sima` login, a root-owned target fails while `tar` restores the directory's
+  timestamps ("utime: Operation not permitted"), after appearing to copy fine.
 - **`ros_domain_id` must match the board.** A wrong id fails *silently* on
   hardware — everything launches and nothing ever discovers anything. Ask; do not
   guess.
