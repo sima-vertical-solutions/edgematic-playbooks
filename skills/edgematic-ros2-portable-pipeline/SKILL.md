@@ -129,6 +129,12 @@ writable NVMe-backed filesystem exists may the agent use
 `/data/simaai/applications/<application>` as the fallback, and it must report
 that fallback. Never deploy to both locations in one attempt.
 
+Studio resolves `remote_dir` from the active project's client `deploy.yaml`,
+not from a second manifest nested only inside the directory passed as
+`payload`. Synchronize the project-level manifest to the selected storage path
+before calling `deploy_to_device`, then reject the result if its returned
+`remote_path` differs from that path.
+
 The optional `payload` parameter is not a placeholder. Omit the key entirely
 for the normal staged install tree; never pass an empty string. When a prepared
 ROS app has assembled a complete payload directory, pass that exact directory

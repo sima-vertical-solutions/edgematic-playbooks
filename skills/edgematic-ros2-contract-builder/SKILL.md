@@ -143,7 +143,10 @@ deployment: select a writable NVMe-backed application directory from live
 `lsblk`/`findmnt` evidence, and use `/data/simaai/applications/<application>`
 only when the board has no writable NVMe filesystem. Persist the selected path
 in `deploy.yaml` and record its backing device with the source revision and build
-manifest. Before launch, follow the board setup and portable-pipeline preflight.
+manifest. Update the active project's client `deploy.yaml` before invoking
+deployment; a `deploy.yaml` nested only inside a custom `payload` directory does
+not override the project-level destination used by Studio. Before launch,
+follow the board setup and portable-pipeline preflight.
 Stop only a previously recorded instance of this deployment. Launch detached
 with durable logs, then start `foxglove_bridge` after the publishers are live.
 
@@ -160,7 +163,10 @@ Do not report success until all four levels pass:
 
 For replay input, prove it loops or state its finite duration. Sample at startup,
 after 30 seconds, and after 60 seconds to catch launch processes that die with
-the SSH session. Include the current bridge subscription log in the evidence.
+the SSH session. Measure header latency against the replay clock (for example,
+`ros2 topic delay --use-sim-time`) rather than wall time, and make redirected
+CLI metrics unbuffered so timeout termination does not leave empty evidence.
+Include the current bridge subscription log in the evidence.
 
 If a check fails, diagnose, edit the generated source or configuration, rebuild,
 redeploy, and repeat the entire acceptance sequence. Do not paper over a runtime
