@@ -4,6 +4,11 @@ The four files divide facts by ownership so the agent can generate code without
 silently inventing a hardware contract. YAML keys may be extended, but the
 meaning of the required fields stays stable.
 
+Studio normally uploads the files as `robot.urdf`, `robot_contract.yaml`,
+`build_target.yaml`, and `acceptance.yaml` at the project root. The equivalent
+`input/<name>` layout is also valid. These are the same four logical inputs,
+not two sets of files.
+
 ## `input/robot.urdf`
 
 Supply a fully expanded XML robot. It is authoritative for names and topology:

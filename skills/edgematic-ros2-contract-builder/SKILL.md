@@ -19,7 +19,9 @@ preflight, detached launch, and runtime verification. Load
 
 ## Required input
 
-Require exactly one prompt and these four project-relative files:
+Require exactly one prompt and these four project-relative files. Accept them
+either at the project root (the normal Studio multi-file upload result) or under
+`input/`; resolve one layout once and use it consistently:
 
 1. `input/robot.urdf` — expanded URDF, not a Xacro entry point.
 2. `input/robot_contract.yaml` — evidence sources, interfaces, expected sensors,
@@ -73,11 +75,14 @@ fidelity; use a file publisher only when the acceptance contract selects it.
 
 ## 2. Derive and confirm the application
 
-Call `derive_ros_application` with `input_mode` from the acceptance contract,
-then `inspect_ros_application`. Reconcile its result with the four uploaded
-files and the evidence classifications. Use `adjust_ros_application` to remove
-unsupported motion or to correct topics, QoS, bridge allowlists, and confirmed
-sensors.
+Call `derive_ros_application` with `input_mode` and an explicit `rosbag_loop`
+from the acceptance contract, then `inspect_ros_application`. Reconcile its
+result with the four uploaded files and the evidence classifications. Use
+`adjust_ros_application` to remove unsupported motion or to correct topics,
+QoS, bridge allowlists, rosbag looping, and confirmed sensors. A
+`sensor_confirmations` value of `false` explicitly excludes that sensor from
+this application without removing its URDF frames; use it for optional sensors
+that are outside the accepted demo scope.
 
 Present one compact confirmation summary: active sensors, input mode, components,
 topics and types, target, deliberate exclusions, and production gaps. Call
@@ -93,6 +98,9 @@ self-contained package or workspace with at least:
 - launch files and deterministic parameters;
 - the expanded URDF and `robot_state_publisher` wiring;
 - replay/file input adapters chosen by the contract;
+- when the selected rosbag fixture is not already uploaded, a deterministic
+  fixture generator plus the generated bag itself; the missing fixture is a
+  package-generation task, not a fifth required user upload or a blocker;
 - perception publishers for both a renderable image and structured results;
 - every runtime-loaded ROS plugin selected by the graph (for example the
   `compressed_image_transport` publisher/subscriber plugin), with an official
