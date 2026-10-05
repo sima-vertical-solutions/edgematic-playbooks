@@ -81,6 +81,38 @@ belong in the secure pairing form.
 Use `edgematic-ros2-portable-pipeline` for the detailed build, deploy, board,
 and detached-launch mechanics, and `edgematic-foxglove-viz` for the viewer.
 
+## Real RTSP → NVMe bag → replay acceptance path
+
+When the user asks for the standard recording-ready end-to-end demo with a real
+managed RTSP input, use the catalogue path and keep the mechanics out of their
+prompt:
+
+1. Resolve the paired Modalix, list the ROS examples, and select the supported
+   `yolov8_seg` package. Start a managed Edgematic video stream whose measured
+   geometry is exactly the package geometry; never guess width, height, or FPS.
+2. Call `run_ros_pipeline` with the returned RTSP URL, all three measured source
+   geometry fields, and `record_seconds: 30`. The tool standardizes the live raw
+   publisher as `/camera/image_raw` and starts a bounded MCAP recording of that
+   input plus `/detections` and `/detections_overlay` under writable NVMe. Retain
+   the returned `recording.path`; do not invent or search for a bag path.
+3. Verify current non-zero rates for those three topics at start, 30 seconds,
+   and 60 seconds. Open embedded live output only after the activity check, and
+   show only panels whose selected topic delivered a message. A merely
+   advertised channel is not a visible output.
+4. Once the bounded capture has finalized, call `run_ros_pipeline` again with
+   only the same `device`, `replay_bag_path: <recording.path>`, and
+   `replay_loop: true`. This stops the live detector before playback so live and
+   recorded publishers cannot be mixed. Re-measure the same topics, then reopen
+   embedded output.
+5. Explain that the bag contains the real decoded camera input, structured
+   on-device inference results, and the rendered overlay. Do not claim odometry
+   or TF for this camera-only capture. If a separate robot fixture supplies
+   `/wheel/odometry`, `/tf`, or `/tf_static`, label them replayed and show them
+   only after they emit messages.
+6. Retain the recording path, recording and replay logs, MCAP SHA-256, topic
+   list/rates, source URL geometry, package/build provenance, and screenshots.
+   Any absent or zero-output topic is an explicit gap, never an empty panel.
+
 ## Prepared HELLO + VIEW fast path
 
 When `/workspace/edgematic-demo` already contains `build.sh`, `deploy.yaml`,
@@ -148,11 +180,15 @@ the build, status checks, reads, verification, or automatic viewer open.
 
 Use this stable viewer contract when the demo has camera/detection output:
 
-- `/image_raw` — `sensor_msgs/msg/Image`
+- `/camera/image_raw` — live RTSP `sensor_msgs/msg/Image`
+- `/camera/image_raw/compressed` — deterministic replay input when the bag
+  stores compressed camera frames
 - `/detections_overlay` — `sensor_msgs/msg/Image`
 - `/detections` — structured detection messages
 
-Edgematic's embedded layout may select `/image_raw/compressed` and
+Legacy packages may still publish `/image_raw`; detect and bind that alias only
+when it has current output. Edgematic's embedded layout may select
+`/camera/image_raw/compressed` and
 `/detections_overlay/compressed` to stay within VPN bandwidth. If the pipeline
 emits only raw BGR8 images, a compressor may subscribe to those live inference
 topics and publish their compressed transports at a paced rate. It must not

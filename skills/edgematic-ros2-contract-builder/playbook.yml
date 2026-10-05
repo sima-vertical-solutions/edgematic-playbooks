@@ -1,8 +1,8 @@
 id: edgematic-ros2-contract-builder
 name: Edgematic ROS 2 Contract Builder
-version: 0.1.0
+version: 0.2.0
 agents: [codex, claude]
-description: Generate a new ROS 2 package from a prompt and four-file robot contract, then build, deploy, verify Flora output, and exercise a read-only operator TUI.
+description: Generate a new ROS 2 package from a prompt and four-file robot contract, then build, deploy, and verify raw replay, detections, overlay, and a read-only operator TUI.
 compatibility:
   env_types: [host, sdk]
   min_cli_version: 2.1.0

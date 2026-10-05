@@ -99,8 +99,11 @@ self-contained package or workspace with at least:
 - the expanded URDF and `robot_state_publisher` wiring;
 - replay/file input adapters chosen by the contract;
 - when the selected rosbag fixture is not already uploaded, a deterministic
-  fixture generator plus the generated bag itself; the missing fixture is a
-  package-generation task, not a fifth required user upload or a blocker;
+  real-video-to-rosbag generator plus the generated bag itself; the missing
+  fixture is a package-generation task, not a fifth required user upload or a
+  blocker. Use a real scene with ordinarily detectable objects, record its
+  source and license, and never substitute a generated rectangle unless the
+  acceptance contract explicitly asks for synthetic imagery;
 - perception publishers for both a renderable image and structured results;
 - every runtime-loaded ROS plugin selected by the graph (for example the
   `compressed_image_transport` publisher/subscriber plugin), with an official
@@ -123,6 +126,12 @@ Prefer standard ROS messages for visible output. The Flora image topic must be
 must retain their real type. Give every generated node a stable name. Do not
 claim a driver exists merely because its topic is replayed: name replay nodes
 as replay or fixture publishers.
+
+For camera replay, bridge the exact source topic as well as inference output.
+If the bag publishes `/camera/image_raw/compressed`, the allowlist and live
+layout must include that exact topic; `/image_raw/compressed` is not an alias.
+Show the raw replay beside `/detections` and `/detections_overlay` so the demo
+proves input, structured results, and rendered output independently.
 
 After writing, re-read `package.xml`, the build file, every launch file, and the
 TUI entry point. Check that installed paths match launch references and that all
@@ -165,7 +174,8 @@ Do not report success until all four levels pass:
 1. **Advertised:** expected nodes and topics exist with exact message types.
 2. **Active:** fresh rate samples meet the contract and logs continue advancing.
 3. **Visible:** Flora subscribes to the exact image/result topics and renders
-   current messages, not a stale frame.
+   current messages, not a stale frame. For video replay, this includes the raw
+   bag topic, structured detections, and overlay in separate panels.
 4. **Operable:** the generated TUI renders at normal and narrow terminal sizes,
    updates node/topic/log state, exits cleanly, and exposes no motion command.
 
