@@ -70,7 +70,35 @@ def frontmatter_of(path: Path) -> dict[str, str] | None:
     if match is None:
         fail(f"{path.relative_to(REPO)}: frontmatter has no closing '---'")
         return None
+    check_frontmatter_is_real_yaml(path, match.group(1))
     return parse_flat_yaml(match.group(1))
+
+
+def check_frontmatter_is_real_yaml(path: Path, block: str) -> None:
+    """Catch frontmatter this parser accepts and a real YAML parser rejects.
+
+    `parse_flat_yaml` partitions on the first colon and never validates, so an
+    unquoted value containing a colon-space reads as `key: value` here and as a
+    nested mapping to PyYAML — which is what sima-cli uses. The installer then
+    discards the skill with "mapping values are not allowed here", and the only
+    visible symptom is a skill that is silently absent from the agent's roster.
+
+    Checked textually rather than with a YAML library on purpose: this script is
+    dependency-free so it fails for reasons about skills and nothing else.
+    """
+    for lineno, line in enumerate(block.splitlines(), start=2):
+        if not line or line.startswith("#") or line[0].isspace() or ":" not in line:
+            continue
+        value = line.partition(":")[2].strip()
+        if value[:1] in ("'", '"'):
+            continue
+        if ": " in value:
+            fail(
+                f"{path.relative_to(REPO)}:{lineno}: the value contains a "
+                "colon-space, which a real YAML parser reads as a nested "
+                "mapping — sima-cli discards the skill. Reword it (an em dash "
+                "reads well) or quote the whole value."
+            )
 
 
 def check_repo_root() -> None:
