@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "profile_id": "husarion_rosbot_xl_no_motion_demo",
+  "robot": {
+    "name": "rosbot_xl",
+    "vendor": "Husarion"
+  },
+  "match": {
+    "robot_name": "rosbot_xl",
+    "required_links": [
+      "base_link",
+      "body_link",
+      "imu_link",
+      "camera_color_optical_frame"
+    ],
+    "required_joints": [
+      "fl_wheel_joint",
+      "fr_wheel_joint",
+      "rl_wheel_joint",
+      "rr_wheel_joint"
+    ],
+    "required_ros2_control_plugins": [
+      "rosbot_hardware_interfaces/RosbotImuSensor",
+      "rosbot_hardware_interfaces/RosbotSystem"
+    ]
+  },
+  "vendor_sources": [
+    {
+      "repository": "https://github.com/husarion/rosbot_ros.git",
+      "revision": "ff77c662bdfd1fac933af74df488c917f987afc5",
+      "use_for": [
+        "base_geometry",
+        "ros2_control_plugins",
+        "firmware_bridge",
+        "bringup_contract"
+      ]
+    },
+    {
+      "repository": "https://github.com/husarion/husarion_components_description.git",
+      "revision": "5f783f89961bb16098184f5381b1a76058cec19e",
+      "use_for": [
+        "sensor_models",
+        "sensor_frames",
+        "nominal_mounts"
+      ]
+    }
+  ],
+  "stable_facts": {
+    "base": {
+      "drive_type": "mecanum",
+      "wheel_count": 4,
+      "velocity_command_joint_order": [
+        "fl_wheel_joint",
+        "fr_wheel_joint",
+        "rl_wheel_joint",
+        "rr_wheel_joint"
+      ]
+    },
+    "sensor_candidates": [
+      {
+        "role": "front_camera",
+        "model": "OAK-D Pro",
+        "frame": "camera_color_optical_frame"
+      },
+      {
+        "role": "lidar",
+        "model": "RPLIDAR S3",
+        "frame": "laser"
+      },
+      {
+        "role": "imu",
+        "model": "integrated_rosbot_imu",
+        "frame": "imu_link"
+      }
+    ]
+  },
+  "contract_generation": {
+    "materialized_files": [
+      "robot_contract.yaml",
+      "build_target.yaml",
+      "acceptance.yaml"
+    ],
+    "default_input_mode": "rosbag",
+    "default_physical_motion_required": false,
+    "required_sensor_roles": [
+      "front_camera"
+    ],
+    "optional_sensor_roles": [
+      "imu",
+      "lidar"
+    ],
+    "supported_input_modes": [
+      {
+        "input_mode": "rosbag",
+        "transport": "rosbag",
+        "rosbag_loop_must_be_explicit": true,
+        "live_hardware_drivers_required": false,
+        "required_nodes": [
+          "/compressed_camera_decoder",
+          "/robot_state_publisher",
+          "/odom_to_tf",
+          "/neat_inference",
+          "/detection_overlay_encoder"
+        ],
+        "required_topics": [
+          {
+            "name": "/camera/image_raw/compressed",
+            "type": "sensor_msgs/msg/CompressedImage",
+            "minimum_rate_hz": 8.0,
+            "source": "rosbag"
+          },
+          {
+            "name": "/wheel/odometry",
+            "type": "nav_msgs/msg/Odometry",
+            "minimum_rate_hz": 15.0,
+            "source": "rosbag"
+          },
+          {
+            "name": "/joint_states",
+            "type": "sensor_msgs/msg/JointState",
+            "minimum_rate_hz": 15.0,
+            "source": "rosbag"
+          }
+        ]
+      },
+      {
+        "input_mode": "live",
+        "transport": "managed_rtsp",
+        "rosbag_loop_must_be_explicit": false,
+        "live_hardware_drivers_required": false,
+        "required_nodes": [
+          "/robot_state_publisher",
+          "/neat_inference",
+          "/detection_overlay_encoder"
+        ],
+        "required_topics": [
+          {
+            "name": "/camera/image_raw",
+            "type": "sensor_msgs/msg/Image",
+            "minimum_rate_hz": 8.0,
+            "source": "managed_rtsp"
+          }
+        ]
+      }
+    ],
+    "common_required_topics": [
+      {
+        "name": "/detections",
+        "type": "simaai_common/msg/DetectionArray",
+        "minimum_rate_hz": 1.0,
+        "source": "modalix_inference"
+      },
+      {
+        "name": "/detections_overlay",
+        "type": "sensor_msgs/msg/Image",
+        "minimum_rate_hz": 1.0,
+        "source": "modalix_inference"
+      },
+      {
+        "name": "/detections_overlay/compressed",
+        "type": "sensor_msgs/msg/CompressedImage",
+        "minimum_rate_hz": 1.0,
+        "source": "modalix_inference"
+      },
+      {
+        "name": "/tf",
+        "type": "tf2_msgs/msg/TFMessage",
+        "minimum_rate_hz": 1.0
+      },
+      {
+        "name": "/tf_static",
+        "type": "tf2_msgs/msg/TFMessage",
+        "event_condition": "at_least_one_transform"
+      }
+    ],
+    "flora_required": true,
+    "tui": {
+      "required": true,
+      "read_only": true,
+      "required_sections": [
+        "run",
+        "nodes",
+        "topics",
+        "logs"
+      ],
+      "forbidden_capabilities": [
+        "teleop",
+        "cmd_vel",
+        "actuator_commands"
+      ]
+    },
+    "minimum_stable_seconds": 60
+  },
+  "mutable_target_fields": [
+    "target.ros_distro",
+    "target.architecture",
+    "target.sdk",
+    "target.sdk_image_digest",
+    "target.board_class",
+    "target.platform_version",
+    "target.neat_core",
+    "target.middleware",
+    "build.container",
+    "build.sima_core_revision",
+    "deploy.storage_target",
+    "deploy.ros_domain_id"
+  ],
+  "unresolved_for_production": [
+    "calibrated_sensor_extrinsics",
+    "serial_or_network_device_identity",
+    "physical_stop_and_safety_policy",
+    "validated_motion_limits",
+    "live_robot_driver_parameters"
+  ]
+}

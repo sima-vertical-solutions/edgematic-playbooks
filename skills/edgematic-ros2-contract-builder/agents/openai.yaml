@@ -1,4 +1,4 @@
 interface:
   display_name: "Edgematic ROS 2 Contract Builder"
-  short_description: "Generate and prove a new ROS 2 package from four contract files"
-  default_prompt: "Use $edgematic-ros2-contract-builder with my prompt and the four files under input/ to generate, build, deploy, and prove a ROS 2 package with real-video rosbag replay, raw camera input, detections, overlay, and a read-only status TUI."
+  short_description: "Generate and prove a new ROS 2 package from robot contracts"
+  default_prompt: "Use $edgematic-ros2-contract-builder with my prompt and expanded robot.urdf to generate, build, deploy, and prove a no-motion ROSBOT XL package with rosbag or managed RTSP input, detections, overlay, and a read-only status TUI."

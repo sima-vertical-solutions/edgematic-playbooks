@@ -2,7 +2,9 @@
 
 The four files divide facts by ownership so the agent can generate code without
 silently inventing a hardware contract. YAML keys may be extended, but the
-meaning of the required fields stays stable.
+meaning of the required fields stays stable. For a matched ROSBOT XL profile,
+the skill materializes the three YAML files before application derivation; for
+every other robot the user supplies all four files.
 
 Studio normally uploads the files as `robot.urdf`, `robot_contract.yaml`,
 `build_target.yaml`, and `acceptance.yaml` at the project root. The equivalent
@@ -41,6 +43,8 @@ Each sensor entry should identify its kind, frame, desired ROS message/type, and
 whether the demo uses `live`, `rosbag`, or `file` input. Source URLs should be
 official and may be resolved by the agent, but generated evidence must record an
 immutable revision. Put unknowns in `unresolved`; never encode a guess as a fact.
+Profile facts are `vendor_supported`, not user-proven, and conflicting explicit
+input must be surfaced rather than silently replaced.
 
 ## `input/build_target.yaml`
 
@@ -60,7 +64,10 @@ build:
 ```
 
 Use versions observed from the selected SDK and paired board when the file leaves
-them unresolved. Do not silently cross-build against a different target.
+them unresolved, and record observation provenance. An unobserved mutable value
+is `null` plus an unresolved reason, never a version copied from the profile, an
+old demo, or a previous board. Do not silently cross-build against a different
+target.
 
 ## `input/acceptance.yaml`
 
@@ -88,6 +95,18 @@ Every required topic entry needs a name, exact ROS type, and either a minimum
 rate or an event/count condition. If `physical_motion_required` is false,
 `cmd_vel`, actuator command interfaces, teleoperation, and motion keys are out of
 scope and must not be generated.
+
+For ROSBOT XL, the profile supports two no-motion modes:
+
+- `rosbag`: recorded ROS messages, with explicit finite or looping behavior;
+- `live` with `transport: managed_rtsp`: an Edgematic-managed camera stream,
+  whose returned URL and measured geometry are runtime observations.
+
+Do not treat managed RTSP as `file`, and do not claim that an RTSP frame proves
+the physical OAK-D driver. Acceptance must require the exact active raw input,
+structured detections, rendered overlay, TF, Flora subscriptions, and a
+read-only TUI. Rosbag-only odometry and joint-state checks do not carry over to
+the camera-only managed RTSP mode.
 
 ## Evidence classification
 

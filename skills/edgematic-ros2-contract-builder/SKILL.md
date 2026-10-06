@@ -1,13 +1,13 @@
 ---
 name: edgematic-ros2-contract-builder
-description: Generate, build, deploy, run, and verify a new ROS 2 package from a user prompt plus an expanded URDF, robot contract, build target, and acceptance contract. Use when no implementation package exists and Edgematic AI must discover relevant sensors and drivers, author the package, expose live output in Flora, and provide a read-only operator TUI; route an existing package to edgematic-ros2-user-package.
+description: Generate, build, deploy, run, and verify a new ROS 2 package from a user prompt and robot contracts. A recognized ROSBOT XL can start from only an expanded URDF; unknown robots require the URDF, robot contract, build target, and acceptance contract. Use when no implementation package exists and Edgematic AI must discover relevant sensors and drivers, author the package, expose live output in Flora, and provide a read-only operator TUI; route an existing package to edgematic-ros2-user-package.
 ---
 
 # Edgematic ROS 2 Contract Builder
 
-Turn the four uploaded contract files into working source code and runtime
-evidence. This skill owns the gap between a confirmed ROS application graph and
-an existing package: **the agent authors the package with `write_file`**. Do not
+Turn an expanded robot contract into working source code and runtime evidence.
+This skill owns the gap between a confirmed ROS application graph and an
+existing package: **the agent authors the package with `write_file`**. Do not
 stop after describing components, producing a graph, or telling the user to
 write the implementation.
 
@@ -17,11 +17,11 @@ preflight, detached launch, and runtime verification. Load
 `package.xml`, or a launch file already exists, route to
 `edgematic-ros2-user-package` instead.
 
-## Required input
+## Resolve the input contract
 
-Require exactly one prompt and these four project-relative files. Accept them
-either at the project root (the normal Studio multi-file upload result) or under
-`input/`; resolve one layout once and use it consistently:
+Always require one prompt and an expanded `robot.urdf`. Accept files either at
+the project root (the normal Studio multi-file upload result) or under `input/`;
+resolve one layout once and use it consistently:
 
 1. `input/robot.urdf` — expanded URDF, not a Xacro entry point.
 2. `input/robot_contract.yaml` — evidence sources, interfaces, expected sensors,
@@ -31,17 +31,61 @@ either at the project root (the normal Studio multi-file upload result) or under
 4. `input/acceptance.yaml` — demo scope, required nodes/topics/types/rates,
    Flora and TUI checks, and whether physical motion is required.
 
-Read all four before deriving the graph. Use `references/contract-files.md` for
-the contract and evidence rules. A ZIP or documentation page is not a fifth
-runtime input and is not a substitute for any of the four files.
+Read `references/contract-files.md` for the ownership and evidence rules, then
+select exactly one path:
+
+- **Known ROSBOT XL:** if the expanded URDF satisfies every match field in
+  `references/rosbot-xl-profile.json`, read that profile and use the prompt plus
+  URDF as sufficient user input. The robot name alone is not a match. A missing
+  required link, joint, or `ros2_control` plugin sends the request to the generic
+  path.
+- **Generic robot:** require all four files above. This remains the default for
+  an unknown robot, an ambiguous profile match, or a profile conflict.
+
+If the ROSBOT XL request already contains any of the three YAML files, read and
+reconcile them; do not overwrite user-provided facts silently. Profile facts
+may fill omissions but may not override explicit conflicting input. A ZIP or
+documentation page is not another runtime input and is not a substitute for a
+required generic-robot file.
+
+### Materialize the ROSBOT XL contract
+
+Before calling application derivation, create the three absent YAML files next
+to the selected URDF with `write_file`, then re-read all four files:
+
+1. Generate `robot_contract.yaml` from the matched profile and exact URDF.
+   Preserve the profile's pinned vendor sources and immutable revisions, copy
+   geometry and declared interfaces from this URDF, and keep calibration,
+   device identity, live-driver parameters, validated motion limits, and safety
+   policy unresolved.
+2. Generate `build_target.yaml` from read-only observations of the selected SDK
+   and paired board. Record the command/API and value that established each
+   mutable target field listed in the profile. Never copy an SDK tag, platform
+   version, Neat revision, middleware, architecture, or ROS distribution from a
+   previous demo. Leave an unobserved field `null` with an unresolved reason;
+   do not invent a default. A compile or run gate remains blocked until its
+   required target fields are observed.
+3. Generate `acceptance.yaml` from the prompt and the selected profile mode.
+   Use `rosbag` for recorded ROS replay or `live` with transport
+   `managed_rtsp` for an Edgematic Streams input. If the prompt is silent, use
+   the profile's safe deterministic `rosbag` default. Physical motion is false
+   unless the user explicitly requests it and supplies a separate validated
+   motion and safety contract. Keep the TUI read-only in either mode.
+
+The generated files are audit artifacts and become the inputs used for the rest
+of this run. Do not keep the profile-derived values only in chat or only in the
+persisted application graph.
 
 ## 1. Establish evidence, without borrowing the answer
 
-Call `discover_ros_contract` with the prompt, expanded URDF, and build target.
-The tool reports only what the model proves and which facts remain missing.
-Then resolve relevant gaps automatically in this order:
+After all four files are present, call `discover_ros_contract` with the prompt,
+expanded URDF, selected input mode, no-motion default, and the observed build
+target. Pass a target object only when its required fields are complete; an
+incomplete materialized target stays explicit rather than being replaced with
+stale values. The tool reports only what the model proves and which facts remain
+missing. Then resolve relevant gaps automatically in this order:
 
-1. the uploaded contract files;
+1. the materialized contract files;
 2. the selected target's installed SDK and `sima-core` interfaces;
 3. the paired board, using read-only inspection for detected devices, OS,
    architecture, runtime versions, and available interfaces;
@@ -61,23 +105,30 @@ limits, or production motion behavior from link or joint names.
 
 ### Demo-scope exception
 
-When `physical_motion_required: false`, build a read-only, replay-driven proof.
+When `physical_motion_required: false`, build a read-only, perception-driven
+proof from rosbag or managed RTSP input.
 Missing motor-controller transport, command limits, safety interlocks, and live
 base-driver details are production blockers, but they do **not** block package
-generation for an offline camera/odometry/joint-state demo. Keep them in
+generation for a no-motion camera demo. Keep them in
 `docs/production-gaps.md`, do not instantiate a motion command publisher, and
 make the TUI incapable of driving the robot.
 
 Only hardware that participates in the requested demo can gate generation. For
-example, a camera-perception replay does not wait for a live lidar driver, even
+example, a camera-perception run does not wait for a live lidar driver, even
 when the URDF contains a lidar frame. Prefer recorded ROS input for message-level
-fidelity; use a file publisher only when the acceptance contract selects it.
+fidelity. A managed RTSP stream is a live network input, not proof of the
+robot-mounted camera driver. Use a file publisher only when the acceptance
+contract explicitly selects file input on the generic path.
 
 ## 2. Derive and confirm the application
 
-Call `derive_ros_application` with `input_mode` and an explicit `rosbag_loop`
-from the acceptance contract, then `inspect_ros_application`. Reconcile its
-result with the four uploaded files and the evidence classifications. Use
+Call `derive_ros_application` with the acceptance contract's `input_mode` and
+an explicit `rosbag_loop` for rosbag mode, then `inspect_ros_application`.
+`managed_rtsp` maps to application input mode `live`; never disguise it as
+`file` merely because an older tool schema lacks live derivation. If the loaded
+tool does not advertise the selected mode, report that exact tooling gap and
+stop before generation. Reconcile the derived result with the four materialized
+files and the evidence classifications. Use
 `adjust_ros_application` to remove unsupported motion or to correct topics,
 QoS, bridge allowlists, rosbag looping, and confirmed sensors. A
 `sensor_confirmations` value of `false` explicitly excludes that sensor from
@@ -97,7 +148,7 @@ self-contained package or workspace with at least:
 - `package.xml` and `CMakeLists.txt` or `setup.py`/`setup.cfg`;
 - launch files and deterministic parameters;
 - the expanded URDF and `robot_state_publisher` wiring;
-- replay/file input adapters chosen by the contract;
+- rosbag, managed-RTSP, or file input adapters chosen by the contract;
 - when the selected rosbag fixture is not already uploaded, a deterministic
   real-video-to-rosbag generator plus the generated bag itself; the missing
   fixture is a package-generation task, not a fifth required user upload or a
@@ -127,11 +178,13 @@ must retain their real type. Give every generated node a stable name. Do not
 claim a driver exists merely because its topic is replayed: name replay nodes
 as replay or fixture publishers.
 
-For camera replay, bridge the exact source topic as well as inference output.
-If the bag publishes `/camera/image_raw/compressed`, the allowlist and live
-layout must include that exact topic; `/image_raw/compressed` is not an alias.
-Show the raw replay beside `/detections` and `/detections_overlay` so the demo
-proves input, structured results, and rendered output independently.
+Bridge the exact camera source topic as well as inference output. If the bag
+publishes `/camera/image_raw/compressed`, the allowlist and live layout must
+include that exact topic; `/image_raw/compressed` is not an alias. For managed
+RTSP, use the active raw image topic and record the managed stream identity plus
+measured width, height, and frame rate. Show the current raw input beside
+`/detections` and `/detections_overlay` so the demo proves input, structured
+results, and rendered output independently.
 
 After writing, re-read `package.xml`, the build file, every launch file, and the
 TUI entry point. Check that installed paths match launch references and that all
@@ -179,12 +232,14 @@ Do not report success until all four levels pass:
 4. **Operable:** the generated TUI renders at normal and narrow terminal sizes,
    updates node/topic/log state, exits cleanly, and exposes no motion command.
 
-For replay input, prove it loops or state its finite duration. Sample at startup,
-after 30 seconds, and after 60 seconds to catch launch processes that die with
-the SSH session. Measure header latency against the replay clock (for example,
-`ros2 topic delay --use-sim-time`) rather than wall time, and make redirected
-CLI metrics unbuffered so timeout termination does not leave empty evidence.
-Include the current bridge subscription log in the evidence.
+For replay input, prove it loops or state its finite duration. For managed RTSP,
+prove the stream is owned by Edgematic Streams, is reachable from the board,
+and continues delivering frames. Sample either mode at startup, after 30 seconds,
+and after 60 seconds to catch launch processes that die with the SSH session.
+Measure replay header latency against the replay clock (for example, `ros2 topic
+delay --use-sim-time`) rather than wall time, and make redirected CLI metrics
+unbuffered so timeout termination does not leave empty evidence. Include the
+current bridge subscription log in the evidence.
 
 If a check fails, diagnose, edit the generated source or configuration, rebuild,
 redeploy, and repeat the entire acceptance sequence. Do not paper over a runtime
@@ -195,5 +250,6 @@ failure by weakening `input/acceptance.yaml`.
 Report the generated package path and source revision, evidence sources and
 assumptions, build and deployment identities, node/topic/type/rate table, Flora
 subscription proof, TUI checks, all changed files, and every remaining
-production gap. Explicitly say that a replay-driven no-motion proof does not
-validate the physical robot driver or safety system.
+production gap. Explicitly say that a replay- or managed-RTSP-driven no-motion
+proof does not validate the physical robot driver, robot-mounted camera driver,
+or safety system.
