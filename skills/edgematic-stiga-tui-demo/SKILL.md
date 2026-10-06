@@ -1,119 +1,77 @@
 ---
 name: edgematic-stiga-tui-demo
-description: Automatically set up the host and paired Modalix or ROSBOT, build and deploy the supported Robot TUI demo, and open it through EdgeMatic Studio. Use for requests such as "set up this robot demo" or "show the Robot TUI" even when the user does not know the Stiga codename, repositories, ROS dependencies, or commands. Do not use for generic ROS packages or production mowing.
+description: Prepare, build, stage, deploy, and open a robot operator TUI through Edgematic Studio, including ROSBOT XL and Stiga. Use for robot TUI setup and coexistence with live perception; use ROS pipeline skills for inference itself.
 ---
 
-# EdgeMatic Stiga TUI Demo
+# Robot operator TUI through Edgematic
 
-Drive this workflow with EdgeMatic tools. Do not hand the user host-side
-build, deploy, or SSH commands: after Studio installation and device pairing,
-the agent owns repository setup, build, payload assembly, deployment, and TUI
-open.
+This existing skill ID is retained for compatibility. Select the application
+from the user's robot and its actual workspace: ROSBOT XL uses its ROSBOT
+application; Stiga is not the default for every Modalix board.
 
-The user does not need to know that the supported demo application is Stiga.
-Treat a request for the paired robot's TUI demo as this workflow
-and choose the repositories, revisions, workspace layout, provisioner, and
-payload yourself. Do not ask the user for an application name, repository,
-branch, workspace path, package list, or board-side install commands.
+The useful engineering knowledge from
+[Stiga PR #55](https://github.com/sima-vertical-solutions/stiga/pull/55)
+is preserved in the references below. The PR is withdrawn by the operator;
+its feature branch and unmerged helper scripts are **not prerequisites**.
+Do not reopen it, require its merge, or silently choose that feature ref.
 
-## Definition of done
+## Execute
 
-The demo is ready only when:
+Read [workspace and tool sequence](references/automatic-flow.md) first; it
+preserves the dedicated-workspace and complete-dependency requirements.
 
-- the intended board is paired as `root`, selected, reachable, and identified
-  by name;
-- the checked-in non-interactive provisioner reports the board ready for the
-  EdgeMatic TUI payload through Studio's managed pairing key;
-- the requested Stiga and sima-core revisions are recorded;
-- Stiga's managed ROS build has a persisted successful result;
-- the checked-in EdgeMatic staging script produced the complete named payload;
-- that payload was deployed to `/root/sima_ws` through the paired device;
-- the selected board's singleton Robot TUI panel opened automatically; and
-- the session can exit without issuing a movement command or leaving a Stiga
-  process unintentionally running.
+1. Resolve the named/current selected device using `list_devices` and
+   `get_device_status`. Pairing identity is authoritative. Require root only
+   when the application's provisioning or deployment root requires it.
+2. Inspect the current application's manifest, `deploy.yaml`, build script,
+   TUI entrypoint and launch modes. Use `clone_repository` if sources are
+   absent; resolve the current supported revision, not the withdrawn ref.
+3. Read [bootstrap and build](references/bootstrap-and-build.md) when the
+   host or board needs preparation. Inspect available script options before
+   using them. Never assume the withdrawn PR's `--non-interactive`,
+   `--tui-demo`, or staging script exists in the selected revision.
+4. Build through the supported ROS SDK/build-channel path. Preserve a
+   terminal successful build result and exact source revisions.
+5. Read [payload and process ownership](references/payload-and-lifecycle.md).
+   Prefer a checked-in staging script when present; otherwise implement a
+   workspace-local staging helper from that contract as part of the
+   authorized setup. Package a complete named payload and deploy it through
+   `deploy_to_device`; an `install/`-only copy is often incomplete.
+6. Inspect the actual Studio version for Robot TUI support and its configured
+   launcher. Use the singleton panel when supported. Otherwise open the
+   existing device terminal and run the verified application TUI through its
+   PTY. Do not claim a missing panel opened or send an unsupported directive.
+7. Read [TUI acceptance](references/tui-acceptance.md). Verify render, resize,
+   singleton/session lifecycle and cleanup without movement keys.
 
-A successful compile is not a successful demo. A pre-existing launcher is not
-proof that the requested revision was deployed.
+When the deployed Studio supports the Robot TUI response directive and the
+selected device's configured launcher is verified, emit:
 
-## Execute the workflow
+```edgematic-robot-tui
+```
 
-Read [`references/automatic-flow.md`](references/automatic-flow.md), then carry
-out its tool sequence. Important invariants:
+## TUI and YOLO together
 
-- Build in the SDK container, never on the board.
-- Before the first build, import every source in the core capability and
-  Stiga dependency manifests, plus the Stiga manifest repository that provides
-  its selected sensor packages, at declared revisions through
-  `clone_repository`. A clean checkout does not vendor those sources.
-- Provision with checked-in
-  `tools/deploy/provision.sh --non-interactive --tui-demo`; never give the
-  agent a device password or private-key path.
-- Let Stiga's `build.sh` use all online logical CPUs except two; do not cap it
-  further or multiply package-level and compiler-level parallelism.
-- Stage with checked-in `tools/deploy/stage-edgematic-tui.sh` after the build.
-- Deploy only its `edgematic-tui-payload` through `deploy_to_device`. The named
-  payload contains Stiga's otherwise-missing runtime libraries, vendored Python
-  packages, setup files, and generated launch wrappers.
-- Open the panel with the `edgematic-robot-tui` response directive only after
-  deployment succeeds. The directive selects the backend's fixed
-  `/root/sima_ws/run_stiga_tui.sh`; it never contains a command.
+Keep teleoperation operator-controlled. The perception application must not
+start a duplicate base controller or overwrite the TUI deployment. Inspect
+the TUI's ROS domain, command topic and message type; ROSBOT XL can use
+`TwistStamped`, so a Stiga `Twist` publisher is not a drop-in replacement.
 
-The user may need to approve the build/deploy mutations and send a continuation
-after enabling ROS tools or rebinding the cloned workspace. Those are product
-authorization/session boundaries, not manual setup work. Do not ask the user to
-run shell commands that the flow's tools can execute.
+Use the actual camera (UVC/Logitech and RealSense need different drivers),
+derive its negotiated geometry, and match the detector's encoding and shape.
+Put perception and the intended base state in the same ROS domain. Let one
+owner operate the camera and one bridge serve Flora. Verify advancing raw,
+detection and overlay samples while the operator drives; advertise only the
+odometry that exists, commonly `/odometry/wheels` or `/odometry/filtered` on
+ROSBOT XL. A video-only RTSP detector does not create odometry.
 
-## Hardware and storage boundary
+Do not issue motion keys during unattended validation. Do not substitute a
+replay trajectory for live robot odometry. A working menu alone proves neither
+movement nor inference. If hardware is unavailable, finish host/build/payload
+work and report the exact physical acceptance still pending.
 
-NVMe is not required for EdgeMatic's TUI transport, the 467 MiB Stiga overlay,
-or `run_stiga_tui.sh`. The full Stiga mapping stack requires NVMe-backed
-`/media` because RTAB-Map persists maps, bags, captures, and logs there rather
-than saturating the board's eMMC root.
+## Evidence
 
-For an eMMC-only ROSBOT, accept the TUI demo while reporting that RTAB-Map,
-mapping, and production navigation remain unvalidated. A missing supported SPI
-IMU has the same boundary: it does not prevent rendering the robot menu, but
-hardware-dependent modes are not accepted.
-
-## Safe TUI acceptance
-
-Check each item:
-
-| Check | Required evidence |
-| --- | --- |
-| Selected target | The panel resolves the paired board requested by the user. |
-| Single session | Reopening focuses the existing Robot TUI instead of creating a duplicate. |
-| Render | The Stiga robot menu renders through the remote PTY. |
-| Resize | The display follows a panel resize without exiting or corrupting. |
-| Coexistence | A normal local shell remains usable beside the Robot TUI. |
-| Lifecycle | Closing and reopening creates a fresh usable session. |
-| Cleanup | Exiting leaves no stack started by the test unintentionally running. |
-
-The robot may move when mode keys are used. Never send `e`, `b`, `m`, `t`, or
-`D` during automated or unattended verification. Use `q` to leave a menu. If a
-mode was started manually, request idle/stop with `i` before `q`.
-
-## Diagnose by boundary
-
-- No ROS tools: ask the user to enable **ROS Pipelines** in Studio Settings and
-  resume on their next message; the CLI agent is not given the internal toggle
-  tool.
-- Build failure: report the persisted package/phase failure; do not deploy an
-  older install tree.
-- Missing staging script: the selected Stiga revision does not support this
-  automatic flow; do not reconstruct the payload ad hoc.
-- Missing ready marker: staging failed. Preserve its bounded stderr and stop.
-- Deploy refusal: report the paired-device, transport, build, or payload error
-  returned by `deploy_to_device`; do not bypass it with raw SSH.
-- Provision refusal: report the exact sanitized gap and stop. Re-pair when the
-  managed key fails; never fall back to interactive password authentication.
-- Panel exits immediately: distinguish a missing base runtime from a launcher
-  or PTY failure using the newest panel error. Do not restart unrelated board
-  workloads.
-
-## Handoff record
-
-Report the selected device, board address without credentials, source
-revisions, active build duration, staging marker, deployed payload size/remote
-root, TUI acceptance table, and any NVMe/IMU limitation. Never include
-passwords, private keys, tokens, or an unredacted terminal transcript.
+Record device, source/build revisions, successful staging marker, payload
+digest, deployment result, panel/PTY checks, topic samples, active build time,
+and remaining hardware limits. Keep credentials out of logs and handoffs.

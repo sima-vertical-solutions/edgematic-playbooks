@@ -3,6 +3,8 @@ name: edgematic-ros-capabilities
 description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio; clone the robot repositories; inspect, add, remove, or turn off build capabilities; build the ROS workspace; or deploy it to the robot. Covers clone_repository, open_ros_workspace, list_ros_capabilities, set_ros_capabilities, prepare_ros_build, cancel_ros_build, and build-log monitoring. Ensures the client repository and sima-core share one parent, only bringup exec_depend entries select capabilities, declared third-party sources are complete, the build script is explicit, and the run_on result controls the build handoff. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit, Foxglove or Flora rendering, board bring-up and flashing, or non-ROS EdgeMatic model-archive projects.
 ---
 
+For robot TUI deployments, also read [robot TUI setup](../edgematic-stiga-tui-demo/SKILL.md). It preserves the reusable build and payload lessons from withdrawn Stiga PR #55 without depending on that feature branch.
+
 # ROS Workspace Capabilities, Build & Deploy
 
 A **host-side ROS 2 workspace** is a directory on this machine holding two sibling
