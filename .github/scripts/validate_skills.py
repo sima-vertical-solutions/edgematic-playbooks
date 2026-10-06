@@ -12,6 +12,7 @@ this fail for a reason that has nothing to do with the skills.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -129,6 +130,141 @@ def check_skill(skill: Path) -> None:
 
     if not fields.get("version"):
         fail(f"{rel}: playbook.yml has no version")
+
+    if skill.name == "edgematic-ros2-contract-builder":
+        check_rosbot_xl_profile(skill)
+
+
+def check_rosbot_xl_profile(skill: Path) -> None:
+    """Validate the machine-readable ROSBOT XL profile's safety invariants."""
+    profile_path = skill / "references" / "rosbot-xl-profile.json"
+    rel = profile_path.relative_to(REPO)
+    if not profile_path.is_file():
+        fail(f"{rel}: missing ROSBOT XL profile")
+        return
+
+    try:
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        fail(f"{rel}: cannot parse profile: {exc}")
+        return
+    if not isinstance(profile, dict):
+        fail(f"{rel}: profile root must be an object")
+        return
+
+    if profile.get("schema_version") != 1:
+        fail(f"{rel}: schema_version must be 1")
+
+    match = profile.get("match", {})
+    if not isinstance(match, dict) or match.get("robot_name") != "rosbot_xl":
+        fail(f"{rel}: match.robot_name must be 'rosbot_xl'")
+        match = {}
+    expected_links = {
+        "base_link",
+        "body_link",
+        "imu_link",
+        "camera_color_optical_frame",
+    }
+    if not expected_links.issubset(set(match.get("required_links", []))):
+        fail(f"{rel}: match must require the ROSBOT XL base, IMU, and camera links")
+    expected_joints = {
+        "fl_wheel_joint",
+        "fr_wheel_joint",
+        "rl_wheel_joint",
+        "rr_wheel_joint",
+    }
+    if set(match.get("required_joints", [])) != expected_joints:
+        fail(f"{rel}: match must require all four ROSBOT XL wheel joints")
+    expected_plugins = {
+        "rosbot_hardware_interfaces/RosbotImuSensor",
+        "rosbot_hardware_interfaces/RosbotSystem",
+    }
+    if set(match.get("required_ros2_control_plugins", [])) != expected_plugins:
+        fail(f"{rel}: match must require both ROSBOT XL ros2_control plugins")
+
+    sources = profile.get("vendor_sources", [])
+    if not isinstance(sources, list) or len(sources) < 2:
+        fail(f"{rel}: vendor_sources must contain the pinned base and sensor sources")
+    else:
+        for index, source in enumerate(sources):
+            if not isinstance(source, dict):
+                fail(f"{rel}: vendor_sources[{index}] must be an object")
+                continue
+            repository = source.get("repository", "")
+            revision = source.get("revision", "")
+            if not repository.startswith("https://github.com/husarion/"):
+                fail(f"{rel}: vendor_sources[{index}] is not an official Husarion repository")
+            if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+                fail(f"{rel}: vendor_sources[{index}] revision is not an immutable Git SHA")
+
+    generation = profile.get("contract_generation", {})
+    if not isinstance(generation, dict):
+        fail(f"{rel}: contract_generation must be an object")
+        generation = {}
+    expected_files = {
+        "robot_contract.yaml",
+        "build_target.yaml",
+        "acceptance.yaml",
+    }
+    if set(generation.get("materialized_files", [])) != expected_files:
+        fail(f"{rel}: contract_generation must materialize the three derived YAML files")
+    if generation.get("default_physical_motion_required") is not False:
+        fail(f"{rel}: physical motion must default to false")
+    tui = generation.get("tui", {})
+    if not isinstance(tui, dict) or tui.get("read_only") is not True:
+        fail(f"{rel}: the generated TUI must remain read-only")
+
+    modes = generation.get("supported_input_modes", [])
+    modes_by_transport = {
+        mode.get("transport"): mode
+        for mode in modes
+        if isinstance(mode, dict) and isinstance(mode.get("transport"), str)
+    }
+    rosbag = modes_by_transport.get("rosbag", {})
+    live = modes_by_transport.get("managed_rtsp", {})
+    if rosbag.get("input_mode") != "rosbag":
+        fail(f"{rel}: rosbag transport must materialize input_mode 'rosbag'")
+    if live.get("input_mode") != "live":
+        fail(f"{rel}: managed RTSP transport must materialize input_mode 'live'")
+    if live.get("live_hardware_drivers_required") is not False:
+        fail(f"{rel}: managed RTSP must not claim proof of a physical camera driver")
+    live_topics = {
+        topic.get("name"): topic.get("type")
+        for topic in live.get("required_topics", [])
+        if isinstance(topic, dict)
+    }
+    if live_topics.get("/camera/image_raw") != "sensor_msgs/msg/Image":
+        fail(f"{rel}: managed RTSP must expose a typed raw image topic")
+    common_topics = {
+        topic.get("name"): topic.get("type")
+        for topic in generation.get("common_required_topics", [])
+        if isinstance(topic, dict)
+    }
+    required_common_topics = {
+        "/detections": "simaai_common/msg/DetectionArray",
+        "/detections_overlay": "sensor_msgs/msg/Image",
+        "/tf": "tf2_msgs/msg/TFMessage",
+        "/tf_static": "tf2_msgs/msg/TFMessage",
+    }
+    for topic, message_type in required_common_topics.items():
+        if common_topics.get(topic) != message_type:
+            fail(f"{rel}: common acceptance is missing {topic} ({message_type})")
+
+    mutable = set(profile.get("mutable_target_fields", []))
+    required_mutable = {
+        "target.ros_distro",
+        "target.architecture",
+        "target.sdk",
+        "target.platform_version",
+        "target.neat_core",
+        "target.middleware",
+    }
+    if not required_mutable.issubset(mutable):
+        fail(f"{rel}: mutable target fields must cover SDK and board runtime identity")
+
+    skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
+    if profile_path.name not in skill_text:
+        fail(f"{rel}: profile is not discoverable from SKILL.md")
 
 
 # Edgematic Studio can be told that the legacy ROS 2 client repository does not

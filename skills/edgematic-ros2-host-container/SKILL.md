@@ -62,15 +62,20 @@ sima-cli sdk ls        # what is installed, and whether it is running
 sima-cli sdk ros2      # open a shell in the ROS 2 container
 ```
 
-**The published package is arm64-only.** On an arm64 host it installs natively.
-On x86_64 the `sima-cli` compatibility check correctly refuses the native
-installer. For the internally verified Edgematic demo path, do not use
-`sima-cli ... --force`. Register arm64 binfmt, then run the published arm64
-container explicitly with Docker and mount Studio's selected workspace at the
-same `/workspace` path:
+**The published package is arm64-only.** On an ARM64 host the Edgematic
+installer runs it natively. On an AMD64/x86_64 host, the current Edgematic
+installer registers ARM64 binfmt and creates the same container under emulation;
+use that supported `--ros2`/Ready-checkbox path first. Do not use
+`sima-cli ... --force`.
+
+Only when repairing an install made before that support landed, register binfmt
+with the same pinned helper the installer uses, then run the published ARM64
+container explicitly and mount Studio's selected workspace at `/workspace`:
 
 ```bash
-docker run --rm --privileged tonistiigi/binfmt --install arm64
+docker run --rm --privileged \
+  tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0 \
+  --install arm64
 test -e /proc/sys/fs/binfmt_misc/qemu-aarch64
 docker run -dit --platform linux/arm64 \
   --name ros2-sdk-edgematic-ws \
@@ -79,7 +84,7 @@ docker run -dit --platform linux/arm64 \
   ghcr.io/sima-vertical-solutions/ros2-sdk:latest bash
 ```
 
-This is an AMD64 host running an ARM64 SDK container under qemu/binfmt, and it
+This fallback is an AMD64 host running an ARM64 SDK container under qemu/binfmt, and it
 produces ARM64 artifacts for Modalix. It is slower than a native ARM64 build;
 it is not ARM64-to-AMD64 compilation. Use it only after Studio has created the
 `simasdkbridge` network and the user has selected that exact workspace. Verify
