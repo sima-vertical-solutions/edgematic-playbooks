@@ -160,8 +160,10 @@ distribution in the compile log's "Compilation summary".
 - **Calibrate before `dataset` compile** — else `422`.
 - **Symbolic non-batch input dim** (e.g. channels named `sequence`) → auto-detect
   pins it to 1; pass `input_name`+`input_shape` explicitly.
-- **`afe` (ModelSDK) required** — absent → `503 model_compile_unavailable`;
-  on newer SDK images it is at `/sdk-extensions/model-compiler`.
+- **`afe` (ModelSDK) required** — absent, or present but not importable, →
+  `503 model_compile_unavailable`. The error names every location searched and
+  the two variables that override them; read them from it rather than from any
+  list written down here.
 - Placing a compiled user-model **into a project** for deploy has no dedicated
   API (`PUT /projects/{id}/files/content` is UTF-8-only, so it rejects a binary
   tar) — that bridge is out of scope here; see the deploy skill.

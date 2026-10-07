@@ -40,9 +40,20 @@ contract, and error codes: `references/compile-api.md`.
 
 ## Workflow
 
-0. **Preflight the compiler before registering or compiling.** Confirm both of
-   these exist: the compile wrapper `./tools/model-compile/compile_user_model.sh`
-   in the Studio install, and the ModelSDK at `/sdk-extensions/model-compiler`.
+0. **Preflight the compiler before registering or compiling.** Three things have
+   to hold, and the compile 503s if any one of them does not: the compile wrapper
+   `./tools/model-compile/compile_user_model.sh` exists in the Studio install;
+   a ModelSDK venv was found; and that venv can import `afe`. A present venv is
+   therefore not proof — a broken one fails the same way a missing one does, so
+   do not report the compiler healthy because the folder is there.
+
+   **Do not carry a list of ModelSDK locations in your head, and do not check one
+   path and conclude it is missing.** The venv is searched for in several places
+   and two environment variables can move it, and the 503 names every one of them
+   when it fires. Read the paths out of that message; it is current by
+   construction, where any list repeated here would drift the first time the
+   search order changes.
+
    If the wrapper is missing, tell the user in the FIRST reply, before any
    compile call. Offer the fallback of uploading a pre-compiled `.tar.gz`, which
    goes under `assets/models/` with `model.path` set in `common/config.yaml`.
@@ -109,11 +120,13 @@ contract, and error codes: `references/compile-api.md`.
   If the path is unconfirmed, say so and offer to look it up instead of emitting
   a pill. Do not offer Netron for a compiled `.tar.gz` (Netron reads graphs, not
   MPK packages).
-- **`503 model_compile_unavailable`** has two causes; read the message to tell
-  them apart. Either the SiMa ModelSDK (`afe`) is not installed on the host (it
-  ships with the **Model SDK Extension**; on newer SDK images the venv lives at
-  `/sdk-extensions/model-compiler`), or the compile wrapper script
-  `compile_user_model.sh` is missing from the Studio install.
+- **`503 model_compile_unavailable`** has three causes; the message says which.
+  The compile wrapper `compile_user_model.sh` is missing from the Studio install;
+  or no ModelSDK venv was found (it ships with the **Model SDK Extension**, and
+  the message lists every path searched — quote that list rather than naming one
+  path); or a venv was found and cannot import `afe`, which is a broken install
+  rather than an absent one. Installing the extension again only helps the
+  second. Relay the paths the message lists rather than any from memory.
 - **One compile at a time per model** — a second returns `409`.
 - **Parse responses with `strict=False`** — `compile_error` may contain newlines
   (Python's `json.load` rejects control chars by default).
