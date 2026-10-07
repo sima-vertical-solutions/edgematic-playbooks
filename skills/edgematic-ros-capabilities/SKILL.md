@@ -3,6 +3,8 @@ name: edgematic-ros-capabilities
 description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio; clone the robot repositories; inspect, add, remove, or turn off build capabilities; build the ROS workspace; or deploy it to the robot. Covers clone_repository, open_ros_workspace, list_ros_capabilities, set_ros_capabilities, prepare_ros_build, cancel_ros_build, and build-log monitoring. Ensures the client repository and sima-core share one parent, only bringup exec_depend entries select capabilities, declared third-party sources are complete, the build script is explicit, and the run_on result controls the build handoff. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit, Foxglove or Flora rendering, board bring-up and flashing, or non-ROS EdgeMatic model-archive projects.
 ---
 
+For robot TUI deployments, also read [robot TUI setup](../edgematic-stiga-tui-demo/SKILL.md). It preserves the reusable build and payload lessons from withdrawn Stiga PR #55 without depending on that feature branch.
+
 # ROS Workspace Capabilities, Build & Deploy
 
 A **host-side ROS 2 workspace** is a directory on this machine holding two sibling
@@ -177,7 +179,7 @@ one, and a flow that opens with a secret prompt is asking for a secret before it
 that it needs one.
 
 The other two `requirement` values are not yours to repair. `git` and `git_lfs` mean the
-runtime image is missing a binary; an operator has to install it, and retrying the call cannot
+runtime image is missing a binary; a user has to install it, and retrying the call cannot
 start succeeding. Report which one, and stop.
 
 **When the clones are done and `open_ros_workspace` has returned, end the turn** — see
@@ -438,7 +440,7 @@ success, never deploy on the strength of one, and say plainly what happened. The
 whatever witness the path actually has: when `run_on` was `"host"`, ask the user what
 their terminal showed; when it was `"container"` there is no user terminal to ask about,
 so the log is the only witness — quote its tail, and say the build channel itself is the
-operator's to check. The other two prefixes are distinct on purpose:
+user's to check. The other two prefixes are distinct on purpose:
 `ros_build_failed:` is an **observed** non-zero exit, and `ros_build_timed_out:` means
 the build never reached either terminal condition.
 
@@ -509,7 +511,7 @@ do not guess around it.
 - **The clone has no credential** — `clone_unavailable` with `requirement` set to `token`.
   This is the one clone prerequisite the user can supply; ask once, retry with it in `token`,
   and say it is stored. `git` or `git_lfs` in that same field means a missing binary in the
-  runtime image: an operator's job, and retrying cannot help.
+  runtime image: a user's job, and retrying cannot help.
 - **The clone destination is occupied by a project** — the folder would overlap a workspace
   Studio manages. Choose a different parent; do not delete anything to make room.
 - **Not a usable workspace** — no child holds a `capabilities/` directory, or several

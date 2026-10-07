@@ -3,6 +3,8 @@ name: edgematic-ros2-host-container
 description: Use when the ROS 2 container has to be created, provisioned or repaired on the user's own host before any ROS 2 work can start — there is no ROS 2 SDK container yet, the container was recreated and lost what was installed into it, or a workspace build dies within seconds on a build dependency the container does not carry (GTSAM, socpipeline, shapely). Covers the host install command, cloning sima-core into the directory shared by Studio and the ROS container, and running sima-core's in-place container provisioning. Trigger on "install ROS2", "set up the ROS container", "I have no ros2-sdk container", "provision the container", or an early missing-build-dependency failure. Do not use for capability selection/building, DevKit preflight, running a prepared pipeline, or SoC flashing.
 ---
 
+For robot-specific build/provisioning failures, consult the retained [bootstrap lessons](../edgematic-stiga-tui-demo/references/bootstrap-and-build.md), including binfmt loss after reboot, independent dependency checks, CPU budgeting and menu versus hardware readiness.
+
 # Standing up the ROS 2 container on the host
 
 The ROS 2 toolchain lives in a **second container**, beside the one Edgematic
@@ -10,6 +12,28 @@ Studio runs in. This skill gets that container onto the user's host and makes it
 able to build. It stops there: choosing capabilities and running a build is the
 `edgematic-ros-capabilities` flow, and that flow assumes everything below is
 already true.
+
+## Installer-owned setup is the default
+
+When the user is installing EdgeMatic Studio on a supported arm64 host, do not
+hand them the manual container commands below. The supported path is one
+installer invocation with the workspace and ROS option included:
+
+```bash
+curl -fsSL https://studio.dev.vdp.sima.ai/install.sh | bash -s -- \
+  --workspace "$HOME/edgematic-e2e" --ros2
+```
+
+The installer creates the Neat and ROS 2 SDK containers on the same workspace,
+clones `sima-core`, provisions the ROS build dependencies and GTSAM, and starts
+the authenticated build channel. On Apple Silicon the ROS SDK is arm64-native:
+do not mention, install, or test QEMU/binfmt. The user still completes the
+installer's visible account sign-in and confirmation screens; no separate host
+setup command follows.
+
+Use the manual recovery sections below only for an already-installed Studio
+whose ROS container was omitted, recreated, or damaged, or for the internally
+verified AMD64 fallback. They are not the clean-install instructions.
 
 ## What "done" looks like
 
@@ -33,7 +57,7 @@ step that was supposed to produce them worked.
    `run_on: "container"` and `run_on: "host"`. Provisioning does this at the end
    of step 3; see "The build channel" below for how to check it.
 
-## Step 1 is the user's to run, not yours
+## Manual recovery is the user's to run, not yours
 
 Studio has no shell on the host, no Docker socket, and no channel into a
 container it is not inside; `sima-cli`'s SDK commands are host-only by design.
@@ -41,7 +65,7 @@ So there is no tool for this, and looking for one wastes a round. Present the
 command as a copyable block, say plainly that they run it on the host, and wait
 for them to report back before moving on.
 
-## Step 1 — install the ROS 2 SDK container
+## Manual recovery step 1 — install the ROS 2 SDK container
 
 On the host:
 
@@ -90,9 +114,9 @@ containers after the image reference, so the real name is usually longer. Read
 it from `sima-cli sdk ls` or `docker ps` before using it anywhere. Studio's ROS
 build tools address the container by a configured name that defaults to
 `ros2-sdk`; when the real name differs, that setting has to point at it, and
-that is an operator change — say so rather than renaming things to fit.
+that is a user change — say so rather than renaming things to fit.
 
-## Step 2 — clone sima-core into the shared directory
+## Manual recovery step 2 — clone sima-core into the shared directory
 
 Use `clone_repository`. Set `repo` to `sima-vertical-solutions/sima-core` and,
 for the standard demo, set `parent` to `/workspace` so the result is exactly
@@ -124,14 +148,14 @@ only; `requirement` exists inside the server and never reaches you. A missing
 token says so in the message and offers an `ask_user` fix carrying the exact
 question to put. Opening a container setup
 with a secret prompt asks for a secret before showing that it is needed. The
-other `requirement` values, `git` and `git_lfs`, are an operator's to fix:
+other `requirement` values, `git` and `git_lfs`, are the user's to fix:
 report which one, and stop.
 
 The provisioning script the next step runs is on sima-core's default branch, so
 a plain clone lands on it. If it is missing, the checkout predates it: re-clone,
 or pass `ref`. Do not reconstruct its steps by hand.
 
-## Step 3 — provision the container, in place
+## Manual recovery step 3 — provision the container, in place
 
 The stock image cannot build sima-core as it ships: GTSAM is in no eLxr apt
 repository, and the SoC development headers collide with the Neat headers the

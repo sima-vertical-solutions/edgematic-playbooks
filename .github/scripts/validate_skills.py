@@ -131,6 +131,49 @@ def check_skill(skill: Path) -> None:
         fail(f"{rel}: playbook.yml has no version")
 
 
+def check_stiga_tui_workspace_contract() -> None:
+    """Keep the TUI flow off the projects root that Studio cannot adopt."""
+    flow = (
+        SKILLS
+        / "edgematic-stiga-tui-demo"
+        / "references"
+        / "automatic-flow.md"
+    )
+    if not flow.is_file():
+        fail(f"{flow.relative_to(REPO)}: missing Robot TUI automatic flow")
+        return
+
+    text = flow.read_text(encoding="utf-8")
+    skill = flow.parents[1] / "SKILL.md"
+    combined = text + "\n" + skill.read_text(encoding="utf-8")
+    required = (
+        '"parent": "/workspace/robot-tui-demo"',
+        "Never use `/workspace` itself",
+        "selected dedicated parent",
+        "<selected-workspace-parent>/stiga/src",
+    )
+    for phrase in required:
+        if phrase not in text:
+            fail(
+                f"{flow.relative_to(REPO)}: missing workspace-safety contract "
+                f"{phrase!r}"
+            )
+
+    forbidden = (
+        '"parent": "/workspace",',
+        "on the shared `/workspace` parent",
+        "`parent`: `/workspace/stiga/src`",
+        "`set_ros_pipelines`",
+        "`run_command`",
+    )
+    for phrase in forbidden:
+        if phrase in combined:
+            fail(
+                f"{flow.relative_to(REPO)}: unsafe or unavailable Robot TUI "
+                f"instruction remains: {phrase!r}"
+            )
+
+
 # Edgematic Studio can be told that the legacy ROS 2 client repository does not
 # exist for a deployment. It enforces that by hiding every installed skill whose
 # TEXT names the repository — a skill is prose the model reads, so no tool gate
@@ -187,6 +230,7 @@ def main() -> int:
     for skill in skills:
         check_skill(skill)
         check_legacy_repo_mentions(skill)
+    check_stiga_tui_workspace_contract()
 
     if errors:
         print(f"{len(errors)} problem(s) found:\n", file=sys.stderr)
