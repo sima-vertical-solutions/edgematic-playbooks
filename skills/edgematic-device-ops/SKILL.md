@@ -18,8 +18,9 @@ outcome clearly.
 
 | Tool | Purpose | Notes |
 | --- | --- | --- |
-| `list_devices` | List every paired device (newest first) | Read-only. |
-| `add_device` | Pair a DevKit (installs the backend SSH key) | Needs `name`, `host`, `user`, `password` — ask via `ask_user` for any missing field. Requires confirmation. |
+| `list_devices` | List every paired device (newest first) | Read-only; `ssh.argv` contains the managed key and known-hosts paths. |
+| `connect_device` | Connect a new board or repair an existing pairing | `device` = paired name/id/IP or new host; optional `name`. Tries managed key, then `root:root`, then `sima:edgeai`. |
+| `add_device` | Pair a DevKit (installs the backend SSH key) | Use supplied non-default credentials, or after `connect_device` exhausts both defaults. Needs `name`, `host`, `user`, `password`. Requires confirmation. |
 | `remove_device` | Unpair a device | `device` = name or id; optional `force` to also drop deploy/run history. Requires confirmation. |
 | `get_device_status` | Live status (build / cpu / memory …) for one device | `device` = name or id. |
 | `deploy_to_device` | Deploy a built project to a device | `project_id` + `device` (name or id). Transport is auto-selected. |
@@ -29,9 +30,9 @@ Full request/response and error-code detail: `references/device-api.md`.
 ## Workflow
 
 1. **Understand the intent** — list, add, remove, status, or deploy.
-2. **Adding a device (see *Adding a device*).** Gather `name`, `host`/IP, `user`,
-   and `password` with `ask_user` for any missing field (transport only if the
-   user raised it), then call `add_device`. Never invent a host.
+2. **Adding or reconnecting a device (see *Adding a device*).** Resolve its
+   explicit host/IP and try `connect_device` before asking for credentials.
+   Never invent a host.
 3. **Resolve the current target, never a remembered one.** When the turn has a
    `[context: device_id=…]` prefix, that UUID is the active Studio selection and
    is authoritative unless the user explicitly names a different target in the
@@ -46,15 +47,28 @@ Full request/response and error-code detail: `references/device-api.md`.
 
 ## Adding a device (pairing)
 
-Pairing installs an SSH key using the device password. Collect the details and
-pair directly from chat:
+For a known paired target, use the `ssh.argv` returned by `list_devices` for
+shell access. These are the backend's actual key and known-hosts paths inside
+its runtime; do not substitute the host's `~/.ssh` directory or print key bytes.
 
-1. Gather `name`, `host`/IP, `user`, and `password`, asking with `ask_user` for
-   any field the user did not supply (ask about `ssh`/`nfs` transport only if the
-   user brings it up — otherwise leave the default). Never invent a host.
-2. Call `add_device`. It requires confirmation, so the user approves the pairing
-   before it runs.
-3. After it succeeds, call `list_devices` to show the new device.
+For a new board, or if the managed key is rejected:
+
+1. Call `connect_device` with the selected device name/id/IP, or the new board's
+   explicit host/IP and optional display `name`.
+2. The backend probes the managed key, then `root` / `root`, then `sima` /
+   `edgeai`. On successful password login it installs Studio's public key,
+   verifies key-only login, and persists the working SSH user without deleting
+   existing deployment history. Use its returned `device` and `ssh.argv`.
+3. Only after both default logins fail, ask for the user's SSH credentials and
+   use `add_device` for a new board. A network timeout cannot establish whether
+   a password works: report connectivity separately. A changed host key or a
+   foreign ownership marker needs an explicit pairing decision; do not bypass it.
+
+If the installed backend does not advertise `connect_device`, use its managed
+key path from configuration and the same default-login order via the available
+shell/pairing tools. Keep passwords out of command arguments and logs (use
+child-scoped `SSHPASS`); never guess a private key path. Preserve host-key and
+ownership checks. Do not repeatedly retry defaults after both are rejected.
 
 ## Key rules
 
@@ -88,7 +102,7 @@ useful, suggest the next step. Do not paraphrase away the actionable detail.
 | Error code | Meaning | What to tell the user |
 | --- | --- | --- |
 | `device_unreachable` | Device offline / TCP handshake failed | Device is offline — check it's powered on and on the network, then retry. |
-| `device_pairing_failed` | SSH bootstrap failed (usually wrong password) | Pairing failed — likely wrong credentials; re-enter the username/password. |
+| `device_pairing_failed` | SSH bootstrap failed (usually wrong password) | Use `connect_device` first for authentication failures; ask for credentials only after both default logins fail. |
 | `device_already_exists` | Host already paired | That host is already paired — no action needed (or remove it first). |
 | `device_in_use_by_other` | DevKit claimed by another Edgematic instance | In use by another instance. Report it and OFFER the `force: true` retry — never take it over on your own initiative. |
 | `nfs_host_setup_required` | NFS chosen but no workspace mounted | Surface the message **verbatim** — it contains the exact `sima-cli sdk setup --devkit <ip>` command to run on the host. See `references/nfs-setup.md`. |
@@ -99,8 +113,8 @@ useful, suggest the next step. Do not paraphrase away the actionable detail.
 
 ## Boundaries
 
-- Do not edit device credentials via chat — to change them, remove the device
-  and add it again (password re-entered when adding).
+- `connect_device` repairs the managed public key and verified login in place.
+  Do not remove a device merely to repair SSH access.
 - No bulk operations (e.g. "remove all devices") — act on one device at a time.
 - Do not discover devices via chat — pairing is by explicit host/IP.
 - This skill is about *operating* devices, not building applications or editing
