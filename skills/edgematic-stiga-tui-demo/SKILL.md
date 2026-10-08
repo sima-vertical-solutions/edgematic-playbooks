@@ -17,6 +17,11 @@ Do not reopen it, require its merge, or silently choose that feature ref.
 
 ## Execute
 
+For a ROSBOT XL using micro-ROS, read the
+[verified Modalix/MCU path](references/rosbot-xl-micro-ros.md) first. It covers
+direct Ethernet, firmware routing, the working agent, motor order, and reusable
+low-speed TUI controls; avoid rediscovering these or selecting a MAVLink driver.
+
 Read [workspace and tool sequence](references/automatic-flow.md) first; it
 preserves the dedicated-workspace and complete-dependency requirements.
 
