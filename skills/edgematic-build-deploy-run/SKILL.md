@@ -5,6 +5,11 @@ description: Use when the user wants to build an Edgematic project, deploy it to
 
 # Edgematic Build, Deploy & Run
 
+If building requires choosing or replacing a model or runtime component, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Reuse a compatible SiMa artifact before custom compilation or an external
+runtime. Preserve an existing project's working, explicitly selected contract.
+
 ## Overview
 
 Take a project all the way to running on a device, from chat: **build** it, wait

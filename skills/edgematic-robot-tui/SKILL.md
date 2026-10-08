@@ -1,19 +1,15 @@
 ---
-name: edgematic-stiga-tui-demo
-description: Prepare, build, stage, deploy, and open a robot operator TUI through Edgematic Studio, including ROSBOT XL and Stiga. Use for robot TUI setup and coexistence with live perception; use ROS pipeline skills for inference itself.
+name: edgematic-robot-tui
+description: Prepare, build, stage, deploy, and open a robot operator TUI through Edgematic Studio using the user-supplied application repository. Use for robot TUI setup and coexistence with live perception; use ROS pipeline skills for inference itself.
 ---
 
 # Robot operator TUI through Edgematic
 
-This existing skill ID is retained for compatibility. Select the application
-from the user's robot and its actual workspace: ROSBOT XL uses its ROSBOT
-application; Stiga is not the default for every Modalix board.
-
-The useful engineering knowledge from
-[Stiga PR #55](https://github.com/sima-vertical-solutions/stiga/pull/55)
-is preserved in the references below. The PR is withdrawn by the operator;
-its feature branch and unmerged helper scripts are **not prerequisites**.
-Do not reopen it, require its merge, or silently choose that feature ref.
+Use the application repository supplied by the user, at a recorded revision.
+Derive hardware, topics, drivers, launch commands, and operator bindings from
+that repository and the selected device's observed state. No robot model or
+customer application is a default. If the source is missing, resolve it with
+the user before selecting a robot application.
 
 ## Execute
 
@@ -25,11 +21,11 @@ preserves the dedicated-workspace and complete-dependency requirements.
    when the application's provisioning or deployment root requires it.
 2. Inspect the current application's manifest, `deploy.yaml`, build script,
    TUI entrypoint and launch modes. Use `clone_repository` if sources are
-   absent; resolve the current supported revision, not the withdrawn ref.
+   absent; record the selected immutable revision.
 3. Read [bootstrap and build](references/bootstrap-and-build.md) when the
    host or board needs preparation. Inspect available script options before
-   using them. Never assume the withdrawn PR's `--non-interactive`,
-   `--tui-demo`, or staging script exists in the selected revision.
+   using them. Do not assume optional provisioning flags or staging helpers exist in the
+   selected revision.
 4. Build through the supported ROS SDK/build-channel path. Preserve a
    terminal successful build result and exact source revisions.
 5. Read [payload and process ownership](references/payload-and-lifecycle.md).
@@ -54,16 +50,16 @@ selected device's configured launcher is verified, emit:
 
 Keep teleoperation operator-controlled. The perception application must not
 start a duplicate base controller or overwrite the TUI deployment. Inspect
-the TUI's ROS domain, command topic and message type; ROSBOT XL can use
-`TwistStamped`, so a Stiga `Twist` publisher is not a drop-in replacement.
+the TUI's ROS domain, command topic, message type, and stop semantics from the
+selected application's source and active graph; do not assume a compatible
+velocity publisher from a different application.
 
-Use the actual camera (UVC/Logitech and RealSense need different drivers),
+Use the camera and driver identified by the supplied source and live device,
 derive its negotiated geometry, and match the detector's encoding and shape.
 Put perception and the intended base state in the same ROS domain. Let one
 owner operate the camera and one bridge serve Flora. Verify advancing raw,
 detection and overlay samples while the operator drives; advertise only the
-odometry that exists, commonly `/odometry/wheels` or `/odometry/filtered` on
-ROSBOT XL. A video-only RTSP detector does not create odometry.
+odometry that exists under the names and types proven by the selected graph. A video-only RTSP detector does not create odometry.
 
 Do not issue motion keys during unattended validation. Do not substitute a
 replay trajectory for live robot odometry. A working menu alone proves neither

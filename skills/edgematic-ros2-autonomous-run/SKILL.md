@@ -5,6 +5,11 @@ description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
 
+Before selecting models or authoring replacement components, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Discover compatible SiMa artifacts and capabilities, test relevant candidates,
+and retain the evidence for any external or custom fallback in the project.
+
 The user asked for a working pipeline, not a conversation. Everything below
 exists to keep you from stopping to ask for something the code already answers,
 and from reporting success you have not verified.
@@ -15,6 +20,17 @@ orchestrator: `edgematic-ros2-demo` owns standard and minimal demos;
 
 **Finish the job.** If you cannot, say exactly what is blocked, what you tried
 and what you need — never hand back a half-run pipeline as if it were done.
+
+## Robot source boundary
+
+For robot work, use the GitHub repository supplied in the prompt and record its
+immutable revision. Derive model, geometry, sensors, driver packages, topics,
+message types, launcher paths, calibration and limits from that source and
+read-only inspection of the selected device. Do not import a remembered robot
+profile or customer application as a default. Keep task-specific findings in the
+project contracts and evidence, outside these shared skills. Resolve missing
+source or required facts before the dependent action.
+
 
 ## What you may ask for, and nothing else
 

@@ -5,12 +5,29 @@ description: Build, deploy, run, and verify an existing user-supplied ROS 2 pack
 
 # Edgematic ROS 2 User Package
 
+Preserve the package's explicit model and runtime contract. When a component is
+missing or replacement is needed, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md)
+before introducing an external model or duplicate runtime; a deployment request
+alone is not permission to replace a working user-selected model.
+
 Preserve the user's package and make its actual build/run path work. Do not
 replace it with a reference demo or generalize from a different repository.
 
 Load `edgematic-ros2-portable-pipeline` for the detailed workspace, build,
 deploy, board, and detached-launch mechanics. This skill owns routing, the
 package contract, and the evidence required before reporting success.
+
+## Robot source boundary
+
+For robot work, use the GitHub repository supplied in the prompt and record its
+immutable revision. Derive model, geometry, sensors, driver packages, topics,
+message types, launcher paths, calibration and limits from that source and
+read-only inspection of the selected device. Do not import a remembered robot
+profile or customer application as a default. Keep task-specific findings in the
+project contracts and evidence, outside these shared skills. Resolve missing
+source or required facts before the dependent action.
+
 
 ## Keep one workspace
 
