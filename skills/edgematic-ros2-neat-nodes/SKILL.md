@@ -107,7 +107,6 @@ examples", list these with a one-line description each.
 | **`yolov8`** | YOLOv8 **object detection** (boxes only) | `/detections_overlay` (Image), `/detections` (DetectionArray) |
 | **`yolo_pose`** | YOLO **pose** estimation | `/image_raw` (Image), `/simaai/genericrender/output` (annotated Image) |
 | **`yolov8_seg_sensor_fusion`** | seg + Intel **RealSense** depth fusion | `/…/color/image_raw`, `/…/depth/image_raw`, `/simaai/segmentation/detections`, `/simaai/sensor_fusion/output` |
-| `yolov8_rover` / `yolov8_seg_rover` | rover variants — **only on the Husarion ROSBot XL** | as above + rover odom/cmd_vel |
 
 All publish `/neat_inference/transition_event` (lifecycle state). For Flora, the
 inline card's default panels (overlay + raw + detections + pipeline-state) fit
@@ -139,9 +138,7 @@ in Edgematic (the Streams panel), chain the media tools with `run_ros_pipeline`:
 
    **Verify the host is board-reachable before blaming the pipeline.** The
    stream tools report the *host's* view of itself, which is not always the
-   address the board can route to (measured: one host answered on
-   `172.16.1.208` from the board while `172.16.1.114` — the reported endpoint —
-   was unreachable). A wrong host here produces a pipeline that runs happily
+   address the board can route to. Verify the reported endpoint from the board. A wrong host here produces a pipeline that runs happily
    with **`/image_raw` at 0 Hz** and a blank overlay, and no error anywhere.
    If frames never arrive, say so plainly and have the user run
    `ros2 topic hz /image_raw` and `nc -z <host> 8554` from the DevKit terminal.

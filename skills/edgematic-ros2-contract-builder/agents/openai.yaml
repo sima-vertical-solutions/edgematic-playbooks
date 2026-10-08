@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 Contract Builder"
+  short_description: "Generate and prove a new ROS 2 package from robot contracts"
+  default_prompt: "Use $edgematic-ros2-contract-builder with my prompt, robot/vendor GitHub link, and expanded robot.urdf to generate, build, deploy, and prove a no-motion ROS 2 package with rosbag or managed RTSP input, detections, overlay, and a read-only status TUI."

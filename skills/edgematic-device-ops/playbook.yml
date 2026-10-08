@@ -1,6 +1,6 @@
 id: edgematic-device-ops
 name: Edgematic Device Ops
-version: 0.1.0
+version: 0.2.0
 agents: [codex, claude]
 description: Manage SiMa DevKits and deploy pipelines from the Edgematic Studio chat — list, add (pair), and remove devices, check live device status, and deploy over SCP or NFS.
 compatibility:

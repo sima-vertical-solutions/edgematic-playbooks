@@ -1,0 +1,8 @@
+id: edgematic-ros2-starter-prompts
+name: Edgematic ROS 2 Starter Prompts
+version: 0.3.0
+agents: [codex, claude]
+description: Generate copy-ready starter prompts for contract-built packages, existing ROS 2 projects, rosbag replay, and clean end-to-end demos.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

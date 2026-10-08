@@ -10,7 +10,7 @@ description: Use when the user asks to manage SiMa DevKits or deploy from the Ed
 Manage paired SiMa DevKits and trigger deployments from chat. You do this
 through the agent's device tools, which call the Edgematic Studio backend
 in-process. The user speaks in natural language ("show my devices", "add
-Edge-01 at 192.168.1.10", "deploy to Edge-01"); you translate that into the
+Edge-01 at <device-ip>", "deploy to Edge-01"); you translate that into the
 right tool call, collecting any missing information first and reporting the
 outcome clearly.
 

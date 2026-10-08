@@ -57,7 +57,7 @@ sima-cli playbooks remove edgematic-device-ops
 | [`edgematic-ros2-host-container`](skills/edgematic-ros2-host-container) | Install the ROS 2 SDK container on the user's own host and provision it to build — the host-only install command, cloning sima-core into the shared mount, and the in-place provisioning script. |
 | [`edgematic-ros2-demo`](skills/edgematic-ros2-demo) | Run a standard ROS 2 proof at the smallest useful level: READY, HELLO, LAUNCH, DEPLOY, or live VIEW. |
 | [`edgematic-ros2-user-package`](skills/edgematic-ros2-user-package) | Preserve, build, deploy, run, and verify an existing user-supplied ROS 2 package or workspace. |
-| [`edgematic-stiga-tui-demo`](skills/edgematic-stiga-tui-demo) | Prepare the selected robot TUI and preserve Stiga PR #55 build, provisioning, payload and rendering knowledge without depending on the withdrawn branch. |
+| [`edgematic-robot-tui`](skills/edgematic-robot-tui) | Prepare the user-supplied application TUI with generic build, provisioning, payload and rendering checks. |
 
 ## Layout
 
@@ -78,3 +78,12 @@ Skill authoring rules, the manifest contract, and the local validation loop are 
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+
+Robot applications are selected from the GitHub link in the user prompt. Shared
+skills contain no robot profiles or customer application defaults. Hardware
+facts and task evidence belong in the selected project, at recorded revisions.
+
+| Skill | Purpose |
+| --- | --- |
+| [`edgematic-ros2-contract-builder`](skills/edgematic-ros2-contract-builder) | Generate a package from user-supplied robot sources and evidence contracts. |
+| [`edgematic-ros2-starter-prompts`](skills/edgematic-ros2-starter-prompts) | Prepare copy-ready prompts including the user's source and target. |

@@ -16,6 +16,17 @@ orchestrator: `edgematic-ros2-demo` owns standard and minimal demos;
 **Finish the job.** If you cannot, say exactly what is blocked, what you tried
 and what you need — never hand back a half-run pipeline as if it were done.
 
+## Robot source boundary
+
+For robot work, use the GitHub repository supplied in the prompt and record its
+immutable revision. Derive model, geometry, sensors, driver packages, topics,
+message types, launcher paths, calibration and limits from that source and
+read-only inspection of the selected device. Do not import a remembered robot
+profile or customer application as a default. Keep task-specific findings in the
+project contracts and evidence, outside these shared skills. Resolve missing
+source or required facts before the dependent action.
+
+
 ## What you may ask for, and nothing else
 
 Two things genuinely need the user. Resolve everything else yourself.

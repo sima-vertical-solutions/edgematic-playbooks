@@ -3,7 +3,7 @@ name: edgematic-ros-capabilities
 description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio; clone the robot repositories; inspect, add, remove, or turn off build capabilities; build the ROS workspace; or deploy it to the robot. Covers clone_repository, open_ros_workspace, list_ros_capabilities, set_ros_capabilities, prepare_ros_build, cancel_ros_build, and build-log monitoring. Ensures the client repository and sima-core share one parent, only bringup exec_depend entries select capabilities, declared third-party sources are complete, the build script is explicit, and the run_on result controls the build handoff. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit, Foxglove or Flora rendering, board bring-up and flashing, or non-ROS EdgeMatic model-archive projects.
 ---
 
-For robot TUI deployments, also read [robot TUI setup](../edgematic-stiga-tui-demo/SKILL.md). It preserves the reusable build and payload lessons from withdrawn Stiga PR #55 without depending on that feature branch.
+For robot TUI deployments, also read [robot TUI setup](../edgematic-robot-tui/SKILL.md). It covers generic build, payload and operator-session verification.
 
 # ROS Workspace Capabilities, Build & Deploy
 
@@ -28,6 +28,16 @@ build inside the container and `run_on` comes back `"container"`. Where none is,
 `prepare_ros_build` returns the *command*, the user runs it, and `run_on` comes back
 `"host"`. Either way Studio watches the log the build writes and settles the build row
 from it.
+
+## Robot source boundary
+
+For robot work, use the GitHub repository supplied in the prompt and record its
+immutable revision. Derive model, geometry, sensors, driver packages, topics,
+message types, launcher paths, calibration and limits from that source and
+read-only inspection of the selected device. Do not import a remembered robot
+profile or customer application as a default. Keep task-specific findings in the
+project contracts and evidence, outside these shared skills. Resolve missing
+source or required facts before the dependent action.
 
 ## The order
 
@@ -78,15 +88,15 @@ Follow it. Each step needs what the one before it returns.
 7. **Deploy** to the paired device with `deploy_to_device` once — and only once — the
    build reported an observed success.
 
-
 ## 0. Getting the two repositories onto disk
 
 When the workspace is not on disk yet, put it there with `clone_repository` — **twice, into
-one and the same `parent`** — and then open that parent. Unless the user named other
-repositories, they are:
+one and the same dedicated `parent`** — and then open that parent. Select the
+application repository from the GitHub link in the prompt and its core dependency
+from the selected source manifest. Do not substitute a remembered robot repository:
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "<the parent>" }`
-2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "<same parent>" }`
+1. `clone_repository` `{ "repo": "<user-supplied-application-repository>", "parent": "<the parent>" }`
+2. `clone_repository` `{ "repo": "<manifest-declared-core-repository>", "parent": "<same parent>" }`
 3. `open_ros_workspace` `{ "path": "<that same parent>" }`
 
 Three calls rather than one, and that is what the general shape of the clone tool costs:
@@ -101,8 +111,8 @@ Leave `name` out. The destination folder name is derived from the repository its
 already the name the workspace expects; send `name` only when the user asked for a different
 folder. Re-running step 0 is safe: a destination that already exists is left untouched and
 comes back as `outcome: "already_present"`, with nothing re-cloned. Submodules are reported
-through `has_gitmodules` and never fetched — neither of these repositories uses them, so if
-that comes back true, say so rather than acting on it.
+through `has_gitmodules` and not fetched by this call. Inspect the selected
+repository manifests to resolve any required submodules and revisions.
 
 **A wrong layout is refused legibly, and that is the compensating control for the clone tool
 not guaranteeing one.** `open_ros_workspace` detects the layout *before* it registers
@@ -284,27 +294,18 @@ Each is a `vcs` manifest: a `repositories:` map of `name → {type, url, version
 
 **`manifest.repos` is where to look when a package is missing that no
 `dependencies.repos` declares.** It names the platform repositories — usually the client
-and the core you cloned yourself, but it can name more: the Stiga workspace declares
-`sima-sensor-stack`, which carries `sensor_bringup`, `intel_realsense_d435`,
-`imu_icm42688_spi`, `power_board_driver` and `sensor_manager`, and nothing else on disk
-mentions them.
-
-Fetch from it on that symptom rather than on sight. The capability manifests declare BUILD
-dependencies, so taking all of them is right; `manifest.repos` mostly declares packages
-needed at RUN time, and a repository's packages join the build graph the moment they are on
-disk — so pulling one nothing needs lengthens every build and adds ways for it to fail.
-
-**Do not scope this to the selected capabilities.** It is tempting and it is wrong: a
-package outside the selection can still be pulled into the build graph by an ordinary
-dependency — in the Stiga workspace `stiga_behavior` requires `apriltag_docking` whatever
-the selection says. Take every declaration.
+and the core you cloned yourself, but it can also name sensor and runtime providers.
+Resolve the complete build and runtime dependency closure from the selected
+manifests before the first build. A package outside the capability selection may
+still be required transitively by a selected package. Import its declared source
+at the declared revision. Do not infer dependency names from a previous robot.
 
 **`ref` is not optional in practice.** The manifests pin branches (`release/2.4.x`), tags
 (`v1.2.1-devel`) and raw commits (`62a272ac…`). Omitting it clones the default branch,
 which succeeds, builds, and ships a different revision than the one asked for — a failure
 nothing downstream can notice.
 
-A manifest may name a private repository (the Stiga workspace's `visual_odometry` names two).
+A manifest may name a private repository.
 Those need a credential; report them by name rather than silently skipping them.
 
 ## Which script builds this project
@@ -339,14 +340,10 @@ and it breaks visibly: the `cd` fails, its message is the whole log, and the bui
 reports a non-zero exit. If you see that, say the workspace is not under the shared
 mount — do not rewrite the path.
 
-**The reason, because a bare prohibition just invites a cleverer improvisation:** the
-workspace's `build.sh` carries roughly fifteen tuned flags. Among them are worker caps
-that stop a parallel build from exhausting memory and getting OOM-killed part-way
-through, `--packages-ignore` entries that keep Qt-based GUI packages out of an image
-destined for a headless robot, and a set of `-DWITH_*=OFF` switches. A hand-written
-`colcon build` drops all of them. The two failures that follow are concrete: the build
-dies to the OOM killer with a log that looks like a compiler crash, or a GUI package is
-dragged onto a robot that has no display and no business running it.
+The selected workspace's build script may carry required worker caps,
+headless-package exclusions and dependency configuration. Inspect and preserve
+those flags; replacing the script with a bare Colcon command can exhaust memory
+or build packages that the selected target does not support.
 
 So:
 
