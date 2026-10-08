@@ -10,8 +10,9 @@ A ROS2 pipeline launched against an unprepared board does not fail. It reports
 condition below produces that same symptom, which is why the board is checked
 *before* the run rather than diagnosed after it.
 
-**The rule this skill exists to enforce:** the pipeline's video input comes from
-**Edgematic's own Streams**, never from an RTSP server someone started by hand.
+For an **RTSP** pipeline, the video input comes from **Edgematic's own Streams**,
+never from an RTSP server someone started by hand. A pipeline whose confirmed
+input contract is direct USB V4L2 uses that exact device instead of Streams.
 
 ## Pre-flight order
 
@@ -132,11 +133,16 @@ on the board cannot be repointed or relaunched from chat — deploy and launch y
 own build instead, and say that is what you are doing rather than reporting a
 capability as half-loaded.
 
-### 5. The input stream comes from Edgematic Streams
+### 5. Verify the selected input transport
 
-This is a requirement, not a preference. Start the stream through Studio
+For RTSP input this is a requirement, not a preference. Start the stream through Studio
 (`start_stream`, or the Streams page) and pass the returned `rtsp://…` address to
 `run_ros_pipeline` as `rtsp_url`.
+
+For direct USB V4L2, verify the exact configured device path resolves on the
+board and supports the contract's capture format, size and FPS. Start the
+client package's USB capture component with that path. Do not start Streams,
+probe alternate camera nodes, or pass an `rtsp_url` for this transport.
 
 **Never leave the pipeline on its baked-in default.** The params file on the board
 carries whatever address was last written into it — typically a hand-started

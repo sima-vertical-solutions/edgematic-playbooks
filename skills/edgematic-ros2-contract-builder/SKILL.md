@@ -86,7 +86,7 @@ limits, or production motion behavior from link or joint names.
 ### Demo-scope exception
 
 When `physical_motion_required: false`, build a read-only, perception-driven
-proof from rosbag or managed RTSP input.
+proof from the explicitly selected rosbag, managed RTSP, or direct USB V4L2 input.
 Missing motor-controller transport, command limits, safety interlocks, and live
 base-driver details are production blockers, but they do **not** block package
 generation for a no-motion camera demo. Keep them in
@@ -97,13 +97,20 @@ Only hardware that participates in the requested demo can gate generation. For
 example, a camera-perception run does not wait for a live lidar driver, even
 when the URDF contains a lidar frame. Prefer recorded ROS input for message-level
 fidelity. A managed RTSP stream is a live network input, not proof of the
-robot-mounted camera driver. Use a file publisher only when the acceptance
+robot-mounted camera driver. For direct USB, use only the selected `/dev/v4l/by-id/`
+device and measured capture format; never probe other video nodes or fall back
+to a network source. Use a file publisher only when the acceptance
 contract explicitly selects file input for this application.
 
 ## 2. Derive and confirm the application
 
-Call `derive_ros_application` with the acceptance contract's `input_mode` and
-an explicit `rosbag_loop` for rosbag mode, then `inspect_ros_application`.
+Call `derive_ros_application` with the acceptance contract's `input_mode`,
+the typed `input_source` for live mode, and an explicit `rosbag_loop` for
+rosbag mode, then `inspect_ros_application`. Pass the same typed source to
+`discover_ros_contract` and to any source-changing adjustment. For USB V4L2,
+include the exact device, measured width/height/FPS/pixel format, a frame in
+the selected URDF, raw/compressed topics, client bringup package and
+`fallback: none`.
 `managed_rtsp` maps to application input mode `live`; never disguise it as
 `file` merely because an older tool schema lacks live derivation. If the loaded
 tool does not advertise the selected mode, report that exact tooling gap and
@@ -122,13 +129,24 @@ topics and types, target, deliberate exclusions, and production gaps. Call
 
 ## 3. Generate a complete package
 
+When this generated application will use `open_ros_workspace` and
+`prepare_ros_build`, establish the registrar's layout **before** opening the
+workspace: the application has its own client directory beside the core
+directory containing `capabilities/`. Put the generated ROS package under the
+client's `src/`, and put its `deploy.yaml` (including `bringup`), build/run
+scripts, model references, and contracts in that same client directory. Call
+`open_ros_workspace` on their common parent only after those files exist.
+Do not put the generated package or `deploy.yaml` at the common parent root;
+other sibling directories cannot identify the client for the registrar. Check
+that exactly one sibling client has a valid `deploy.yaml` before registering.
+
 Use `write_file` with project-relative `name` and whole-file `content`. Create a
 self-contained package or workspace with at least:
 
 - `package.xml` and `CMakeLists.txt` or `setup.py`/`setup.cfg`;
 - launch files and deterministic parameters;
 - the expanded URDF and `robot_state_publisher` wiring;
-- rosbag, managed-RTSP, or file input adapters chosen by the contract;
+- rosbag, managed-RTSP, direct USB V4L2, or file input adapters chosen by the contract;
 - when the selected rosbag fixture is not already uploaded, a deterministic
   real-video-to-rosbag generator plus the generated bag itself; the missing
   fixture is a package-generation task, not a fifth required user upload or a
@@ -162,7 +180,10 @@ Bridge the exact camera source topic as well as inference output. If the bag
 publishes `/camera/image_raw/compressed`, the allowlist and live layout must
 include that exact topic; `/image_raw/compressed` is not an alias. For managed
 RTSP, use the active raw image topic and record the managed stream identity plus
-measured width, height, and frame rate. Show the current raw input beside
+measured width, height, and frame rate. For USB V4L2, implement and test the
+capture component in the client package; a graph component does not prove its
+executable exists. Preserve the exact device identity in launch parameters.
+Show the current raw input beside
 `/detections` and `/detections_overlay` so the demo proves input, structured
 results, and rendered output independently.
 
@@ -214,7 +235,9 @@ Do not report success until all four levels pass:
 
 For replay input, prove it loops or state its finite duration. For managed RTSP,
 prove the stream is owned by Edgematic Streams, is reachable from the board,
-and continues delivering frames. Sample either mode at startup, after 30 seconds,
+and continues delivering frames. For USB V4L2, prove direct ownership of the
+selected device and fresh compressed camera, detection, and boxed-overlay
+topics. Sample live input at startup, after 30 seconds,
 and after 60 seconds to catch launch processes that die with the SSH session.
 Measure replay header latency against the replay clock (for example, `ros2 topic
 delay --use-sim-time`) rather than wall time, and make redirected CLI metrics
