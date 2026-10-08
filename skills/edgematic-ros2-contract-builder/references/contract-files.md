@@ -121,3 +121,12 @@ Only `proven`, `vendor_supported`, and `observed` facts may justify a live drive
 An `assumed_for_demo` fact may justify a replay/fixture node but must appear in
 the README and handoff. An unresolved physical-motion fact blocks motion even
 when the rest of a no-motion demo can proceed.
+
+## Component selection evidence
+
+Alongside these contracts, retain `docs/component-selection.md` or the existing
+project evidence manifest using the
+[SiMa-first selection contract](../../edgematic-ros-capabilities/references/sima-first-selection.md).
+Reference its selected artifact hashes, runtime/input/output contracts and
+acceptance results from the build and acceptance files. Unknown origin or failed
+catalogue discovery remains explicit; it is not evidence of unavailability.

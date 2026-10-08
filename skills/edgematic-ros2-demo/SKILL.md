@@ -5,6 +5,11 @@ description: Create or run a deliberately simple ROS 2 hello-world, smoke-test, 
 
 # Edgematic ROS 2 Demo
 
+When the demo needs model or runtime selection, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Prefer a compatible SiMa packaged artifact and supported components, and retain
+measured acceptance and source evidence. Text-only demos need no model search.
+
 Use the narrowest known-good path that proves the claim. A demo should not spend
 hours discovering a universal architecture.
 

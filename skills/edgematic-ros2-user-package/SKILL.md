@@ -5,6 +5,12 @@ description: Build, deploy, run, and verify an existing user-supplied ROS 2 pack
 
 # Edgematic ROS 2 User Package
 
+Preserve the package's explicit model and runtime contract. When a component is
+missing or replacement is needed, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md)
+before introducing an external model or duplicate runtime; a deployment request
+alone is not permission to replace a working user-selected model.
+
 Preserve the user's package and make its actual build/run path work. Do not
 replace it with a reference demo or generalize from a different repository.
 

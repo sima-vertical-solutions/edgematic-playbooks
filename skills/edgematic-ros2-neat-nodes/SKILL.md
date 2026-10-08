@@ -5,6 +5,11 @@ description: Use when the user wants to build, run, or introspect the SiMa ROS2 
 
 # ROS2 Neat Nodes (yolov8_seg) on a Modalix DevKit
 
+When selecting models or replacing inference components, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Discover the target-compatible SiMa artifact and its parser/input contract
+before adding an external model or implementing a duplicate inference path.
+
 **For a full end-to-end run** — sources, input provisioning, build, deploy,
 launch, verify and view, with minimal questions — start from
 `edgematic-ros2-autonomous-run` and come back here for the board-side tools.

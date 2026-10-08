@@ -7,6 +7,11 @@ For robot TUI deployments, also read [robot TUI setup](../edgematic-robot-tui/SK
 
 # ROS Workspace Capabilities, Build & Deploy
 
+When choosing capabilities or model artifacts, first follow
+[SiMa-first component selection](references/sima-first-selection.md). The live
+workspace catalogue decides available package names; reuse compatible SiMa
+components and record evidence for any external or custom fallback.
+
 A **host-side ROS 2 workspace** is a directory on this machine holding two sibling
 repositories: a **core** repository, which carries a `capabilities/` directory — that
 is what identifies the workspace at all — and a **client** repository beside it. The

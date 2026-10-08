@@ -5,6 +5,12 @@ description: Use when the user wants to compile or quantize their OWN model (an 
 
 # Edgematic Model Compile (bring-your-own ONNX → SiMa MPK)
 
+When the user explicitly supplies a model to compile, honor that choice. When
+compilation is only a proposed way to solve a broader task, first follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md):
+look for a compatible SiMa precompiled artifact and test a fitting candidate
+before authoring a custom export/compile path. Record why BYOM is necessary.
+
 ## Overview
 
 Turn a user's own **ONNX** model into a **SiMa MPK** (`.tar.gz`) that runs on the

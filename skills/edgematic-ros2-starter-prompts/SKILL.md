@@ -5,6 +5,13 @@ description: Generate copy-ready starter prompts for Edgematic ROS 2 work when a
 
 # Edgematic ROS 2 starter prompts
 
+For component selection, execution skills apply
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+When model choice matters, the prompt may say “Prefer compatible SiMa models and
+capabilities; explain any custom additions.” Keep catalogue queries, versions,
+benchmark instructions and selection evidence mechanics out of the user prompt.
+Preserve an explicit USB camera or RTSP choice; do not force a default transport.
+
 Generate the smallest prompt that can route the request to the right execution
 skill. Keep platform mechanics in those skills instead of making the user name
 containers, launch files, transport commands, or deployment layouts.

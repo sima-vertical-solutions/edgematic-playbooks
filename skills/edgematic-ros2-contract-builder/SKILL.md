@@ -5,6 +5,12 @@ description: Generate, build, deploy, run, and verify a new ROS 2 package from a
 
 # Edgematic ROS 2 Contract Builder
 
+Before deriving the application graph, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Reuse compatible SiMa models, artifacts, Neat and ROS components; generate only
+the missing application logic or adapters. Include selection and fallback
+evidence in the project alongside its contracts.
+
 Turn an expanded robot contract into working source code and runtime evidence.
 This skill owns the gap between a confirmed ROS application graph and an
 existing package: **the agent authors the package with `write_file`**. Do not
