@@ -173,6 +173,22 @@ no agent-controlled board path.
   relaunching** rather than trying again and hoping, and treat the reboot as the
   shared-board action it is — ask the user, do not take it.
 
+### A PyNeat model load stuck in GStreamer discovery
+
+When a Python node prints the model archive's low-level `Model loaded` line but
+never reaches its own post-constructor log or publishes output, inspect its
+child processes before diagnosing an MLA failure. A `gst-plugin-scanner` child
+blocked in `isp_v4l2_m2m_fop_open` means GStreamer is enumerating the board's
+internal V4L devices. For a file or ROS-image input that does not need V4L
+plugins, give only that application a plugin directory excluding V4L and
+libcamera entries, set a separate `GST_REGISTRY`, and set
+`SIMA_GST_ALLOW_SYSTEM_PLUGINS=1` when intentionally setting
+`GST_PLUGIN_SYSTEM_PATH_1_0`; PyNeat rejects that override without the opt-in.
+Do not apply this filter to a pipeline that needs V4L capture. Stop only the
+owned launch before retrying; an uninterruptible scanner from another run is
+not a process to clear. Verify the node reaches model initialization and that
+fresh image and detection messages follow.
+
 ## 5. The source must match the geometry the pipeline was built for
 
 A pipeline is built for one input size. `yolov8_seg` is built for **1280x720**:
