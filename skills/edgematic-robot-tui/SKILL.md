@@ -1,15 +1,21 @@
 ---
 name: edgematic-robot-tui
-description: Prepare, build, stage, deploy, and open a robot operator TUI through Edgematic Studio using the user-supplied application repository. Use for robot TUI setup and coexistence with live perception; use ROS pipeline skills for inference itself.
+description: Prepare, build, stage, deploy, and open a guarded robot operator TUI through Edgematic Studio using a user-supplied repository or current generated project. Use for attended operator controls and coexistence with live perception; use ROS pipeline skills for inference itself.
 ---
 
 # Robot operator TUI through Edgematic
 
-Use the application repository supplied by the user, at a recorded revision.
+Use the application repository supplied by the user, or the selected current
+project's generated package, at a recorded revision.
 Derive hardware, topics, drivers, launch commands, and operator bindings from
-that repository and the selected device's observed state. No robot model or
+the selected source and device's observed state. No robot model or
 customer application is a default. If the source is missing, resolve it with
 the user before selecting a robot application.
+
+For a TUI that can request physical motion, read
+[attended robot motion](../edgematic-ros2-contract-builder/references/attended-motion.md).
+Derive controls and guards from the selected robot. Start disarmed, verify zero
+output and fresh base feedback before the user performs an attended motion test.
 
 ## Execute
 

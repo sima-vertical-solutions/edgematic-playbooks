@@ -94,13 +94,20 @@ runtime:
 Every required topic entry needs a name, exact ROS type, and either a minimum
 rate or an event/count condition. If `physical_motion_required` is false,
 `cmd_vel`, actuator command interfaces, teleoperation, and motion keys are out of
-scope and must not be generated.
+scope and must not be generated. For requested physical motion, set
+`physical_motion_required: true` and `tui.read_only: false`; add the observed
+command and feedback types, guarded stop conditions, disarmed startup, operator
+controls, and attended physical acceptance. Use
+[attended robot motion](attended-motion.md) to derive those fields. Do not fill
+unknown limits or interfaces from the example above or from a previous robot.
 
-Two supported no-motion input modes are:
+No-motion input modes include:
 
 - `rosbag`: recorded ROS messages, with explicit finite or looping behavior;
 - `live` with `transport: managed_rtsp`: an Edgematic-managed camera stream,
-  whose returned URL and measured geometry are runtime observations.
+  whose returned URL and measured geometry are runtime observations;
+- `live` with direct USB V4L2: the selected by-id device and measured capture
+  format, with no implicit RTSP or file fallback.
 
 Do not treat managed RTSP as `file`, and do not claim that an RTSP frame proves
 the physical camera driver. Acceptance must require the exact active raw input,

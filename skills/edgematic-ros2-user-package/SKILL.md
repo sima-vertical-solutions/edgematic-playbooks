@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-user-package
-description: Build, deploy, run, and verify an existing user-supplied ROS 2 package or workspace through Edgematic Studio on a paired Modalix DevKit. Use when the user points to their own repository, package.xml, launch file, dependencies, or custom topic contract. Do not use for a hello-world, smoke-test, or standard SiMa demo; use edgematic-ros2-demo instead.
+description: Build, extend, deploy, run, and verify an existing or current-project ROS 2 package through Edgematic Studio on a paired Modalix DevKit. Use for a short outcome prompt that points to a repository, active project, package, launch file, or custom topic contract, including an attended robot follow application. Use edgematic-ros2-demo for standard demos.
 ---
 
 # Edgematic ROS 2 User Package
@@ -56,6 +56,27 @@ workspace elsewhere.
    inspection is safe; rebooting, installing board packages, replacing platform
    libraries, or stopping an unrelated robot stack needs explicit authorization.
 
+## Extend an existing application from a short outcome prompt
+
+If the user asks the current project to add live perception, odometry, or robot
+following, inspect its source and active run first, then write the missing
+application code, contracts, launch wiring, and tests in that project. The
+current project's package is the source to extend, not a reason to route to a
+new package generator or start a second workspace. Keep working components and
+their model provenance; derive the delta from the prompt, supplied robot source,
+URDF, and observed device interfaces. Resolve required build and runtime
+dependencies in the SDK rather than asking the user for routine shell steps.
+For a runnable script created with `write_file`, set `executable: true`, verify
+the mode in the host and build container, and preserve it on later edits.
+
+For requested physical motion, read
+[attended robot motion](../edgematic-ros2-contract-builder/references/attended-motion.md)
+before implementing or launching the base path. The user's requested behavior
+defines scope; the exact command interface, guard thresholds, operator bindings,
+and feedback topics come from the selected application and live robot evidence.
+Leave the robot disarmed for unattended verification and hand the controls to
+the operator for the physical acceptance step.
+
 ## Build and deploy
 
 - Build on the host in Edgematic's ROS 2 SDK container. The board is a runtime
@@ -103,6 +124,12 @@ end time; an alive node after `pull: route closed` is not an active pipeline.
 The latest evidence supersedes earlier success. If a prior rate was non-zero but
 the current log shows a closed source route with no later decode/result lines,
 report the package as inactive until a fresh rate proves otherwise.
+
+For a robot follow request, also verify one camera, controller, base-command
+owner, and bridge; current feedback and zero requested/measured motion while
+disarmed; and the guarded stop paths in isolated tests. A healthy camera or
+advertised odometry topic does not prove physical following. Record observed
+motion only after an attended operator test with fresh feedback.
 
 ## Visualization
 

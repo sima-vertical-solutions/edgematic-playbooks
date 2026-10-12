@@ -1,8 +1,8 @@
 id: edgematic-robot-tui
 name: Edgematic Robot TUI Setup
-version: 0.3.0
+version: 0.4.0
 agents: [codex, claude]
-description: Prepare and deploy a robot operator TUI through Edgematic Studio using the selected application's runtime contract, derived from the user-supplied repository.
+description: Prepare and deploy a guarded operator TUI through Edgematic Studio using the selected application's runtime contract from a user repository or current generated project.
 compatibility:
   env_types: [host, sdk]
   min_cli_version: 2.1.0

@@ -103,9 +103,10 @@ Then honour the answer:
 
 Two failures that look like broken code and are not:
 
-- **The build script must be executable.** `write_file` cannot set the exec bit —
-  a permission is not file content — so the user sets `+x` from their own shell.
-  Without it the build dies instantly on a bad interpreter / permission denied.
+- **The build script must be executable.** When creating a runnable script with
+  `write_file`, set `executable: true`; verify its mode on the host and in the
+  build container, and preserve it on edits. Repair a stripped mode in the
+  agent workflow before building. Otherwise the build dies on permission denied.
 - **Name the script by its bare filename**, not a workspace-relative path. The
   container's working directory is already the project directory, so a path
   produces exit 127 and "No such file or directory".
@@ -136,8 +137,9 @@ application source directory above it.
 
 ## 4. Board pre-flight, before every run
 
-Have the user run these over the built-in SSH terminal; both are cheap and both
-have cost hours when skipped.
+Run these through the available managed board command path or built-in SSH
+terminal. Ask the user to run a read-only command only when this deployment has
+no agent-controlled board path.
 
 - **The MLA shared-memory signature must be the live one.** Read the first four
   bytes of the MLA shared-memory node with `od` (`xxd` is frequently absent from
@@ -149,13 +151,16 @@ have cost hours when skipped.
   directory holds the MLA just as firmly, and it is easy to miss because you are
   looking at the wrong tree. When matching a process name, bracket the first
   character of the pattern so the search cannot match the very command that runs
-  it and kill the user's own session.
+  it and kill the user's own session. Stop only a previously recorded instance
+  of this deployment; another workload holding the MLA is a resource conflict
+  to report, not a process to clear speculatively.
 - **No stale DDS state may survive the old run.** A killed pipeline leaves its
   shared-memory transport files under `/dev/shm` (`fastrtps_*`), writable only
   by the user that created them. Left behind by another user, they let a fresh
   publisher and subscriber discover each other and exchange **no data** — nodes
-  and topics list normally while every rate is zero. Remove them once prior
-  deployments are cleared, and confirm no container survives with **zero**
+  and topics list normally while every rate is zero. Remove only files
+  attributable to the stopped deployment, after checking no other owner uses
+  them, and confirm no container survives with **zero**
   loaded components (`ros2 component list`): that one answers graph queries in
   place of your launch, so "the node is listed" proves nothing.
 - **The MLA segment pool must not be exhausted.** The board's shared memory is a

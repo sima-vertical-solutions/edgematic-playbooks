@@ -31,8 +31,8 @@ source or required facts before the dependent action.
 
 - This is a prompt-only skill. Do not build, deploy, start streams, or change a
   device unless the user separately asks to execute the prompt.
-- Choose one route: a new contract-built package, an existing user package,
-  rosbag replay, or a clean recording-ready end-to-end demo.
+- Choose one route: a new contract-built package, an existing or active-project
+  package, rosbag replay, or a clean recording-ready end-to-end demo.
 - Ask for a missing project or device only when the execution skill cannot
   resolve it. Prefer placeholders in the generated prompt.
 
@@ -49,6 +49,14 @@ the implementation recipe. When relevant it names:
 - build, deploy, run, record, stop, and replay outcomes;
 - that a topic is visible only after it is advertised **and emits messages**;
 - retained logs, bag, manifest, hashes, screenshots, and explicit gaps.
+
+For a robot follow or other attended-motion request, prefer two sentences:
+identify the paired device, supplied vendor source or URDF, live input, desired
+behavior, and visible output; then request disarmed startup, guarded operator
+controls, live feedback and an attended physical test. Do not put ROS domains,
+motor topic names, key maps, SDK commands, or board addresses into the prompt
+unless the user explicitly supplies them. The execution skills derive those
+details and leave physical motion to the operator.
 
 Take exact visible topics from the selected application's declared contract and
 verify their current publishers. Do not copy a robot's topic names into the

@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-contract-builder
-description: Generate, build, deploy, run, and verify a new ROS 2 package from a user prompt and robot contracts. Derive hardware facts from the GitHub repository supplied in the prompt and an expanded URDF; materialize evidence, build target, and acceptance contracts before generation. Use when no implementation package exists and Edgematic AI must discover relevant sensors and drivers, author the package, expose live output in Flora, and provide a read-only operator TUI; route an existing package to edgematic-ros2-user-package.
+description: Generate, build, deploy, run, and verify a new ROS 2 robot application from a short outcome prompt, supplied source or URDF, and observed device. Materialize contracts, author the package, and prove live output; for requested physical motion, add guarded operator controls and attended acceptance. Route an existing or current-project package to edgematic-ros2-user-package.
 ---
 
 # Edgematic ROS 2 Contract Builder
@@ -19,17 +19,22 @@ write the implementation.
 
 Load `edgematic-ros2-portable-pipeline` for build, staged deployment, board
 preflight, detached launch, and runtime verification. Load
-`edgematic-ros2-board-setup` before running on a Modalix DevKit. If source code,
-`package.xml`, or a launch file already exists, route to
-`edgematic-ros2-user-package` instead.
+`edgematic-ros2-board-setup` before running on a Modalix DevKit. If application
+source code, `package.xml`, or a launch file already exists, route to
+`edgematic-ros2-user-package` instead. A short prompt is sufficient when it
+identifies the robot source or attaches its URDF, target device, input, desired
+behavior, and visible result; derive the contract files yourself.
 
 ## Resolve the input contract
 
-Start with the user's prompt and robot/vendor GitHub link. Inspect that source
-at an immutable revision. Use an uploaded expanded `robot.urdf`, or locate and
+Start with the user's prompt and supplied robot/vendor GitHub link, when present.
+Inspect that source at an immutable revision. Use an uploaded expanded
+`robot.urdf`, or locate and
 expand the URDF from the supplied repository with its declared dependencies.
-If neither source is available, ask for the missing source; never select a
-built-in robot profile, customer implementation, or remembered hardware default.
+If neither source is available, ask for the missing source. For requested
+physical motion, resolve an authoritative vendor or user source for the base
+driver before implementing it. Never select a built-in robot profile, customer
+implementation, or remembered hardware default.
 
 Read [contract file requirements](references/contract-files.md). Resolve one
 layout, either the project root or `input/`, and materialize these four artifacts:
@@ -48,7 +53,9 @@ layout, either the project root or `input/`, and materialize these four artifact
    prompt and supplied application: `rosbag`, `live` (including `managed_rtsp`),
    or explicitly requested file input. Do not silently replace a live camera
    request with replay. Physical motion requires the user's requested scope and
-   a validated motion contract; keep the generated monitoring TUI read-only.
+   a validated motion contract. A no-motion TUI is read-only. A motion TUI is
+   operator-controlled and starts disarmed; use
+   [attended robot motion](references/attended-motion.md).
 
 Reconcile existing user-supplied files without silently replacing conflicting
 facts. Device identity, calibration, controller limits and safety policy remain
@@ -59,8 +66,10 @@ the application. These are project artifacts, never additions to shared skills.
 ## 1. Establish evidence, without borrowing the answer
 
 After all four files are present, call `discover_ros_contract` with the prompt,
-expanded URDF, selected input mode, no-motion default, and the observed build
-target. Pass a target object only when its required fields are complete; an
+expanded URDF, selected input mode, and the observed build target. Pass the
+prompt's motion scope if the tool schema supports it; default to no motion only
+when the prompt does not request motion. Pass a target object only when its
+required fields are complete; an
 incomplete materialized target stays explicit rather than being replaced with
 stale values. The tool reports only what the model proves and which facts remain
 missing. Then resolve relevant gaps automatically in this order:
@@ -116,7 +125,8 @@ the selected URDF, raw/compressed topics, client bringup package and
 tool does not advertise the selected mode, report that exact tooling gap and
 stop before generation. Reconcile the derived result with the four materialized
 files and the evidence classifications. Use
-`adjust_ros_application` to remove unsupported motion or to correct topics,
+`adjust_ros_application` to remove unsupported motion from a no-motion request
+or to correct topics,
 QoS, bridge allowlists, rosbag looping, and confirmed sensors. A
 `sensor_confirmations` value of `false` explicitly excludes that sensor from
 this application without removing its URDF frames; use it for optional sensors
@@ -126,6 +136,11 @@ Present one compact confirmation summary: active sensors, input mode, components
 topics and types, target, deliberate exclusions, and production gaps. Call
 `confirm_ros_application`. Do not generate until the persisted lifecycle is
 `confirmed`; do not repeatedly ask after the same gate has been approved.
+If the graph tool cannot express a requested base-control path, confirm only
+what it actually models. Keep motion unresolved until the separate source,
+interface, and guard checks in the attended-motion reference pass. If the tool
+refuses even that narrower graph, report its exact tooling gap; do not bypass
+confirmation.
 
 ## 3. Generate a complete package
 
@@ -140,7 +155,9 @@ Do not put the generated package or `deploy.yaml` at the common parent root;
 other sibling directories cannot identify the client for the registrar. Check
 that exactly one sibling client has a valid `deploy.yaml` before registering.
 
-Use `write_file` with project-relative `name` and whole-file `content`. Create a
+Use `write_file` with project-relative `name` and whole-file `content`. For
+runnable build/run/verify shell scripts, set `executable: true` and verify the
+mode before invoking them; later edits must preserve it. Create a
 self-contained package or workspace with at least:
 
 - `package.xml` and `CMakeLists.txt` or `setup.py`/`setup.cfg`;
@@ -164,9 +181,9 @@ self-contained package or workspace with at least:
   an explicit runtime source for the bridge: either prove the target image
   guarantees it or fetch an official upstream revision and cross-build it into
   the deploy payload; a bridge found on a previously used board is not proof;
-- a read-only TUI executable showing node presence, topic type/rate, lifecycle,
-  and recent log state; the only interactive actions may be refresh, help, and
-  quit — never velocity or actuator commands;
+- a TUI executable showing node presence, topic type/rate, lifecycle, and
+  recent log state. For no-motion scope, actions are refresh, help, and quit.
+  For requested motion, use the attended-motion reference and start disarmed;
 - launch, contract, and package tests; build/stage/run scripts; and a README
   that separates demo guarantees from production gaps.
 
@@ -194,9 +211,10 @@ topic names/types agree with `input/acceptance.yaml`.
 ## 4. Test, build, and deploy
 
 Run source-level contract tests before the cross-build. The tests must catch at
-least malformed URDF, missing package dependencies, launch parse failures,
-unexpected motion publishers, absent required topics, and a TUI that imports or
-binds motion-control messages.
+least malformed URDF, missing package dependencies, launch parse failures, and
+absent required topics. In no-motion scope, catch any motion publisher or TUI
+motion binding. In motion scope, test the command owner, disarmed zero output,
+freshness guards, bounded output, and stop behavior without moving hardware.
 
 Build in the ROS 2 SDK container selected by `input/build_target.yaml`; never
 compile the target package on the board. Poll to a terminal exit marker and
@@ -231,7 +249,9 @@ Do not report success until all four levels pass:
    current messages, not a stale frame. For video replay, this includes the raw
    bag topic, structured detections, and overlay in separate panels.
 4. **Operable:** the generated TUI renders at normal and narrow terminal sizes,
-   updates node/topic/log state, exits cleanly, and exposes no motion command.
+   updates node/topic/log state, and exits cleanly. In motion scope, verify
+   guarded controls in isolated tests and an attended physical test; keep those
+   as separate evidence claims.
 
 For replay input, prove it loops or state its finite duration. For managed RTSP,
 prove the stream is owned by Edgematic Streams, is reachable from the board,
@@ -253,6 +273,7 @@ failure by weakening `input/acceptance.yaml`.
 Report the generated package path and source revision, evidence sources and
 assumptions, build and deployment identities, node/topic/type/rate table, Flora
 subscription proof, TUI checks, all changed files, and every remaining
-production gap. Explicitly say that a replay- or managed-RTSP-driven no-motion
-proof does not validate the physical robot driver, robot-mounted camera driver,
-or safety system.
+production gap. For a no-motion replay or managed-RTSP proof, state that it does
+not validate the physical robot driver, robot-mounted camera driver, or safety
+system. For requested motion, report source and guard evidence, disarmed live
+checks, and the operator's measured physical acceptance separately.

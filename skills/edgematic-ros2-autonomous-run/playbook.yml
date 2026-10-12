@@ -1,8 +1,8 @@
 id: edgematic-ros2-autonomous-run
 name: Edgematic ROS 2 Autonomous Run
-version: 0.4.0
+version: 0.5.0
 agents: [codex, claude]
-description: Get an otherwise-unclassified ROS 2 pipeline request running on a Modalix DevKit end to end from one sentence with minimal back-and-forth; route explicit hello-world or smoke-test work to edgematic-ros2-demo and explicit existing repositories or packages to edgematic-ros2-user-package.
+description: Route and run a short ROS 2 outcome request end to end; send standard demos to edgematic-ros2-demo, current or existing projects to edgematic-ros2-user-package, and new robot applications to edgematic-ros2-contract-builder.
 compatibility:
   env_types: [host, sdk]
   min_cli_version: 2.1.0
