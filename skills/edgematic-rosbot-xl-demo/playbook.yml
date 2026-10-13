@@ -1,0 +1,8 @@
+id: edgematic-rosbot-xl-demo
+name: EdgeMatic ROSBOT XL Demo
+version: 0.1.0
+agents: [codex, claude]
+description: Prepare, recover, and verify the TrailMate bench and attended ROSBOT XL person-follow demos on the paired Modalix, including direct Ethernet, legacy micro-ROS, live C270 perception, guarded motor bridge, and operator TUI.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0
