@@ -1,0 +1,8 @@
+id: edgematic-stiga-tui-demo
+name: Edgematic Robot TUI Setup
+version: 0.2.0
+agents: [codex, claude]
+description: Prepare and deploy a robot operator TUI through Edgematic Studio using the selected application's runtime contract, including ROSBOT XL and Stiga.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

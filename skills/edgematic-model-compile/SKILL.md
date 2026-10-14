@@ -40,8 +40,31 @@ contract, and error codes: `references/compile-api.md`.
 
 ## Workflow
 
-1. **Upload the ONNX.** `POST /user-models` with `name` + `file`; capture the
-   returned `id`.
+0. **Preflight the compiler before registering or compiling.** Three things have
+   to hold, and the compile 503s if any one of them does not: the compile wrapper
+   `./tools/model-compile/compile_user_model.sh` exists in the Studio install;
+   a ModelSDK venv was found; and that venv can import `afe`. A present venv is
+   therefore not proof — a broken one fails the same way a missing one does, so
+   do not report the compiler healthy because the folder is there.
+
+   **Do not carry a list of ModelSDK locations in your head, and do not check one
+   path and conclude it is missing.** The venv is searched for in several places
+   and two environment variables can move it, and the 503 names every one of them
+   when it fires. Read the paths out of that message; it is current by
+   construction, where any list repeated here would drift the first time the
+   search order changes.
+
+   If the wrapper is missing, tell the user in the FIRST reply, before any
+   compile call. Offer the fallback of uploading a pre-compiled `.tar.gz`, which
+   goes under `assets/models/` with `model.path` set in `common/config.yaml`.
+   Do not recreate the wrapper or run the compiler by hand: both write outside
+   the project.
+1. **Upload the ONNX.** Locate the file first: when the model lives in the
+   project's working directory, find it with `find_project_files` (`extension`
+   `onnx`, plus the name the user typed as `pattern`) rather than asking the
+   user to type a filesystem path — a path they dictate is a path that can be
+   wrong. Then `POST /user-models` with `name` + `file`; capture the returned
+   `id`.
 2. **Inspect the input shape.** If the ONNX has a symbolic (named) **non-batch**
    dim — e.g. a channels dim named `sequence` — you MUST override it at compile
    time; otherwise auto-detect pins every symbolic dim to 1 and produces a
@@ -63,6 +86,17 @@ contract, and error codes: `references/compile-api.md`.
 6. **Read the result.** On `compiled`, `compiled_artifact` gives
    `{filename, sha1, size_bytes, location}` (the MPK `.tar.gz`). On `failed`,
    report `compile_error` (and the compile log).
+6b. **Check the decoder before wiring the model.** Open the source ONNX in
+    Netron (`netron` pill) and read the output tensor shape(s). Compare them
+    with the project's `BoxDecodeType` (for example `YoloV26` in the shipped
+    detection example). YOLO families differ in output layout:
+    - End-to-end or top-k style outputs fit the YOLO26 decoder.
+    - Raw head outputs such as `[1, 4+nc, N]` (typical of YOLO11/v8) need a
+      different decoder.
+    If the layouts don't match, tell the user before wiring. Changing the
+    decoder means editing the entry file, which is a deliberate departure from
+    the "only change `common/config.yaml`" rule for examples, so ask first.
+    Never wire a model to a decoder you haven't checked.
 7. **Hand off to deploy.** To run the MPK on a board, switch to
    **edgematic-build-deploy-run**.
 
@@ -78,9 +112,21 @@ contract, and error codes: `references/compile-api.md`.
 - **Custom script replaces auto-detection.** With `/compile/custom`,
   `input_name`/`input_shape`/`generate.py` are ignored — your `.py` owns the
   whole compile. Filename must end in `.py`, ≤ 1 MB, UTF-8.
-- **`503 model_compile_unavailable`** = the SiMa ModelSDK (`afe`) is not
-  installed on the host. It ships with the **Model SDK Extension**; on newer SDK
-  images the venv lives at `/sdk-extensions/model-compiler`.
+- **Always offer Netron for an ONNX.** Whenever the user attaches or uploads an
+  ONNX, the same reply MUST include a `netron` quick-action pill for it, even if
+  the compile later fails or never starts. Take the reference from the
+  attachment message (`modelPath`, copied character for character) or from an
+  `open_netron_viewer` result (`userModelId` + `filename`). Never guess a path.
+  If the path is unconfirmed, say so and offer to look it up instead of emitting
+  a pill. Do not offer Netron for a compiled `.tar.gz` (Netron reads graphs, not
+  MPK packages).
+- **`503 model_compile_unavailable`** has three causes; the message says which.
+  The compile wrapper `compile_user_model.sh` is missing from the Studio install;
+  or no ModelSDK venv was found (it ships with the **Model SDK Extension**, and
+  the message lists every path searched — quote that list rather than naming one
+  path); or a venv was found and cannot import `afe`, which is a broken install
+  rather than an absent one. Installing the extension again only helps the
+  second. Relay the paths the message lists rather than any from memory.
 - **One compile at a time per model** — a second returns `409`.
 - **Parse responses with `strict=False`** — `compile_error` may contain newlines
   (Python's `json.load` rejects control chars by default).
@@ -97,7 +143,8 @@ transport error.
 | `409` compile in progress | A compile is already running | Wait and poll; one compile per model. |
 | `422` no `.onnx` / not compile-safe / invalid ONNX | Model can't be compiled | Re-upload a valid `.onnx`; ensure a compile-safe name. |
 | `422` `calibration='dataset'` but no images | Dataset step skipped | Upload a calibration `.tar.gz` first. |
-| `503 model_compile_unavailable` | ModelSDK `afe` missing | Install the Model SDK Extension in the SDK container, then retry. |
+| `503 model_compile_unavailable` (ModelSDK / `afe` missing) | ModelSDK `afe` missing | Install the Model SDK Extension in the SDK container, then retry. |
+| `503 model_compile_unavailable` with "compile wrapper … not found" | The Studio install lacks the wrapper script (the ModelSDK may be present) | Restore the wrapper in the Studio install, or upload a compiled `.tar.gz`. Don't retry the compile. |
 | `400` (custom) non-`.py` / empty / non-UTF-8 script | Bad custom script | Upload a valid UTF-8 `.py` compile script (filename ends `.py`). |
 
 ## Boundaries

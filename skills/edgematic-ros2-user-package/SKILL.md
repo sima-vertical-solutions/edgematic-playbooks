@@ -35,7 +35,7 @@ workspace elsewhere.
 3. Reuse the package's own model, media, configuration, and topic contract. Ask
    only for an irreducible input such as missing device pairing, credentials
    entered in Studio's secure form, or an unavailable proprietary artifact.
-4. Treat the board as shared unless the operator says otherwise. Read-only
+4. Treat the board as shared unless the user says otherwise. Read-only
    inspection is safe; rebooting, installing board packages, replacing platform
    libraries, or stopping an unrelated robot stack needs explicit authorization.
 

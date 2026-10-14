@@ -71,7 +71,35 @@ def frontmatter_of(path: Path) -> dict[str, str] | None:
     if match is None:
         fail(f"{path.relative_to(REPO)}: frontmatter has no closing '---'")
         return None
+    check_frontmatter_is_real_yaml(path, match.group(1))
     return parse_flat_yaml(match.group(1))
+
+
+def check_frontmatter_is_real_yaml(path: Path, block: str) -> None:
+    """Catch frontmatter this parser accepts and a real YAML parser rejects.
+
+    `parse_flat_yaml` partitions on the first colon and never validates, so an
+    unquoted value containing a colon-space reads as `key: value` here and as a
+    nested mapping to PyYAML — which is what sima-cli uses. The installer then
+    discards the skill with "mapping values are not allowed here", and the only
+    visible symptom is a skill that is silently absent from the agent's roster.
+
+    Checked textually rather than with a YAML library on purpose: this script is
+    dependency-free so it fails for reasons about skills and nothing else.
+    """
+    for lineno, line in enumerate(block.splitlines(), start=2):
+        if not line or line.startswith("#") or line[0].isspace() or ":" not in line:
+            continue
+        value = line.partition(":")[2].strip()
+        if value[:1] in ("'", '"'):
+            continue
+        if ": " in value:
+            fail(
+                f"{path.relative_to(REPO)}:{lineno}: the value contains a "
+                "colon-space, which a real YAML parser reads as a nested "
+                "mapping — sima-cli discards the skill. Reword it (an em dash "
+                "reads well) or quote the whole value."
+            )
 
 
 def check_repo_root() -> None:
@@ -267,6 +295,49 @@ def check_rosbot_xl_profile(skill: Path) -> None:
         fail(f"{rel}: profile is not discoverable from SKILL.md")
 
 
+def check_stiga_tui_workspace_contract() -> None:
+    """Keep the TUI flow off the projects root that Studio cannot adopt."""
+    flow = (
+        SKILLS
+        / "edgematic-stiga-tui-demo"
+        / "references"
+        / "automatic-flow.md"
+    )
+    if not flow.is_file():
+        fail(f"{flow.relative_to(REPO)}: missing Robot TUI automatic flow")
+        return
+
+    text = flow.read_text(encoding="utf-8")
+    skill = flow.parents[1] / "SKILL.md"
+    combined = text + "\n" + skill.read_text(encoding="utf-8")
+    required = (
+        '"parent": "/workspace/robot-tui-demo"',
+        "Never use `/workspace` itself",
+        "selected dedicated parent",
+        "<selected-workspace-parent>/stiga/src",
+    )
+    for phrase in required:
+        if phrase not in text:
+            fail(
+                f"{flow.relative_to(REPO)}: missing workspace-safety contract "
+                f"{phrase!r}"
+            )
+
+    forbidden = (
+        '"parent": "/workspace",',
+        "on the shared `/workspace` parent",
+        "`parent`: `/workspace/stiga/src`",
+        "`set_ros_pipelines`",
+        "`run_command`",
+    )
+    for phrase in forbidden:
+        if phrase in combined:
+            fail(
+                f"{flow.relative_to(REPO)}: unsafe or unavailable Robot TUI "
+                f"instruction remains: {phrase!r}"
+            )
+
+
 # Edgematic Studio can be told that the legacy ROS 2 client repository does not
 # exist for a deployment. It enforces that by hiding every installed skill whose
 # TEXT names the repository — a skill is prose the model reads, so no tool gate
@@ -323,6 +394,7 @@ def main() -> int:
     for skill in skills:
         check_skill(skill)
         check_legacy_repo_mentions(skill)
+    check_stiga_tui_workspace_contract()
 
     if errors:
         print(f"{len(errors)} problem(s) found:\n", file=sys.stderr)

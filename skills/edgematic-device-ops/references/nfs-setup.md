@@ -30,7 +30,7 @@ returns a 422:
   message verbatim** and tell the user to run it on the host (outside the
   container), then retry pairing.
 - **`nfs_workspace_mismatch`** — a workspace is mounted, but it is not the one
-  Studio writes to. This is an operator/config issue, not something re-pairing
+  Studio writes to. This is a user/config issue, not something re-pairing
   fixes; explain that the mounted workspace must be the SDK `/workspace` Studio
   uses.
 

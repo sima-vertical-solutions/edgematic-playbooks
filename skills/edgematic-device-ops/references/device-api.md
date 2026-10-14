@@ -70,3 +70,19 @@ ambiguous or unknown, call `list_devices` and confirm with the user.
 All errors follow `{ "error": { "code": "snake_case_code", "message": "…" } }`.
 Relay the `code`/`message` to the user; for `nfs_host_setup_required` surface the
 `message` verbatim (it embeds the ready-to-run host command).
+
+## Managed SSH recovery
+
+`connect_device` is an agent tool (invoke through `/agent/invoke`); it is not a
+new REST device endpoint. Parameters: `device` (required paired name/id/IP or
+new host), `name` (optional display name for a new host). Returns `device` and
+`ssh`, whose `argv` is the exact argument array for SSH in the backend runtime.
+Append a remote command with proper argument quoting; do not concatenate
+untrusted values into an unquoted shell command. The private-key **path** is
+metadata, never key contents. `list_devices` also supplies this `ssh` metadata.
+
+The tool probes managed-key login before password recovery. Default order is
+`root/root`, then `sima/edgeai`; passwords stay in child environments and are
+not returned. Successful recovery verifies the installed key and updates the
+stored login without changing the device UUID or deployment history. Changed
+host keys, network failures, and foreign ownership are reported separately.

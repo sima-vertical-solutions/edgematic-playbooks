@@ -21,10 +21,10 @@ DevKit's **`foxglove_bridge`** over a browser WebSocket
 (`ws://<devkit-ip>:8765`) — there is no server-side proxy or agent tool in the
 loop once the connection is open; Flora talks straight to the board.
 
-Your job here is **mostly** guidance. You cannot execute arbitrary board-side
-commands (there is no SSH-exec agent tool — the built-in terminal is a direct
-browser↔sidecar PTY bridge the *user* types into). What you do is talk the user
-through getting the board ready, then surface Flora one of two ways:
+Use the available Studio tools and the provider shell to inspect and repair the
+board within the user’s requested scope. For SSH, use the managed identity and
+known-hosts path returned by `list_devices`; `connect_device` repairs pairing.
+See `edgematic-device-ops` for that contract. Surface live output in either form:
 
 - **Offer a `flora` quick-action pill** when you are merely *offering* the option
   (one click opens the embedded Flora pane).
@@ -32,7 +32,8 @@ through getting the board ready, then surface Flora one of two ways:
   open the embedded pane **automatically, with no click** — do this when the user
   asks to *see / open / show* the live output, especially "open it automatically"
   / "don't make me click". Empty body targets the active DevKit; `{ "url":
-  "ws://<host>:8765" }` overrides. A pipeline must be running (a Studio run, OR
+  "ws://<host>:8765", "panels": ["overlay", "raw", "detclean"] }` overrides the
+  target and panel selection in Studio versions supporting directive panels. A pipeline must be running (a Studio run, OR
   the user's word that a board-side pipeline is up) and a DevKit paired — trust
   the user; do not require a tool call to confirm the run. Never answer such a
   request with prose alone.
@@ -74,8 +75,7 @@ fresh connection shows something useful with zero manual panel setup.
 
 ## Board-side prerequisites
 
-Walk the user through these over the **built-in SSH terminal** (a terminal
-panel connected to the paired DevKit) — you cannot run them yourself:
+Verify these using the available tools or managed SSH:
 
 1. **ROS2 workspace built.** `./build.sh yolov8_seg` (one-time, or after the
    workspace is updated).
@@ -153,10 +153,8 @@ Requires a paired DevKit. It does **not** require a prior successful build —
 it builds as part of the chain — so it is the right pill for a project that
 has never been built.
 
-Note this covers the Edgematic-orchestrated half plus `foxglove_bridge`. The
-board-side ROS2 workspace (`./build.sh` / `./run.sh yolov8_seg`) is still
-driven by hand over the terminal — walk the user through the prerequisites
-above as usual.
+For ROS packages, use the applicable ROS build/deploy skill and verify the
+actual launch before presenting its output.
 
 ### `flora` — the pipeline IS already running
 
@@ -175,7 +173,7 @@ want instead of opening the surface and hunting for panels:
   was found or debugging accuracy, not just watching.
 
 `panels` accepts `overlay`, `raw`, `detclean`, `detlist`, `detections`,
-`state`. Prefer `detclean` for a detections table — `detections` is the raw
+`state`, `odometry`, and `frames`. Prefer `detclean` for a detections table — `detections` is the raw
 message dump (segmentation mask bytes included) and is unreadable in chat.
 Omitting `panels` keeps whatever the surface is already showing.
 
@@ -183,6 +181,50 @@ Emit these once the board-side prerequisites above are satisfied (pipeline
 running, RTSP input live) — if either is still missing, walk the user through
 it first. You do **not** need the bridge to be up: the pill starts it. Don't
 offer them for a project that has no camera/detection pipeline at all.
+
+## Detailed-output acceptance and diagnosis
+
+A board process launched through managed SSH can be viewed directly. The
+`edgematic-flora` directive and `flora` actions do **not** require a Studio
+`active_run_id`. A registered publish card is a separate entry point; do not
+explain a missing chat action by inventing a run-record prerequisite.
+
+Use the explicit verified bridge URL in the directive, especially when the
+selected device differs from the target. The directive supports the same
+`panels` vocabulary as the quick action. Completed historical directives keep
+a **View detailed output** action; only the latest reply auto-opens. Quick
+actions in a recovered conversation retain its latest explicit directive target.
+On older Studio builds without directive-panel support, use a `flora` quick
+action for the panel selection.
+
+Verify the complete browser path: restored chat → output action → mounted
+detailed pane → actual advertised topics and messages → pop-out. A unit test
+of the pane alone cannot prove the Studio shell mounts it. If clicking changes
+state but no pane appears, inspect the shell consumer and the chat’s embedded
+Flora wiring before restarting a healthy pipeline.
+
+The detailed topic browser must follow the current bridge graph, including
+custom, slow, static and subsequently advertised topics. A short activity probe
+only helps choose initial panels; it is not the authority for hiding the topic
+browser or filtering its graph. An SSH readiness poll must not tear down a
+working browser WebSocket. Pop-out must stop the embedded subscriber only after
+the new window opens successfully; a blocked window leaves the current view usable.
+
+For remote camera output, keep full-resolution `sensor_msgs/Image` for inference
+and publish paced JPEG `sensor_msgs/CompressedImage` topics for browser display.
+Include both compressed topics in the bridge whitelist. The existing
+`edgematic-ros2-demo/scripts/jpeg_republisher.py` supports multiple `--topic`
+arguments, `--quality 70`, and `--max-fps 10`; copy it into the generated package,
+install it and launch it with the app. Bind panels to the **verified live** topics,
+not a hardcoded default. Merely installing image_transport does not create a
+compressed publisher for a plain rclpy Image publisher.
+
+Validate raw camera, annotated output and detection messages for at least
+0/30/60 seconds in the detailed view and the pop-out. Record the topic names,
+message/frame counts, reconnects and visible panel errors. Do not claim that
+an advertised topic proves frames render, or that a queued-byte count alone
+proves network saturation. Preserve URDF TF; do not imply stationary joint
+states or transforms are measured odometry.
 
 ## Troubleshooting
 
@@ -199,11 +241,6 @@ offer them for a project that has no camera/detection pipeline at all.
 
 ## Boundaries
 
-- This skill is guidance-only for the **board side**: you talk the user
-  through board-side commands over the terminal panel and offer a pill — you
-  never execute those commands yourself and never open the Flora tab
-  yourself. (The `publish` pill is the one exception where a click does real
-  work, and even then the frontend performs it, not you.)
 - Starting/stopping the RTSP input stream is `edgematic-media-streams`'s job,
   not this skill's — reach for it before or alongside these steps when the
   input isn't live yet.

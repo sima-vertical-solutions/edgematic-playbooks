@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Netron View"
+  short_description: "Open a model's graph in Edgematic Studio's bundled Netron viewer"
+  default_prompt: "Use $edgematic-netron-view when the user asks to see, show, open, view or inspect a model's graph, layers or architecture. Open a model attached in chat from the exact absolute path its attachment message states; otherwise find the project's .onnx file first and open the one that was found, asking the user to choose when more than one matches."
