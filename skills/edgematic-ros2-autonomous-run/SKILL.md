@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-autonomous-run
-description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end with minimal back-and-forth. Resolve the device, choose the supported ROS path, derive input and topic contracts from the application, provision input, cross-build, deploy, launch, verify, and show output. Use a one-sentence pipeline-and-device request. Route standard HELLO, smoke-test, demo-ladder, and packaged VIEW work to edgematic-ros2-demo; route an existing repository, package.xml, or launch file to edgematic-ros2-user-package.
+description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end with minimal back-and-forth. Resolve the device, choose the supported ROS path, derive input and topic contracts from the application, provision input, cross-build, deploy, launch, verify, and show output. Use a one-sentence pipeline-and-device request. Route prompt-plus-contract package generation to edgematic-ros2-contract-builder, standard demos to edgematic-ros2-demo, and an existing repository or package to edgematic-ros2-user-package.
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
@@ -11,7 +11,10 @@ and from reporting success you have not verified.
 
 When the request is already classifiable, route before using this general
 orchestrator: `edgematic-ros2-demo` owns standard and minimal demos;
-`edgematic-ros2-user-package` owns existing user-supplied packages.
+`edgematic-ros2-user-package` owns existing user-supplied packages; and
+`edgematic-ros2-contract-builder` owns requests where the AI must author a new
+package from a prompt, expanded URDF, robot contract, build target, and
+acceptance contract.
 
 **Finish the job.** If you cannot, say exactly what is blocked, what you tried
 and what you need — never hand back a half-run pipeline as if it were done.

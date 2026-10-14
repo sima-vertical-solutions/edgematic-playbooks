@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic ROS 2 Starter Prompts"
+  short_description: "Generate copy-ready ROS 2 workflow prompts"
+  default_prompt: "Use $edgematic-ros2-starter-prompts to generate the shortest copy-ready ROS 2 prompt; keep build, RTSP, NVMe recording, replay, active-topic checks, and evidence mechanics in the execution skill."
