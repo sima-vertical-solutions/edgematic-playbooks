@@ -44,13 +44,30 @@ repository names, SDK setup, or package installation into user questions. Ask
 only for an irreducible credential refusal or hardware fact. Record downloaded
 revisions and installed dependencies in the project evidence.
 
-If the user requests a C++ attempt with a PyNeat fallback, complete the first
-C++ build, deploy and first-frame run when feasible. An individual slow compile
-is not by itself a fallback trigger. Use a compatible PyNeat artifact when
-repeated compile/build/deploy cycles materially delay the demo, or when an ABI
-fault makes that path impractical. Prove fresh inference before treating the
-fallback as working. Record the cycles, elapsed time and failure evidence; do
-not make the user debug the MLA.
+**Scan dependencies before the first build; never discover them by compiling.**
+Before invoking any build, resolve the whole dependency closure in one pass:
+every `package.xml` key (`rosdep keys --from-paths src --ignore-src` and
+`rosdep check` inside the selected ROS SDK container), every `find_package`,
+`pkg_check_modules` and `ament_target_dependencies` name in each `CMakeLists.txt`,
+every Python import in `ament_python` packages, and every runtime library or
+module the board must provide (check the board's `/usr/local/ros2`, the staged
+overlay and the board Python). Fetch or install everything missing together,
+record what was added, and only then build. If a build still fails on a missing
+header, package or module, treat it as a gap in the scan: re-scan, fix every gap
+of that class at once, and rebuild once. Do not iterate one missing dependency
+per build. Build only the packages up to the bringup, and never rebuild without
+a source, dependency or setting change.
+
+**Neat nodes: C++ first, PyNeat fallback by default.** Implement MLA inference
+nodes in C++ against Neat core first and complete the first C++ build, deploy
+and first-frame run. A single slow compile is not a trigger. Switch that node to
+a compatible PyNeat implementation when three build/deploy cycles for the same
+C++ node fail, when C++ build time for it exceeds about 30 minutes in total
+without a first frame, or when an ABI fault makes the path impractical. Keep the
+node's topics and parameters identical so the rest of the application does not
+change. Prove fresh inference before treating the fallback as working. Record
+the cycles, elapsed time and failure evidence; do not make the user debug the
+MLA.
 
 For a requested fresh-board proof, inspect the target first, stop only owned
 application processes, and remove only identified prior deployments of that
