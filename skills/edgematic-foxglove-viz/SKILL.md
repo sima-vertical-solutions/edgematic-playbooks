@@ -88,6 +88,10 @@ Starting/stopping the RTSP input stream is **not** this skill — hand that off 
      detections plus a colourised depth view.
   3. Give that link to the user (and a quick-action pill), and check each panel
      shows data rather than "topic does not exist".
+  4. If the user sees no panels or the old ones, Flora is using a layout already
+     saved in their browser; it ignores `panels` when one exists. Tell them to
+     open the link in a private window or create a new layout in Flora's
+     Layouts menu.
 - **Publish views Flora can carry.** Raw `Image` topics (especially 16-bit
   depth) are too heavy for the bridge and drop out. Publish compressed views:
   colour as JPEG, depth colourised to an 8-bit colour map, at a capped
