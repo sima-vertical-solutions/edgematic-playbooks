@@ -100,6 +100,12 @@ Starting/stopping the RTSP input stream is **not** this skill — hand that off 
   is not working.
 - **Show every sensor the user asked for.** If the request mentions a depth
   camera, a colourised depth panel is part of the dashboard, not optional.
+- **Robot demos show odometry.** When the application drives a base, add the
+  `odometry` panel (a Plot of `twist.twist.linear.x` and `twist.twist.angular.z`)
+  bound to the app's own `nav_msgs/Odometry` topic through `paneltopics`, e.g.
+  `panels=overlay,raw,odometry` with `"odometry":"<odom_topic>"`. Verify the
+  topic publishes at a steady rate first; it shows zero while disarmed and the
+  measured speed during attended motion.
 
 ## The yolov8_seg ROS2 pipeline contract
 
