@@ -103,10 +103,12 @@ Then honour the answer:
 
 Two failures that look like broken code and are not:
 
-- **The build script must be executable.** When creating a runnable script with
-  `write_file`, set `executable: true`; verify its mode on the host and in the
-  build container, and preserve it on edits. Repair a stripped mode in the
-  agent workflow before building. Otherwise the build dies on permission denied.
+- **The build script must be executable.** Pass `executable: true` to
+  `write_file` only when its schema lists that parameter. Studio builds without
+  it rewrite the file and drop the execute bit on every `write_file`, so after
+  each write of a runnable script restore `+x` (one `chmod +x <script>` in the
+  shared workspace) and check the mode before calling `prepare_ros_build`.
+  Exit 126 from the build is this, not broken code.
 - **Name the script by its bare filename**, not a workspace-relative path. The
   container's working directory is already the project directory, so a path
   produces exit 127 and "No such file or directory".

@@ -322,8 +322,9 @@ repository — and there is **no default**. Work out what this project actually 
    name, but it is only a convention).
 2. Failing that, read its `README` for the documented build command.
 3. If there is no script at all, **write one** into the client repository with `write_file`
-   and pass its name. Set `executable: true` for a runnable shell script and
-   verify its mode before building. A three-line script that sources the ROS
+   and pass its name. Make it executable before building: pass
+   `executable: true` when `write_file` offers it, otherwise `chmod +x` it after
+   every write, because a rewrite drops the execute bit. A three-line script that sources the ROS
    environment and runs `colcon build` is a perfectly good answer.
 
 Pass the path as it sits relative to the client repository — `build.sh`,
