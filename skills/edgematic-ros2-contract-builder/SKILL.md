@@ -40,6 +40,12 @@ move to implementation/validation or report the exact blocker.
 
 ## Ask once, then proceed
 
+- **The bench includes the robot's read-only feedback.** On the bench, bring up
+  the base's transport (for example its micro-ROS/XRCE agent or driver) and
+  publish wheel odometry, battery and other feedback as `nav_msgs/Odometry` and
+  status topics, with no command publisher. Show wheel odometry in Flora next to
+  any visual odometry. Only command paths to the actuators wait for the robot
+  stage; reading feedback cannot move the robot.
 - **Bench, show, then robot.** When a request covers both a stationary bench
   run and attended motion, finish the bench stage first with no motion
   publisher, then show the user the live output (open the Flora view and
