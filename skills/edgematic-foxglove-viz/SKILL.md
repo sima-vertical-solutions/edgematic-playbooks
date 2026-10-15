@@ -72,10 +72,30 @@ Starting/stopping the RTSP input stream is **not** this skill — hand that off 
 - **If the port never opens,** read the start response and the board launch
   log (`/tmp/edgematic-foxglove-bridge.log`) before concluding anything; do not
   report Flora as "not working" without both.
-- **Map panels to the app's actual topics.** The bundled default layout names
-  example topics. Choose `panels` (or the directive's explicit topics) from the
-  application's verified live topic list, and check each opened panel shows
-  data rather than "topic does not exist".
+- **Map panels to the app's actual topics.** Studio's default panels and its
+  automatic topic probe only know fixed example names (`/detections_overlay/compressed`,
+  `/camera/image_raw/compressed`, `/image_raw/compressed`), and the
+  `edgematic-flora` directive carries only a `url`. So detect the topics
+  yourself and hand the user a bound link:
+  1. List the live image topics (`ros2 topic list -t`, keep
+     `sensor_msgs/msg/CompressedImage`) and measure each with `ros2 topic hz`
+     over several seconds. Keep only topics with a steady rate.
+  2. Build the Flora URL with the `panels` and `paneltopics` query parameters,
+     for example
+     `/flora/view?ds=foxglove-websocket&ds.url=ws://<board-ip>:8765&panels=overlay,raw&paneltopics={"overlay":"<annotated_topic>","raw":"<second_image_topic>"}`
+     (URL-encode the JSON). `overlay` and `raw` are both Image panels, so any
+     two compressed image streams can be shown, such as colour with
+     detections plus a colourised depth view.
+  3. Give that link to the user (and a quick-action pill), and check each panel
+     shows data rather than "topic does not exist".
+- **Publish views Flora can carry.** Raw `Image` topics (especially 16-bit
+  depth) are too heavy for the bridge and drop out. Publish compressed views:
+  colour as JPEG, depth colourised to an 8-bit colour map, at a capped
+  resolution and rate (for example 640×480 at 5–10 Hz). Re-measure each view's
+  rate over at least 30 s; a view that publishes in one sample and not the next
+  is not working.
+- **Show every sensor the user asked for.** If the request mentions a depth
+  camera, a colourised depth panel is part of the dashboard, not optional.
 
 ## The yolov8_seg ROS2 pipeline contract
 
