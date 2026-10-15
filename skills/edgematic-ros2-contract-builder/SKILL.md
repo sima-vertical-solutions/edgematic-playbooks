@@ -22,19 +22,56 @@ preflight, detached launch, and runtime verification. Load
 `edgematic-ros2-board-setup` before running on a Modalix DevKit. If application
 source code, `package.xml`, or a launch file already exists, route to
 `edgematic-ros2-user-package` instead. A short prompt is sufficient when it
-identifies the robot source or attaches its URDF, target device, input, desired
-behavior, and visible result; derive the contract files yourself.
+identifies the paired robot and connected hardware, input, desired behavior,
+and visible result; a source or URDF helps but is not required when official
+source discovery is possible. Derive the contract files yourself.
+
+If a Studio project is already registered, inspect its path and source inventory
+once before creating contracts. An unchanged supplied URDF is an input to
+resolve once: record its path/hash and derived facts, then work through the
+remaining acceptance items. Do not reopen the same workspace or re-run
+`discover_ros_contract` on the same prompt, URDF and build target without a
+changed input or a specific unresolved fact. After two identical tool results,
+move to implementation/validation or report the exact blocker.
+
+For a new application, resolve required SiMa sources, model artifacts, ROS
+packages and build dependencies inside Studio. Reuse stored credentials and
+the selected workspace; fetch only what the observed contract needs. Check the
+ROS SDK container and build channel before building. If either is missing or a
+dependency is absent, use `edgematic-ros2-host-container` to provision or repair
+it when authorized host access is available, then retry. Do not turn routine
+repository names, SDK setup, or package installation into user questions. Ask
+only for an irreducible credential refusal or hardware fact. Record downloaded
+revisions and installed dependencies in the project evidence.
+
+If the user requests a C++ attempt with a PyNeat fallback, complete the first
+C++ build, deploy and first-frame run when feasible. An individual slow compile
+is not by itself a fallback trigger. Use a compatible PyNeat artifact when
+repeated compile/build/deploy cycles materially delay the demo, or when an ABI
+fault makes that path impractical. Prove fresh inference before treating the
+fallback as working. Record the cycles, elapsed time and failure evidence; do
+not make the user debug the MLA.
+
+For a requested fresh-board proof, inspect the target first, stop only owned
+application processes, and remove only identified prior deployments of that
+application before installing the new payload. Keep platform services and
+unrelated workloads intact. Build and stage all required application artifacts
+from the host workspace; a library or model left by an old demo on the board
+does not satisfy dependency closure.
 
 ## Resolve the input contract
 
-Start with the user's prompt and supplied robot/vendor GitHub link, when present.
-Inspect that source at an immutable revision. Use an uploaded expanded
-`robot.urdf`, or locate and
-expand the URDF from the supplied repository with its declared dependencies.
-If neither source is available, ask for the missing source. For requested
+Start with the user's prompt, observed hardware identity and supplied
+robot/vendor GitHub link, when present. Inspect the selected official source at
+an immutable revision. Use an uploaded expanded `robot.urdf`, or discover and
+expand the URDF from the manufacturer's source with its declared dependencies.
+If no source was supplied, discover one from the verified device identity;
+ask only if the model or authoritative source remains ambiguous. For requested
 physical motion, resolve an authoritative vendor or user source for the base
 driver before implementing it. Never select a built-in robot profile, customer
-implementation, or remembered hardware default.
+implementation, or remembered hardware default. Resolve SiMa platform
+repositories and credentials inside Studio rather than asking the user to
+include them in the outcome prompt.
 
 Read [contract file requirements](references/contract-files.md). Resolve one
 layout, either the project root or `input/`, and materialize these four artifacts:
@@ -74,6 +111,20 @@ incomplete materialized target stays explicit rather than being replaced with
 stale values. The tool reports only what the model proves and which facts remain
 missing. Then resolve relevant gaps automatically in this order:
 
+The tool's missing-facts list is a work queue, not a question to paste to the
+user. Inspect the project, vendor source and device for each item first. For a
+requested motion demo, continue building and verifying the disarmed perception
+stage while base-control facts are unresolved. Ask for a specific physical
+safety decision only when that decision gates attended actuation.
+
+Treat generated contracts and application graphs as editable evidence, not an
+infallible template. When a tool rejects a source, topic, format or package,
+inspect its schema and the observed hardware, correct the contract and retry.
+When supplied facts conflict with stronger live or vendor evidence, record the
+correction and continue with the corrected fact. Do not ask the user to diagnose
+Studio parameter errors or provide routine command output. Never invent safety
+limits or call a provisional frame transform calibrated.
+
 1. the materialized contract files;
 2. the selected target's installed SDK and `sima-core` interfaces;
 3. the paired board, using read-only inspection for detected devices, OS,
@@ -101,6 +152,15 @@ base-driver details are production blockers, but they do **not** block package
 generation for a no-motion camera demo. Keep them in
 `docs/production-gaps.md`, do not instantiate a motion command publisher, and
 make the TUI incapable of driving the robot.
+
+For a request that includes eventual physical motion, use staged acceptance
+when the motion contract is not yet proven: keep the requested motion and its
+open decisions in `input/acceptance-motion.yaml`, and make the first runnable
+`input/acceptance.yaml` explicitly disarmed and read-only. Complete and show
+that first stage while discovering the base interface. Later extend the package
+and acceptance contract for guarded attended motion after its facts are known.
+State clearly which stage is verified; never present the perception stage as
+proof of physical following.
 
 Only hardware that participates in the requested demo can gate generation. For
 example, a camera-perception run does not wait for a live lidar driver, even
@@ -229,8 +289,8 @@ and build-only system packages so CI and a clean board follow the same path.
 
 Stage only the declared payload. Apply the portable-pipeline storage rule before
 deployment: select a writable NVMe-backed application directory from live
-`lsblk`/`findmnt` evidence, and use `/data/simaai/applications/<application>`
-only when the board has no writable NVMe filesystem. Persist the selected path
+`lsblk`/`findmnt` evidence. NVMe is mandatory; with no writable NVMe filesystem,
+stop and report the blocker instead of deploying to the root filesystem. Persist the selected path
 in `deploy.yaml` and record its backing device with the source revision and build
 manifest. Update the active project's client `deploy.yaml` before invoking
 deployment; a `deploy.yaml` nested only inside a custom `payload` directory does

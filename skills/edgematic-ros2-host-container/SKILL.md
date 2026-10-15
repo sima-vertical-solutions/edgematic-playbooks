@@ -57,13 +57,20 @@ step that was supposed to produce them worked.
    `run_on: "container"` and `run_on: "host"`. Provisioning does this at the end
    of step 3; see "The build channel" below for how to check it.
 
-## Manual recovery is the user's to run, not yours
+## Manual recovery depends on host access
 
-Studio has no shell on the host, no Docker socket, and no channel into a
+Studio chat has no shell on the host, no Docker socket, and no channel into a
 container it is not inside; `sima-cli`'s SDK commands are host-only by design.
-So there is no tool for this, and looking for one wastes a round. Present the
-command as a copyable block, say plainly that they run it on the host, and wait
-for them to report back before moving on.
+When operating only through Studio chat, first use the installer-owned setup or
+available Studio build channel; the chat tools do not themselves create a host
+container. If those paths are unavailable, present the relevant command as a
+copyable block and wait for the user to run it on the host. When the agent has
+an authorized host shell, perform and verify the recovery directly, including
+re-running the idempotent provisioning script after container recreation and
+restoring the build channel after restart. Keep SDK,
+binfmt, workspace and SiMa repository details out of the end-user prompt; ask
+the user only for hardware access or credentials that cannot be obtained through
+the existing authenticated setup.
 
 ## Manual recovery step 1 — install the ROS 2 SDK container
 
@@ -86,20 +93,15 @@ sima-cli sdk ls        # what is installed, and whether it is running
 sima-cli sdk ros2      # open a shell in the ROS 2 container
 ```
 
-**The published package is arm64-only.** On an ARM64 host the Edgematic
-installer runs it natively. On an AMD64/x86_64 host, the current Edgematic
-installer registers ARM64 binfmt and creates the same container under emulation;
-use that supported `--ros2`/Ready-checkbox path first. Do not use
-`sima-cli ... --force`.
-
-Only when repairing an install made before that support landed, register binfmt
-with the same pinned helper the installer uses, then run the published ARM64
-container explicitly and mount Studio's selected workspace at `/workspace`:
+**The published package is arm64-only.** On an arm64 host it installs natively.
+On x86_64 the `sima-cli` compatibility check correctly refuses the native
+installer. For the internally verified Edgematic demo path, do not use
+`sima-cli ... --force`. Register arm64 binfmt, then run the published arm64
+container explicitly with Docker and mount Studio's selected workspace at the
+same `/workspace` path:
 
 ```bash
-docker run --rm --privileged \
-  tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0 \
-  --install arm64
+docker run --rm --privileged tonistiigi/binfmt --install arm64
 test -e /proc/sys/fs/binfmt_misc/qemu-aarch64
 docker run -dit --platform linux/arm64 \
   --name ros2-sdk-edgematic-ws \
@@ -108,7 +110,7 @@ docker run -dit --platform linux/arm64 \
   ghcr.io/sima-vertical-solutions/ros2-sdk:latest bash
 ```
 
-This fallback is an AMD64 host running an ARM64 SDK container under qemu/binfmt, and it
+This is an AMD64 host running an ARM64 SDK container under qemu/binfmt, and it
 produces ARM64 artifacts for Modalix. It is slower than a native ARM64 build;
 it is not ARM64-to-AMD64 compilation. Use it only after Studio has created the
 `simasdkbridge` network and the user has selected that exact workspace. Verify
@@ -219,6 +221,16 @@ yesterday is this, not a workspace problem. Check the container's identity and
 provisioning before touching the workspace.
 
 ## The build channel
+
+On an x86_64 Linux host after reboot, check ARM64 binfmt before diagnosing a
+ROS SDK container that exits with an exec-format error. If registration was
+lost, restore the host's ARM64/QEMU binfmt support, then restart the existing
+SDK container and its build channel. A restarted Neat/Studio container may also
+need its server process restarted. If a previously paired device becomes
+"unreachable" only through Studio while direct SSH succeeds, check that Studio
+was started with `EDGEMATIC_SSH_DIR` pointing to its existing managed SSH key
+directory; otherwise it silently uses a different key. Verify with
+`get_device_status` before changing device pairing.
 
 The tail of step 3 installs a small HTTP endpoint inside the container and
 publishes its address to `<shared mount>/.edgematic/ros-build-channel.json`.

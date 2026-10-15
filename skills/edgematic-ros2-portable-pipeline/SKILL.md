@@ -125,10 +125,14 @@ and mounted filesystems (`lsblk` plus `findmnt`); if a writable filesystem is
 backed by a device whose transport/source is NVMe, set `remote_dir` to
 `<nvme-mount>/simaai/applications/<application>`. Verify the chosen path with
 `findmnt -T` and record its source, filesystem, free space, and resolved path.
-Do not treat a directory named `/media` as NVMe evidence by itself. Only when no
-writable NVMe-backed filesystem exists may the agent use
-`/data/simaai/applications/<application>` as the fallback, and it must report
-that fallback. Never deploy to both locations in one attempt.
+Do not treat a directory named `/media` as NVMe evidence by itself. Deploy only
+to NVMe. Do not fall back to the root filesystem (`/data/...` that resolves to
+the eMMC/SD root): if no writable NVMe-backed filesystem exists, stop before
+deployment and report the `lsblk`/`findmnt` evidence as the blocker. A path that
+is a symlink into NVMe (for example `/data/simaai/applications ->
+<nvme-mount>/applications`) is acceptable only when `findmnt -T` confirms it, but
+write the resolved NVMe path into `deploy.yaml`. Never deploy to two locations in
+one attempt.
 
 Studio resolves `remote_dir` from the active project's client `deploy.yaml`,
 not from a second manifest nested only inside the directory passed as

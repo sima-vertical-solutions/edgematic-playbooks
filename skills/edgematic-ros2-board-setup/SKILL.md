@@ -25,6 +25,11 @@ the pipeline "to see what happens", because a start always succeeds.
 fails the SSH build/run with a transport error rather than a pipeline error, so
 this is the cheapest check and it disambiguates everything after it.
 
+Compare the paired record's host with the board's current address. When DHCP or
+a network change moved the board, update or re-pair that device record and
+re-probe it; do not deploy through a record whose host no longer answers, and do
+not create a second record for the same board.
+
 ### 2. The board is clean
 
 A previous run that was killed rather than stopped leaves the board in a state
@@ -42,6 +47,16 @@ Stop any running pipeline through the supported path first (`run_ros_pipeline` i
 safe to re-run — it stops what is running for that package and reports
 `replaced_running`). If the board was killed hard, the shared-memory files must be
 cleared before the next start.
+
+**Fresh start: archive, never delete.** When the user asks to start a new
+application from scratch, first confirm no process runs from or holds files in
+earlier application directories (`pgrep`, `lsof +D`). Move every earlier
+application payload and its ad-hoc launch scripts into
+`<nvme-mount>/archive/<YYYYMMDD>-<reason>/`, preserving each original path below
+that root, and write a `MANIFEST.txt` with the time, file count, size and moved
+paths. Leave device access keys, SDK installs and `/usr/local` stacks in place.
+Do not leave application payloads on the root filesystem; if a tool insists on a
+root-filesystem path, make it a symlink into NVMe.
 
 ### 3. Neat matches the workspace
 
@@ -143,6 +158,24 @@ For direct USB V4L2, verify the exact configured device path resolves on the
 board and supports the contract's capture format, size and FPS. Start the
 client package's USB capture component with that path. Do not start Streams,
 probe alternate camera nodes, or pass an `rtsp_url` for this transport.
+
+**Name USB devices stably.** Re-plugging or adding a USB device renumbers
+`/dev/videoN` and ALSA cards, so a numeric path can silently open the wrong
+sensor. Configure cameras by `/dev/v4l/by-id/...-video-indexN` (confirm the node's
+formats with `v4l2-ctl --list-formats`), and audio by ALSA card name
+(`plughw:CARD=<name>,DEV=0` from `arecord -l` / `aplay -l`), never `hw:0,0` or
+`/dev/video0`. After any re-cabling, re-read the mapping before the next run.
+
+**Check USB power and shared devices.** Before running cameras, microphones and
+speakers together, read `lsusb -t` and each hub's `bmAttributes`/`bMaxPower`.
+Several 500 mA devices behind an unpowered hub or extender can enumerate with
+`error -71`, reset (`dmesg: reset high-speed USB device`) or drop video URBs under
+load. Capture video while opening any microphone that shares the camera's USB
+device, and check `dmesg` for resets. Prefer a separate microphone when the
+camera resets, and report the topology when it does not resolve.
+
+ROS 2 on SiMa boards is under `/usr/local/ros2`, not `/opt/ros/<distro>`;
+generated `run.sh` and `deploy.yaml` `upstream_setups` must source that path.
 
 **Never leave the pipeline on its baked-in default.** The params file on the board
 carries whatever address was last written into it — typically a hand-started
