@@ -10,7 +10,10 @@ For robot TUI deployments, also read [robot TUI setup](../edgematic-robot-tui/SK
 When choosing capabilities or model artifacts, first follow
 [SiMa-first component selection](references/sima-first-selection.md). The live
 workspace catalogue decides available package names; reuse compatible SiMa
-components and record evidence for any external or custom fallback.
+components and record evidence for any external or custom fallback. Before any
+driver, camera, perception, voice or visualisation node is written, that
+reference's feature-to-capability mapping (including other SiMa repositories,
+the Model Zoo and voice defaults) must exist in the project.
 
 A **host-side ROS 2 workspace** is a directory on this machine holding two sibling
 repositories: a **core** repository, which carries a `capabilities/` directory — that

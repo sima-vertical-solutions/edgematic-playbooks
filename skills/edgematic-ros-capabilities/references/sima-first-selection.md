@@ -23,6 +23,58 @@ benchmarking unrelated alternatives.
    evidence that SiMa has no suitable model. Retry a relevant supported discovery
    route; if still blocked, explain the limitation and continue independent work.
 
+## Map every feature to a capability before writing a node
+
+Do this before authoring any driver, camera, perception, SLAM/navigation, voice
+or visualisation node, including on a clean board with a short prompt. Search
+the whole SiMa offering, not only the workspace you happened to open:
+
+- **`sima-core` capabilities.** Read `list_ros_capabilities`, then list the
+  `capabilities/` tree itself, because the catalogue can miss nested packages
+  (for example a capability whose package sits several directories down). Check
+  at least the slam, navigation, voice_control and camera_publisher families
+  and any detection capability before writing an equivalent.
+- **Other SiMa organisation repositories.** List the SiMa GitHub organisations
+  available through the stored credential (for example the SiMa robot sensor
+  stack repository, which carries USB and depth camera drivers) and search them
+  by function. A private repository the credential can read is in scope; one it
+  cannot read is unresolved discovery, not absence.
+- **SiMa Model Zoo** through Studio's model download path (see step 2 above),
+  and models already downloaded into the workspace.
+- **Studio's bundled surfaces:** Flora for live visualisation
+  (`edgematic-foxglove-viz`), Streams for RTSP input, and the operator TUI flow
+  (`edgematic-robot-tui`).
+
+Write the mapping into the project's `docs/component-selection.md` before
+generating code: one row per requested feature with the selected capability or
+artifact (repository, path, revision), the alternatives checked, and for every
+custom node the specific reason no SiMa option fits (contract mismatch, failed
+smoke test, missing artifact, licence, explicit user requirement). A custom
+node without that row is not ready to write. Revisit the mapping when the user
+asks whether a SiMa capability was used; answer from the table.
+
+### Voice defaults
+
+When the request includes speech input or output and names no stack, choose the
+SiMa on-board path and state it instead of asking:
+
+- **Speech to text:** the `sima-core` `voice_control` transcription path against
+  the board's on-board Whisper endpoint served through LLiMa
+  (`/v1/audio/transcriptions`); a transcription-only flow does not need an LLM.
+- **Text to speech:** SiMa's Piper TTS voice provider.
+- **No cloud API keys** unless the user explicitly asks for a cloud service.
+- **Fixed command sets:** when the user wants a small set of commands, constrain
+  recognition to that grammar or keyword list and map each to an intent, rather
+  than free-form dictation.
+- **Devices:** open microphones and speakers by ALSA card name
+  (`edgematic-ros2-board-setup`, stable device names), never a numeric card.
+- **Safety:** a voice intent may select a behaviour that the command owner
+  accepts while already armed; it can never arm, disarm-override or bypass a
+  motion guard ([attended robot motion](../../edgematic-ros2-contract-builder/references/attended-motion.md)).
+
+If a SiMa voice component fails its smoke test on the target, record the
+evidence and fall back as for any other component.
+
 ## Reuse what fits
 
 Prefer compatible SiMa precompiled artifacts, Neat runtime components, ROS
