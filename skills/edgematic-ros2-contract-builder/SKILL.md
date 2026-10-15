@@ -59,6 +59,14 @@ move to implementation/validation or report the exact blocker.
   user asks for one.
 - **Clone public repositories the prompt names** and inspect them; only a clone
   refusal turns access into a question.
+- **Studio's GitHub credential is the clone tool's, not your shell's.**
+  `clone_repository` authenticates with the token saved in Studio (installer or
+  Settings); it does not appear as `GH_TOKEN`, `gh auth status`, or a variable
+  in your shell. `list_ros_examples` reads only Studio's environment token, so
+  its "no GitHub token" error says nothing about private-repo access. Before
+  writing that SiMa private repositories are unavailable, `clone_repository`
+  one of them (for example the SiMa robot sensor stack or `sima-core`). Only a
+  refusal from that clone means there is no access; then ask for a token.
 - **Continue through build, deploy and bench in one turn.** Stop only for a
   credential, a physical fact no probe can establish, or a motion/arming
   decision. Routine installs into the application directory, dependency
