@@ -16,6 +16,9 @@ For a TUI that can request physical motion, read
 [attended robot motion](../edgematic-ros2-contract-builder/references/attended-motion.md).
 Derive controls and guards from the selected robot. Start disarmed, verify zero
 output and fresh base feedback before the user performs an attended motion test.
+The TUI is the only arming surface: it sends arm/disarm and a heartbeat to the
+single command owner, shows the owner's mode and last stop reason, and never
+publishes to the base itself. Voice, behaviours and agent tools cannot arm.
 
 ## Execute
 

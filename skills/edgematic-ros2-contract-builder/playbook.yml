@@ -1,6 +1,6 @@
 id: edgematic-ros2-contract-builder
 name: Edgematic ROS 2 Contract Builder
-version: 0.5.0
+version: 0.6.0
 agents: [codex, claude]
 description: Generate, build, deploy, and verify a new ROS 2 application from a short prompt, supplied robot source or URDF, and observed device, with guarded operator motion when requested.
 compatibility:

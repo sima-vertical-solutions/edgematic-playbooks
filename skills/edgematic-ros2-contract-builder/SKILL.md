@@ -5,11 +5,13 @@ description: Generate, build, deploy, run, and verify a new ROS 2 robot applicat
 
 # Edgematic ROS 2 Contract Builder
 
-Before deriving the application graph, follow
-[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
-Reuse compatible SiMa models, artifacts, Neat and ROS components; generate only
-the missing application logic or adapters. Include selection and fallback
-evidence in the project alongside its contracts.
+Before deriving the application graph, and before authoring any driver,
+camera, perception, voice or visualisation node, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md):
+map every requested feature to a SiMa capability, repository, Model Zoo artifact
+or Studio surface, and record that mapping in `docs/component-selection.md`.
+Write a custom node only where the mapping shows no SiMa option fits, and record
+why. Generate only the missing application logic or adapters.
 
 Turn an expanded robot contract into working source code and runtime evidence.
 This skill owns the gap between a confirmed ROS application graph and an
@@ -18,8 +20,10 @@ stop after describing components, producing a graph, or telling the user to
 write the implementation.
 
 Load `edgematic-ros2-portable-pipeline` for build, staged deployment, board
-preflight, detached launch, and runtime verification. Load
-`edgematic-ros2-board-setup` before running on a Modalix DevKit. If application
+preflight, detached launch, and runtime verification. Read
+`edgematic-ros2-board-setup` before the first board probe, not only before the
+first run: it carries the board facts (ROS 2 location, stable device names, NVMe
+layout) that a probe is otherwise misread against. If application
 source code, `package.xml`, or a launch file already exists, route to
 `edgematic-ros2-user-package` instead. A short prompt is sufficient when it
 identifies the paired robot and connected hardware, input, desired behavior,
@@ -33,6 +37,35 @@ remaining acceptance items. Do not reopen the same workspace or re-run
 `discover_ros_contract` on the same prompt, URDF and build target without a
 changed input or a specific unresolved fact. After two identical tool results,
 move to implementation/validation or report the exact blocker.
+
+## Ask once, then proceed
+
+- **One questionnaire, up front.** After the first inspection of the prompt,
+  sources and board, batch every remaining question into a single
+  `ask_user` round. Afterwards treat each answer as settled for the rest of the
+  session; never ask it again in other words.
+- **Propose, do not ask, for non-safety design choices** (detector, model,
+  voice stack, panel layout, file layout): pick a default from the SiMa-first
+  mapping, state it, and continue. When the user says "check", "verify" or
+  "pick", do the inspection or make the choice in the same turn.
+- **The dashboard is not a question.** Live output always goes to Studio's
+  bundled Flora (`edgematic-foxglove-viz`); do not offer alternatives unless the
+  user asks for one.
+- **Clone public repositories the prompt names** and inspect them; only a clone
+  refusal turns access into a question.
+- **Continue through build, deploy and bench in one turn.** Stop only for a
+  credential, a physical fact no probe can establish, or a motion/arming
+  decision. Routine installs into the application directory, dependency
+  fetches and redeploys are agent work, not permission questions. System
+  packages and container runtimes on the board are not routine; follow
+  `edgematic-ros2-board-setup` (keep the platform clean).
+- **Do not park.** Avoid holding a turn on an approval or question for minutes;
+  split long attended steps into short ones and do independent work first. If a
+  turn dies on a provider, timeout or approval-park error, resume from the last
+  verified state recorded in the project evidence rather than redoing finished
+  work.
+
+## Sources, dependencies and the board
 
 For a new application, resolve required SiMa sources, model artifacts, ROS
 packages and build dependencies inside Studio. Reuse stored credentials and
@@ -129,7 +162,10 @@ stale values. The tool reports only what the model proves and which facts remain
 missing. Then resolve relevant gaps automatically in this order:
 
 The tool's missing-facts list is a work queue, not a question to paste to the
-user. Inspect the project, vendor source and device for each item first. For a
+user. Inspect the project, vendor source and device for each item first.
+Hardware and network facts come from the paired board, never from the Studio
+container's own interfaces or from a status summary alone; follow
+`edgematic-device-ops` (inspecting the board). For a
 requested motion demo, continue building and verifying the disarmed perception
 stage while base-control facts are unresolved. Ask for a specific physical
 safety decision only when that decision gates attended actuation.
@@ -159,6 +195,31 @@ immutable revision under `docs/evidence.md` in the generated project.
 Classify each fact as `proven`, `vendor_supported`, `observed`, `assumed_for_demo`,
 or `unresolved`. Never infer wire protocols, device paths, calibration, safety
 limits, or production motion behavior from link or joint names.
+
+### Device links, transports and interfaces
+
+- **Transport from source history plus live probes.** Read the vendor's driver
+  and firmware history at recorded revisions and probe the live link from the
+  board. When the source shows the transport changed across versions (for
+  example a bridge or middleware removed in a later firmware), ask once which
+  firmware/transport the device runs before choosing a bridge.
+- **Respect client/agent direction.** A client that dials out to an agent or
+  broker does not listen on ports; probing it for an open port proves nothing.
+  Start or locate the side that listens, then watch for the client to connect.
+- **Do not ask for protocol-defined values.** Default ports, discovery domains
+  and message layouts that the protocol or vendor source defines come from that
+  source or a live probe (for example scanning the plausible discovery domains),
+  not from the user.
+- **Interface completeness before absence.** Before declaring that a device
+  publishes or subscribes nothing relevant, list hidden endpoints:
+  `ros2 topic list --include-hidden-topics`, `ros2 service list
+  --include-hidden-services`, and `ros2 node info --include-hidden <node>` on each
+  candidate domain. Firmware and bridges commonly expose command/feedback on
+  hidden names (`<hidden_topic>`).
+- **Pin a vendor driver only after it matches the live interface:** topic and
+  service names, message types, array ordering and units must agree with what
+  the board shows. Record the comparison; a driver that targets a different
+  firmware generation is not a pin, it is a mismatch to resolve.
 
 ### Demo-scope exception
 
@@ -233,8 +294,9 @@ other sibling directories cannot identify the client for the registrar. Check
 that exactly one sibling client has a valid `deploy.yaml` before registering.
 
 Use `write_file` with project-relative `name` and whole-file `content`. For
-runnable build/run/verify shell scripts, set `executable: true` and verify the
-mode before invoking them; later edits must preserve it. Create a
+runnable build/run/verify shell scripts, restore the execute bit after every
+write and check the mode before invoking them (see
+`edgematic-ros2-portable-pipeline`, build script). Create a
 self-contained package or workspace with at least:
 
 - `package.xml` and `CMakeLists.txt` or `setup.py`/`setup.cfg`;
@@ -313,8 +375,11 @@ manifest. Update the active project's client `deploy.yaml` before invoking
 deployment; a `deploy.yaml` nested only inside a custom `payload` directory does
 not override the project-level destination used by Studio. Before launch,
 follow the board setup and portable-pipeline preflight.
-Stop only a previously recorded instance of this deployment. Launch detached
-with durable logs, then start `foxglove_bridge` after the publishers are live.
+Verify the board now carries the new build (portable-pipeline, deploy
+verification). Stop only a previously recorded instance of this deployment.
+Launch through the project's run script as portable-pipeline describes, detached
+with durable logs, then start the bridge through Studio's Flora start path after
+the publishers are live (`edgematic-foxglove-viz`).
 
 ## 5. Acceptance is advertised, active, visible, and operable
 
