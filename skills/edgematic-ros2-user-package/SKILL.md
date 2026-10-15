@@ -98,8 +98,13 @@ new package generator or start a second workspace. Keep working components and
 their model provenance; derive the delta from the prompt, supplied robot source,
 URDF, and observed device interfaces. Resolve required build and runtime
 dependencies in the SDK rather than asking the user for routine shell steps.
-For a runnable script created with `write_file`, set `executable: true`, verify
-the mode in the host and build container, and preserve it on later edits.
+Map each new feature to a SiMa capability first and work the questions as the
+contract builder's "Ask once, then proceed" describes: one batched round, then
+build, deploy and bench without stopping except for credentials, physical facts
+or arming.
+For a runnable script created with `write_file`, restore the execute bit after
+every write and verify the mode in the host and build container (see
+`edgematic-ros2-portable-pipeline`, build script).
 
 For requested physical motion, read
 [attended robot motion](../edgematic-ros2-contract-builder/references/attended-motion.md)
@@ -134,6 +139,9 @@ the operator for the physical acceptance step.
 
 - Preflight the exact runtime resources the package uses: ROS domain,
   accelerator ownership, model/media paths, disk space, and port availability.
+- Verify the board carries the new build (build marker or file hash) before
+  launching, and launch through Studio's run tools or the package's run script
+  as `edgematic-ros2-portable-pipeline` describes; record each launch.
 - Stop only a previously recorded instance of this deployment. Prefer saved
   PIDs or exact executable identities; never broad-match a full SSH command line.
 - Launch detached with stdin closed and stdout/stderr redirected to a durable

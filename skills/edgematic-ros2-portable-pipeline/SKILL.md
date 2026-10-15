@@ -146,14 +146,23 @@ The optional `payload` parameter is not a placeholder. Omit the key entirely
 for the normal staged install tree; never pass an empty string. When a prepared
 ROS app has assembled a complete payload directory, pass that exact directory
 relative to the shared workspace (for example `edgematic-demo/payload`), not the
-application source directory above it.
+application source directory above it, on every deploy. What is shipped differs
+silently depending on whether `payload` is passed.
+
+**Verify the board carries the new code.** `deploy_to_device` can report
+success while shipping a stale tree. Before staging, write a build marker into
+the payload (source revision plus build time) and note the SHA-256 of a file you
+changed; after deploying, read the marker and hash that file on the board under
+the returned `remote_path`. If either does not match, redeploy with the correct
+`payload` before launching, and never launch or debug against unverified code.
 
 - **`remote_dir` must be writable by the configured SSH user.** For the common
   `sima` login, a root-owned target fails while `tar` restores the directory's
   timestamps ("utime: Operation not permitted"), after appearing to copy fine.
 - **`ros_domain_id` must match the board.** A wrong id fails *silently* on
-  hardware — everything launches and nothing ever discovers anything. Ask; do not
-  guess.
+  hardware — everything launches and nothing ever discovers anything. Read it
+  from the board's running graph or launch configuration, or probe the plausible
+  domains read-only; ask only if no probe resolves it. Do not guess.
 - Deploy overwrites files in place, so a deployed `foxglove_bridge` is killed by
   its own overwrite. Start the bridge **after** deploying, never before.
 
@@ -239,7 +248,7 @@ you are editing. The other cause that is real is an encoder element string
 re-derived from prose that came out short of its full property set — read the
 exact string out of a working deploy rather than reconstructing it.
 
-## 6. The two things that decide whether the run survives
+## 6. How the run is launched, survives, and is recorded
 
 1. **Set the environment explicitly, do not source the deployed setup script.**
    The merge-install setup script re-sources the container's build-time parent
@@ -253,7 +262,14 @@ exact string out of a working deploy rather than reconstructing it.
    `cd "$COLCON_CURRENT_PREFIX/share/<pkg>"` runs with an empty value and
    launches from the wrong directory — where the pipeline's relative config paths
    resolve to nothing.
-2. **Launch detached.** A backgrounded launch over a non-interactive SSH command
+2. **Launch through Studio's run tools when one supports the package**
+   (`run_ros_pipeline` for a catalogue workspace, `run_pipeline` for a project
+   it can run). Studio currently has no run tool for an arbitrary deployed ROS
+   workspace; then launch and stop through the project's checked-in run/stop
+   script over managed SSH, and record each launch and stop (command, time,
+   PID, log path) in the project evidence. Use ad-hoc SSH commands only for
+   read-only inspection, never as the launch record.
+3. **Launch detached.** A backgrounded launch over a non-interactive SSH command
    dies of `SIGHUP` the moment that command returns. The tell is unmistakable and
    routinely misread: real annotated frames for roughly twenty seconds, then the
    tile goes dark. Launch it under `setsid` with stdout and stderr redirected to

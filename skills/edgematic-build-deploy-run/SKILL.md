@@ -399,6 +399,10 @@ rebuild, redeploy, restart or stop a healthy run to fix a viewing problem.
   `unrecognized arguments`. If `requirements.txt` exists it is `pip install -r`'d
   ON THE DEVICE before the script — list only packages available on the board,
   and never `pyneat` (the board's venv already provides it).
+- **A deploy that reports success is not proof the board has the new code.**
+  Check a build marker or file hash on the board after `deploy_to_device`, and
+  pass `payload` explicitly when the project stages one (details in
+  `edgematic-ros2-portable-pipeline`, deploy).
 - **Builds and runs are async — always poll before the next step.** Don't deploy
   right after `build_project`, and don't fetch results right after `run_pipeline`;
   poll the status tool first.

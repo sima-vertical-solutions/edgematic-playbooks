@@ -58,6 +58,18 @@ paths. Leave device access keys, SDK installs and `/usr/local` stacks in place.
 Do not leave application payloads on the root filesystem; if a tool insists on a
 root-filesystem path, make it a symlink into NVMe.
 
+**Keep the platform clean.** Install the application's runtime dependencies,
+virtual environments, models and helper binaries under
+`<nvme-mount>/simaai/applications/<application>/`, staged from the host build,
+not into `/opt`, `/usr` or the root filesystem. Do not install a container
+runtime or system packages on a clean board without first probing that it can
+work there (for a container runtime: kernel namespace and cgroup support, for
+example `/proc/self/ns/net` and `unshare --net true`; for a package: the image's
+package source and glibc version). If an attempt fails, remove it and stop any
+service it started before moving on, and record what was added and removed in
+the project evidence. A system package is a last resort that needs a recorded
+reason.
+
 ### 3. Neat matches the workspace
 
 The C++ pipelines link against Neat core; PyNeat is not required for them. A

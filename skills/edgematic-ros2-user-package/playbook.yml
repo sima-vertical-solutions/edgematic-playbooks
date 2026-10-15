@@ -1,6 +1,6 @@
 id: edgematic-ros2-user-package
 name: Edgematic ROS 2 User Package
-version: 0.3.0
+version: 0.3.1
 agents: [codex, claude]
 description: Extend, build, deploy, and verify an existing or active-project ROS 2 package from a short outcome prompt, including guarded attended robot motion when requested.
 compatibility:
