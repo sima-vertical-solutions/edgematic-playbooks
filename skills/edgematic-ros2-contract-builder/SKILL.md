@@ -40,6 +40,12 @@ move to implementation/validation or report the exact blocker.
 
 ## Ask once, then proceed
 
+- **Bench, show, then robot.** When a request covers both a stationary bench
+  run and attended motion, finish the bench stage first with no motion
+  publisher, then show the user the live output (open the Flora view and
+  summarise topic rates and the operator TUI) and wait for their go-ahead
+  before starting the robot stage. Never move from bench to motion in the same
+  breath.
 - **One questionnaire, up front.** After the first inspection of the prompt,
   sources and board, batch every remaining question into a single
   `ask_user` round. Afterwards treat each answer as settled for the rest of the
