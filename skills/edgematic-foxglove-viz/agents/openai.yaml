@@ -1,4 +1,4 @@
 interface:
   display_name: "Edgematic Foxglove Visualization (Flora)"
   short_description: "Visualize live pipeline output in the bundled Flora app over foxglove_bridge"
-  default_prompt: "Use $edgematic-foxglove-viz to show a running pipeline's embedded live output; when the user asks to see or show it, open it automatically with the final edgematic-flora directive instead of requiring a click."
+  default_prompt: "Use $edgematic-foxglove-viz to show a running pipeline's embedded live output; when the user asks to see or show it, open it automatically with the final edgematic-flora directive instead of requiring a click. Flora is always the dashboard: never ask which viewer to use, start the bridge through Studio's foxglove probe/start endpoints, ship foxglove_bridge in the payload when the board lacks it, and bind panels to the app's verified live topics."
