@@ -1,8 +1,5 @@
 # Remote TUI rendering and acceptance
 
-Source: Stiga PR #55, reviewed at
-`5525b80b3ff57b82ed12f5cf5bba1440fa88cda3`.
-
 ## Rendering lessons
 
 Build each frame in memory and write/flush it once to the remote PTY. Enter
@@ -29,8 +26,7 @@ message type and stop semantics when implementing attended teleoperation.
 | Lifecycle | Close/reopen produces a usable session and restores terminal state. |
 | Ownership | Own children stop on exit; attached robot stack survives. |
 
-Never send movement/mode keys during unattended checks. Stiga's `e`, `b`, `m`,
-`t`, `D` and teleop entry are not rendering tests. Inspect the actual TUI's
+Never send movement/mode keys during unattended checks. Inspect the actual TUI's
 bindings rather than assuming all robots share them. Do not use quit to stop
 an attached moving robot; the operator must use its supported idle/stop path.
 

@@ -112,8 +112,8 @@ sysroot's real headers on this host — not off prose, and not off the
 Cross-compile with `prepare_ros_build`, naming the build script by its bare
 filename; the container's working directory is already the project directory, so
 a workspace-relative path fails with "No such file or directory". The script
-must be executable — `write_file` cannot set the exec bit, so the user sets it
-from their own shell.
+must be executable. Set `executable: true` when creating it with `write_file`,
+then verify its mode before `prepare_ros_build`; later edits preserve that mode.
 
 Fixes 2 through 6 all compile clean. **A green build means the cross-compilation
 worked and nothing more.** Deploy and run per

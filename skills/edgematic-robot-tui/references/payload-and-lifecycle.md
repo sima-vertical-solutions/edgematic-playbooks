@@ -1,9 +1,5 @@
 # Complete payload and lifecycle contract
 
-Source: Stiga PR #55, reviewed at
-`5525b80b3ff57b82ed12f5cf5bba1440fa88cda3`. Preserve the design knowledge,
-not its old broad process-kill patterns or its feature-branch dependency.
-
 ## Stage in the SDK, deploy through Studio
 
 Read the application's `deploy.yaml`: remote root, ROS domain, system config,
@@ -21,8 +17,7 @@ are one runtime contract. Stage into a fresh owned directory containing:
 
 Reject unresolved Git LFS pointers and container-absolute symlinks. Verify the
 installed TUI and system config exist before printing a staging-ready marker.
-Do not mutate a shared install tree to stage a candidate: copy it first. A
-historical 467 MiB Stiga payload is not a required size for other robots.
+Do not mutate a shared install tree to stage a candidate: copy it first. Record the payload size and digest from the actual staged artifact.
 
 The staging helper does no SSH. Use `deploy_to_device` with its named relative
 `payload`, after the persisted build succeeds. Respect a deployment refusal;
@@ -45,5 +40,4 @@ starting a duplicate camera/controller/inference graph.
 Track owned child process groups with identities and clean up only those.
 On normal exit/signals, restore terminal state and stop the children this
 session started. An attached monitor must leave the pre-existing stack running.
-The old PR used broad process-pattern cleanup; preserve its ownership intent
-but do not kill unrelated launch processes or all component containers.
+Do not kill unrelated launch processes or all component containers.

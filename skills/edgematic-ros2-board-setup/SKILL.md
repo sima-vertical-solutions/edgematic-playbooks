@@ -10,8 +10,9 @@ A ROS2 pipeline launched against an unprepared board does not fail. It reports
 condition below produces that same symptom, which is why the board is checked
 *before* the run rather than diagnosed after it.
 
-**The rule this skill exists to enforce:** the pipeline's video input comes from
-**Edgematic's own Streams**, never from an RTSP server someone started by hand.
+For an **RTSP** pipeline, the video input comes from **Edgematic's own Streams**,
+never from an RTSP server someone started by hand. A pipeline whose confirmed
+input contract is direct USB V4L2 uses that exact device instead of Streams.
 
 ## Pre-flight order
 
@@ -23,6 +24,11 @@ the pipeline "to see what happens", because a start always succeeds.
 `list_devices` / device status (see `edgematic-device-ops`). An unreachable board
 fails the SSH build/run with a transport error rather than a pipeline error, so
 this is the cheapest check and it disambiguates everything after it.
+
+Compare the paired record's host with the board's current address. When DHCP or
+a network change moved the board, update or re-pair that device record and
+re-probe it; do not deploy through a record whose host no longer answers, and do
+not create a second record for the same board.
 
 ### 2. The board is clean
 
@@ -41,6 +47,28 @@ Stop any running pipeline through the supported path first (`run_ros_pipeline` i
 safe to re-run — it stops what is running for that package and reports
 `replaced_running`). If the board was killed hard, the shared-memory files must be
 cleared before the next start.
+
+**Fresh start: archive, never delete.** When the user asks to start a new
+application from scratch, first confirm no process runs from or holds files in
+earlier application directories (`pgrep`, `lsof +D`). Move every earlier
+application payload and its ad-hoc launch scripts into
+`<nvme-mount>/archive/<YYYYMMDD>-<reason>/`, preserving each original path below
+that root, and write a `MANIFEST.txt` with the time, file count, size and moved
+paths. Leave device access keys, SDK installs and `/usr/local` stacks in place.
+Do not leave application payloads on the root filesystem; if a tool insists on a
+root-filesystem path, make it a symlink into NVMe.
+
+**Keep the platform clean.** Install the application's runtime dependencies,
+virtual environments, models and helper binaries under
+`<nvme-mount>/simaai/applications/<application>/`, staged from the host build,
+not into `/opt`, `/usr` or the root filesystem. Do not install a container
+runtime or system packages on a clean board without first probing that it can
+work there (for a container runtime: kernel namespace and cgroup support, for
+example `/proc/self/ns/net` and `unshare --net true`; for a package: the image's
+package source and glibc version). If an attempt fails, remove it and stop any
+service it started before moving on, and record what was added and removed in
+the project evidence. A system package is a last resort that needs a recorded
+reason.
 
 ### 3. Neat matches the workspace
 
@@ -132,11 +160,34 @@ on the board cannot be repointed or relaunched from chat — deploy and launch y
 own build instead, and say that is what you are doing rather than reporting a
 capability as half-loaded.
 
-### 5. The input stream comes from Edgematic Streams
+### 5. Verify the selected input transport
 
-This is a requirement, not a preference. Start the stream through Studio
+For RTSP input this is a requirement, not a preference. Start the stream through Studio
 (`start_stream`, or the Streams page) and pass the returned `rtsp://…` address to
 `run_ros_pipeline` as `rtsp_url`.
+
+For direct USB V4L2, verify the exact configured device path resolves on the
+board and supports the contract's capture format, size and FPS. Start the
+client package's USB capture component with that path. Do not start Streams,
+probe alternate camera nodes, or pass an `rtsp_url` for this transport.
+
+**Name USB devices stably.** Re-plugging or adding a USB device renumbers
+`/dev/videoN` and ALSA cards, so a numeric path can silently open the wrong
+sensor. Configure cameras by `/dev/v4l/by-id/...-video-indexN` (confirm the node's
+formats with `v4l2-ctl --list-formats`), and audio by ALSA card name
+(`plughw:CARD=<name>,DEV=0` from `arecord -l` / `aplay -l`), never `hw:0,0` or
+`/dev/video0`. After any re-cabling, re-read the mapping before the next run.
+
+**Check USB power and shared devices.** Before running cameras, microphones and
+speakers together, read `lsusb -t` and each hub's `bmAttributes`/`bMaxPower`.
+Several 500 mA devices behind an unpowered hub or extender can enumerate with
+`error -71`, reset (`dmesg: reset high-speed USB device`) or drop video URBs under
+load. Capture video while opening any microphone that shares the camera's USB
+device, and check `dmesg` for resets. Prefer a separate microphone when the
+camera resets, and report the topology when it does not resolve.
+
+ROS 2 on SiMa boards is under `/usr/local/ros2`, not `/opt/ros/<distro>`;
+generated `run.sh` and `deploy.yaml` `upstream_setups` must source that path.
 
 **Never leave the pipeline on its baked-in default.** The params file on the board
 carries whatever address was last written into it — typically a hand-started

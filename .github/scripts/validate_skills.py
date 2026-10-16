@@ -159,11 +159,11 @@ def check_skill(skill: Path) -> None:
         fail(f"{rel}: playbook.yml has no version")
 
 
-def check_stiga_tui_workspace_contract() -> None:
+def check_robot_tui_workspace_contract() -> None:
     """Keep the TUI flow off the projects root that Studio cannot adopt."""
     flow = (
         SKILLS
-        / "edgematic-stiga-tui-demo"
+        / "edgematic-robot-tui"
         / "references"
         / "automatic-flow.md"
     )
@@ -178,7 +178,7 @@ def check_stiga_tui_workspace_contract() -> None:
         '"parent": "/workspace/robot-tui-demo"',
         "Never use `/workspace` itself",
         "selected dedicated parent",
-        "<selected-workspace-parent>/stiga/src",
+        "<selected-workspace-parent>/<application>/src",
     )
     for phrase in required:
         if phrase not in text:
@@ -190,7 +190,7 @@ def check_stiga_tui_workspace_contract() -> None:
     forbidden = (
         '"parent": "/workspace",',
         "on the shared `/workspace` parent",
-        "`parent`: `/workspace/stiga/src`",
+        "`parent`: `/workspace/<application>/src`",
         "`set_ros_pipelines`",
         "`run_command`",
     )
@@ -243,6 +243,32 @@ def check_legacy_repo_mentions(skill: Path) -> None:
                 )
 
 
+# These names belong in user project evidence, never in distributable skills.
+# Keep the check outside skills/ so the prohibited defaults are not agent input.
+ROBOT_SPECIFIC_CONTENT = re.compile(
+    r"rosbot[ _-]*xl|husarion|\bstiga\b|\bedgebot\b|"
+    r"yolov8_(?:seg_)?rover|rosbot-xl-profile",
+    re.IGNORECASE,
+)
+
+
+def check_robot_agnostic_content(skill: Path) -> None:
+    for path in sorted(skill.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(SKILLS).as_posix()
+        if ROBOT_SPECIFIC_CONTENT.search(relative):
+            fail(f"{relative}: robot-specific filename in shared skills")
+        try:
+            content = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            fail(f"{relative}: non-text asset requires an explicit content audit")
+            continue
+        for lineno, line in enumerate(content.splitlines(), start=1):
+            if ROBOT_SPECIFIC_CONTENT.search(line):
+                fail(f"{relative}:{lineno}: robot-specific content in shared skills")
+
+
 def main() -> int:
     if not SKILLS.is_dir():
         print("error: no skills/ directory", file=sys.stderr)
@@ -258,7 +284,8 @@ def main() -> int:
     for skill in skills:
         check_skill(skill)
         check_legacy_repo_mentions(skill)
-    check_stiga_tui_workspace_contract()
+        check_robot_agnostic_content(skill)
+    check_robot_tui_workspace_contract()
 
     if errors:
         print(f"{len(errors)} problem(s) found:\n", file=sys.stderr)

@@ -1,9 +1,15 @@
 ---
 name: edgematic-ros2-user-package
-description: Build, deploy, run, and verify an existing user-supplied ROS 2 package or workspace through Edgematic Studio on a paired Modalix DevKit. Use when the user points to their own repository, package.xml, launch file, dependencies, or custom topic contract. Do not use for a hello-world, smoke-test, or standard SiMa demo; use edgematic-ros2-demo instead.
+description: Build, extend, deploy, run, and verify an existing or current-project ROS 2 package through Edgematic Studio on a paired Modalix DevKit. Use for a short outcome prompt that points to a repository, active project, package, launch file, or custom topic contract, including an attended robot follow application. Use edgematic-ros2-demo for standard demos.
 ---
 
 # Edgematic ROS 2 User Package
+
+Preserve the package's explicit model and runtime contract. When a component is
+missing or replacement is needed, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md)
+before introducing an external model or duplicate runtime; a deployment request
+alone is not permission to replace a working user-selected model.
 
 Preserve the user's package and make its actual build/run path work. Do not
 replace it with a reference demo or generalize from a different repository.
@@ -12,7 +18,50 @@ Load `edgematic-ros2-portable-pipeline` for the detailed workspace, build,
 deploy, board, and detached-launch mechanics. This skill owns routing, the
 package contract, and the evidence required before reporting success.
 
+## Robot source boundary
+
+For robot work, first use the active project's source and any user-supplied
+vendor source. If absent, identify the hardware from the paired device and
+discover the manufacturer's authoritative source, then record its immutable
+revision. Ask for a vendor source only when identity or provenance remains
+ambiguous. Derive model, geometry, sensors, driver packages, topics, message
+types, launcher paths, calibration and limits from that source and read-only
+inspection of the selected device. Do not import a remembered robot profile or
+customer application as a default. Keep task-specific findings in the project
+contracts and evidence, outside these shared skills.
+
+Resolve SiMa platform repositories, Model Zoo artifacts, SDK dependencies and
+stored credentials inside the Studio workflow. Use
+[Modalix MLA runtime and ABI diagnosis](../edgematic-ros2-portable-pipeline/references/modalix-mla-runtime.md)
+for first-frame aborts or stalled model loads. The user's short outcome prompt
+needs hardware identity, connection and behavior; it need not name the SiMa
+GitHub organization, compiler packages, or workaround steps.
+Check the selected ROS SDK container and build channel before building. When
+authorized host access is available, repair missing container dependencies or
+restore its build channel through `edgematic-ros2-host-container` and retry the
+Studio build. Fetch needed application dependencies with stored credentials;
+ask the user only after a concrete credential refusal or for a hardware fact
+that inspection cannot establish.
+
+
 ## Keep one workspace
+
+When resuming a Studio project, first read its registered project path and the
+existing package/contract inventory. Keep a short resolved-facts ledger with
+the source revision, URDF path and hash, paired device, build target, launch
+mode, and the next unverified acceptance item. Reuse those facts until the
+source, file hash, device, or requirement changes. Open/register the same ROS
+workspace at most once per unchanged layout. Do not repeatedly call
+`open_ros_workspace`, re-read an unchanged URDF, rediscover the same robot, or
+re-run a model search to answer a fact already in the ledger. If a tool returns
+the same answer twice without a new fact, advance to source validation, build,
+or a specific blocker report instead of repeating the call.
+
+For a bench run followed by an attended robot run, prefer one robot-capable
+build with distinct launch modes: bench has no motor publisher; robot starts
+disarmed with guarded controls. Preserve the exact staged payload between the
+runs. Rebuild only after a source, dependency, model, or build-setting change;
+capture the build identity and payload hash so the second run can be audited.
 
 Use the workspace the user configured; do not create another workspace beneath
 it. Keep the shared capability repository once at `<workspace>/sima-core` and
@@ -33,11 +82,37 @@ workspace elsewhere.
    editing. Resolve symlinks and globbed source paths so changes land in the
    tree the build really compiles.
 3. Reuse the package's own model, media, configuration, and topic contract. Ask
-   only for an irreducible input such as missing device pairing, credentials
-   entered in Studio's secure form, or an unavailable proprietary artifact.
+   only for an irreducible input such as missing device pairing, a concrete
+   secure-credential refusal, or an unavailable proprietary artifact.
 4. Treat the board as shared unless the user says otherwise. Read-only
    inspection is safe; rebooting, installing board packages, replacing platform
    libraries, or stopping an unrelated robot stack needs explicit authorization.
+
+## Extend an existing application from a short outcome prompt
+
+If the user asks the current project to add live perception, odometry, or robot
+following, inspect its source and active run first, then write the missing
+application code, contracts, launch wiring, and tests in that project. The
+current project's package is the source to extend, not a reason to route to a
+new package generator or start a second workspace. Keep working components and
+their model provenance; derive the delta from the prompt, supplied robot source,
+URDF, and observed device interfaces. Resolve required build and runtime
+dependencies in the SDK rather than asking the user for routine shell steps.
+Map each new feature to a SiMa capability first and work the questions as the
+contract builder's "Ask once, then proceed" describes: one batched round, then
+build, deploy and bench without stopping except for credentials, physical facts
+or arming.
+For a runnable script created with `write_file`, restore the execute bit after
+every write and verify the mode in the host and build container (see
+`edgematic-ros2-portable-pipeline`, build script).
+
+For requested physical motion, read
+[attended robot motion](../edgematic-ros2-contract-builder/references/attended-motion.md)
+before implementing or launching the base path. The user's requested behavior
+defines scope; the exact command interface, guard thresholds, operator bindings,
+and feedback topics come from the selected application and live robot evidence.
+Leave the robot disarmed for unattended verification and hand the controls to
+the operator for the physical acceptance step.
 
 ## Build and deploy
 
@@ -64,6 +139,9 @@ workspace elsewhere.
 
 - Preflight the exact runtime resources the package uses: ROS domain,
   accelerator ownership, model/media paths, disk space, and port availability.
+- Verify the board carries the new build (build marker or file hash) before
+  launching, and launch through Studio's run tools or the package's run script
+  as `edgematic-ros2-portable-pipeline` describes; record each launch.
 - Stop only a previously recorded instance of this deployment. Prefer saved
   PIDs or exact executable identities; never broad-match a full SSH command line.
 - Launch detached with stdin closed and stdout/stderr redirected to a durable
@@ -86,6 +164,12 @@ end time; an alive node after `pull: route closed` is not an active pipeline.
 The latest evidence supersedes earlier success. If a prior rate was non-zero but
 the current log shows a closed source route with no later decode/result lines,
 report the package as inactive until a fresh rate proves otherwise.
+
+For a robot follow request, also verify one camera, controller, base-command
+owner, and bridge; current feedback and zero requested/measured motion while
+disarmed; and the guarded stop paths in isolated tests. A healthy camera or
+advertised odometry topic does not prove physical following. Record observed
+motion only after an attended operator test with fresh feedback.
 
 ## Visualization
 

@@ -3,7 +3,7 @@ name: edgematic-ros2-host-container
 description: Use when the ROS 2 container has to be created, provisioned or repaired on the user's own host before any ROS 2 work can start — there is no ROS 2 SDK container yet, the container was recreated and lost what was installed into it, or a workspace build dies within seconds on a build dependency the container does not carry (GTSAM, socpipeline, shapely). Covers the host install command, cloning sima-core into the directory shared by Studio and the ROS container, and running sima-core's in-place container provisioning. Trigger on "install ROS2", "set up the ROS container", "I have no ros2-sdk container", "provision the container", or an early missing-build-dependency failure. Do not use for capability selection/building, DevKit preflight, running a prepared pipeline, or SoC flashing.
 ---
 
-For robot-specific build/provisioning failures, consult the retained [bootstrap lessons](../edgematic-stiga-tui-demo/references/bootstrap-and-build.md), including binfmt loss after reboot, independent dependency checks, CPU budgeting and menu versus hardware readiness.
+For application build/provisioning failures, consult the [bootstrap lessons](../edgematic-robot-tui/references/bootstrap-and-build.md), including binfmt loss after reboot, independent dependency checks, CPU budgeting and menu versus hardware readiness.
 
 # Standing up the ROS 2 container on the host
 
@@ -57,13 +57,20 @@ step that was supposed to produce them worked.
    `run_on: "container"` and `run_on: "host"`. Provisioning does this at the end
    of step 3; see "The build channel" below for how to check it.
 
-## Manual recovery is the user's to run, not yours
+## Manual recovery depends on host access
 
-Studio has no shell on the host, no Docker socket, and no channel into a
+Studio chat has no shell on the host, no Docker socket, and no channel into a
 container it is not inside; `sima-cli`'s SDK commands are host-only by design.
-So there is no tool for this, and looking for one wastes a round. Present the
-command as a copyable block, say plainly that they run it on the host, and wait
-for them to report back before moving on.
+When operating only through Studio chat, first use the installer-owned setup or
+available Studio build channel; the chat tools do not themselves create a host
+container. If those paths are unavailable, present the relevant command as a
+copyable block and wait for the user to run it on the host. When the agent has
+an authorized host shell, perform and verify the recovery directly, including
+re-running the idempotent provisioning script after container recreation and
+restoring the build channel after restart. Keep SDK,
+binfmt, workspace and SiMa repository details out of the end-user prompt; ask
+the user only for hardware access or credentials that cannot be obtained through
+the existing authenticated setup.
 
 ## Manual recovery step 1 — install the ROS 2 SDK container
 
@@ -214,6 +221,16 @@ yesterday is this, not a workspace problem. Check the container's identity and
 provisioning before touching the workspace.
 
 ## The build channel
+
+On an x86_64 Linux host after reboot, check ARM64 binfmt before diagnosing a
+ROS SDK container that exits with an exec-format error. If registration was
+lost, restore the host's ARM64/QEMU binfmt support, then restart the existing
+SDK container and its build channel. A restarted Neat/Studio container may also
+need its server process restarted. If a previously paired device becomes
+"unreachable" only through Studio while direct SSH succeeds, check that Studio
+was started with `EDGEMATIC_SSH_DIR` pointing to its existing managed SSH key
+directory; otherwise it silently uses a different key. Verify with
+`get_device_status` before changing device pairing.
 
 The tail of step 3 installs a small HTTP endpoint inside the container and
 publishes its address to `<shared mount>/.edgematic/ros-build-channel.json`.

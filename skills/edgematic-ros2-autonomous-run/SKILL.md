@@ -1,9 +1,14 @@
 ---
 name: edgematic-ros2-autonomous-run
-description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end with minimal back-and-forth. Resolve the device, choose the supported ROS path, derive input and topic contracts from the application, provision input, cross-build, deploy, launch, verify, and show output. Use a one-sentence pipeline-and-device request. Route standard HELLO, smoke-test, demo-ladder, and packaged VIEW work to edgematic-ros2-demo; route an existing repository, package.xml, or launch file to edgematic-ros2-user-package.
+description: Run an otherwise-unclassified ROS 2 pipeline on a paired DevKit end to end from a short outcome prompt. Resolve the device, source, input and topic contracts, then build, deploy, launch, verify, and show output. Route standard demos to edgematic-ros2-demo, an existing or current project to edgematic-ros2-user-package, and a new robot application with source/URDF to edgematic-ros2-contract-builder.
 ---
 
 # Running a ROS 2 pipeline end to end, without a wall of instructions
+
+Before selecting models or authoring replacement components, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Discover compatible SiMa artifacts and capabilities, test relevant candidates,
+and retain the evidence for any external or custom fallback in the project.
 
 The user asked for a working pipeline, not a conversation. Everything below
 exists to keep you from stopping to ask for something the code already answers,
@@ -11,14 +16,33 @@ and from reporting success you have not verified.
 
 When the request is already classifiable, route before using this general
 orchestrator: `edgematic-ros2-demo` owns standard and minimal demos;
-`edgematic-ros2-user-package` owns existing user-supplied packages.
+`edgematic-ros2-user-package` owns an existing user-supplied package or the
+active project's generated package, including an outcome request to extend it;
+`edgematic-ros2-contract-builder` owns a new application with no package yet.
+A two-sentence robot request can name the device, source or attached URDF, input,
+desired behavior, and visible result. The execution skills derive the build,
+runtime, topic, and acceptance details. Do not ask the user to expand that
+request into a procedure or four contract files.
 
 **Finish the job.** If you cannot, say exactly what is blocked, what you tried
 and what you need — never hand back a half-run pipeline as if it were done.
 
-## What you may ask for, and nothing else
+## Robot source boundary
 
-Two things genuinely need the user. Resolve everything else yourself.
+For robot work, use the GitHub repository supplied in the prompt and record its
+immutable revision. Derive model, geometry, sensors, driver packages, topics,
+message types, launcher paths, calibration and limits from that source and
+read-only inspection of the selected device. Do not import a remembered robot
+profile or customer application as a default. Keep task-specific findings in the
+project contracts and evidence, outside these shared skills. Resolve missing
+source or required facts before the dependent action.
+
+
+## Resolve only irreducible input
+
+For an unclassified pipeline whose source is already available, device access
+is the recurring user input. Routed robot work may also need a missing vendor
+source or an attended physical test; follow the owning skill for those cases.
 
 1. **A device.** Only they have the board's credentials. When the request names
    one, resolve it with `list_devices` and confirm it is online with
@@ -39,7 +63,7 @@ one-off: *may I reboot when, and only when, the log reports the segment pool
 exhausted AND the robot stack is not running?* Once granted, apply it and report
 afterwards.
 
-Beyond that, two conditional questions and only these: **if the ROS 2
+Two other conditional questions may arise here: **if the ROS 2
 cross-compiler container is missing**, whether to build on the device instead
 (the user's call, never yours — `edgematic-ros2-portable-pipeline` carries the
 wording); and **if an input source is behind a login**, for the archive itself,
@@ -49,9 +73,9 @@ because you cannot accept a licence on someone's behalf.
 status poll, a version or permission check, an `ffprobe`, a topic or node query and
 a log read all leave the disk exactly as it was, so they need no permission and no
 "may I" — run them and report what they said. Asking there costs a turn and the
-user's attention for nothing, and it trains them to click past the questions that
-do matter. Keep the asking for what writes, replaces or deletes a file, deploys,
-installs, starts or stops a process, reboots, or sends a message to a person.
+user's attention for nothing. A short end-to-end request already authorizes its
+ordinary project writes, build, deployment, and launch; ask about a mutation
+only when it exceeds that scope or affects an unrelated workload.
 
 The same rule applies when a *tool's own* confirmation gate fires on something
 that changes nothing on disk — registering a workspace, for instance, records a
@@ -60,8 +84,8 @@ let the user approve once, and never re-ask the same gate: a second prompt for a
 gate already answered reads as a loop and is one.
 
 Everything else — which video, which stream, which slot, which topics to watch,
-the build, the deploy target, the launch, the viewer — you determine. A question
-about any of those is a failure of this skill, not diligence.
+the build, the deploy target, the launch, the viewer — you determine from the
+application and available evidence.
 
 ## Step 0 — establish which path this deployment is on, and say so
 
@@ -224,13 +248,12 @@ the run works at all:
 
 - **Deploy to a directory the SSH user owns.** A root-owned target fails while
   the archive restores timestamps, after appearing to copy fine.
-- **Clear prior deployments from EVERY path this board has used**, not just the
-  one you are deploying to. A container left from an older directory holds the
-  accelerator just as firmly, and it is easy to miss because you are looking at
-  the wrong tree. Bracket a character in any process-matching pattern so it
-  cannot match — and kill — your own session. Then clear stale DDS shared
-  memory and check that no container survives with zero components; the
-  pre-flight in `edgematic-ros2-portable-pipeline` has both.
+- **Inspect prior deployments from every path this board has used**, not just
+  the current target. A container from an older directory may still hold the
+  accelerator. Stop only a recorded instance of this deployment; report an
+  unrelated owner as a conflict. Clear only DDS state attributable to the
+  stopped instance and check for an empty surviving component container. The
+  pre-flight in `edgematic-ros2-portable-pipeline` has the details.
 - **Launch detached**, output to a log file. A backgrounded launch over a
   non-interactive SSH command dies when that command returns; the tell is real
   frames for about twenty seconds and then nothing.

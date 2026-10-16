@@ -53,6 +53,60 @@ found on one previously used board must not become an undeclared prerequisite.
 Starting/stopping the RTSP input stream is **not** this skill — hand that off to
 `edgematic-media-streams`.
 
+## Flora is always the dashboard
+
+- **Never ask which dashboard to use.** Live ROS output goes to Studio's
+  bundled Flora. Do not offer a custom web page or another viewer unless the
+  user asks for one; do not build one.
+- **Start the bridge through Studio.** Probe with `GET /devices/{id}/foxglove`
+  and start with `POST /devices/{id}/foxglove/start` (the same path the pills
+  use) rather than hand-launching `foxglove_bridge` over SSH. Read the start
+  response: its status and any error, not just the HTTP code.
+- **If the board image lacks `foxglove_bridge`, ship it in the payload.** Pin an
+  official upstream revision, cross-build it with the application, and stage it
+  in the deployed tree; do not `apt install` it onto the board. If the start
+  path reports the bridge as not installed although the payload carries it,
+  Studio may not be resolving the deployment's directory: say so, and if a
+  workaround is unavoidable use a symlink into the NVMe payload, recorded in the
+  project evidence.
+- **If the port never opens,** read the start response and the board launch
+  log (`/tmp/edgematic-foxglove-bridge.log`) before concluding anything; do not
+  report Flora as "not working" without both.
+- **Map panels to the app's actual topics.** Studio's default panels and its
+  automatic topic probe only know fixed example names (`/detections_overlay/compressed`,
+  `/camera/image_raw/compressed`, `/image_raw/compressed`), and the
+  `edgematic-flora` directive carries only a `url`. So detect the topics
+  yourself and hand the user a bound link:
+  1. List the live image topics (`ros2 topic list -t`, keep
+     `sensor_msgs/msg/CompressedImage`) and measure each with `ros2 topic hz`
+     over several seconds. Keep only topics with a steady rate.
+  2. Build the Flora URL with the `panels` and `paneltopics` query parameters,
+     for example
+     `/flora/view?ds=foxglove-websocket&ds.url=ws://<board-ip>:8765&panels=overlay,raw&paneltopics={"overlay":"<annotated_topic>","raw":"<second_image_topic>"}`
+     (URL-encode the JSON). `overlay` and `raw` are both Image panels, so any
+     two compressed image streams can be shown, such as colour with
+     detections plus a colourised depth view.
+  3. Give that link to the user (and a quick-action pill), and check each panel
+     shows data rather than "topic does not exist".
+  4. If the user sees no panels or the old ones, Flora is using a layout already
+     saved in their browser; it ignores `panels` when one exists. Tell them to
+     open the link in a private window or create a new layout in Flora's
+     Layouts menu.
+- **Publish views Flora can carry.** Raw `Image` topics (especially 16-bit
+  depth) are too heavy for the bridge and drop out. Publish compressed views:
+  colour as JPEG, depth colourised to an 8-bit colour map, at a capped
+  resolution and rate (for example 640×480 at 5–10 Hz). Re-measure each view's
+  rate over at least 30 s; a view that publishes in one sample and not the next
+  is not working.
+- **Show every sensor the user asked for.** If the request mentions a depth
+  camera, a colourised depth panel is part of the dashboard, not optional.
+- **Robot demos show odometry.** When the application drives a base, add the
+  `odometry` panel (a Plot of `twist.twist.linear.x` and `twist.twist.angular.z`)
+  bound to the app's own `nav_msgs/Odometry` topic through `paneltopics`, e.g.
+  `panels=overlay,raw,odometry` with `"odometry":"<odom_topic>"`. Verify the
+  topic publishes at a steady rate first; it shows zero while disarmed and the
+  measured speed during attended motion.
+
 ## The yolov8_seg ROS2 pipeline contract
 
 The board runs the `yolov8_seg` ROS2 package from the SiMa ROS 2 client
@@ -107,7 +161,7 @@ rather than pre-flighting the board yourself:
 | --- | --- |
 | `status: running` | Opens Flora directly. |
 | `status: stopped`, `control_enabled: true` | Starts the bridge over SSH, waits for the port, then opens Flora. |
-| `status: stopped`, `installed: false` | Refuses — the ROS2 package isn't on the board. Tell the user to install `foxglove_bridge`. |
+| `status: stopped`, `installed: false` | Refuses — the ROS2 package isn't on the board. Ship `foxglove_bridge` in the application payload (see "Flora is always the dashboard"), redeploy, and start again. |
 | `status: stopped`, `control_enabled: false` | Refuses — this deployment doesn't drive the board. Walk the user through `ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765` over the terminal. |
 | `status: unknown` | Lets the user try anyway — the probe couldn't tell, and blocking would be worse than a possible retry. |
 
@@ -231,8 +285,8 @@ states or transforms are measured odometry.
 | Symptom | Likely cause | What to tell the user |
 | --- | --- | --- |
 | Flora tab opens but never connects / spins on "Connecting…" | A firewall blocks 8765, or the bridge died right after starting | The pill starts the bridge, so a dead connection here usually means the port is blocked: `nc -z <devkit-ip> 8765` from the host. Also check `/tmp/edgematic-foxglove-bridge.log` on the board — that's where the launch output goes. |
-| "foxglove_bridge did not come up in time" | The bridge process started but never opened its port — usually a missing ROS environment or a port already taken | `cat /tmp/edgematic-foxglove-bridge.log` on the board. If the ROS env is the problem, check `/opt/ros/*/setup.sh` exists; if the port is taken, `ss -ltn \| grep 8765`. |
-| "foxglove_bridge is not installed on the DevKit" | The ROS2 package is absent | Install it on the board (`sudo apt install ros-$ROS_DISTRO-foxglove-bridge`, or build it into the workspace), then retry. |
+| "foxglove_bridge did not come up in time" | The bridge process started but never opened its port — usually a missing ROS environment or a port already taken | `cat /tmp/edgematic-foxglove-bridge.log` on the board. If the ROS env is the problem, check the board's ROS setup (`/usr/local/ros2` on SiMa boards, see `edgematic-ros2-board-setup`); if the port is taken, `ss -ltn \| grep 8765`. |
+| "foxglove_bridge is not installed on the DevKit" | The ROS2 package is absent from the board image and the payload | Cross-build it into the application payload and redeploy, then retry; do not install system packages on the board. |
 | Image panel stays black / no frames | RTSP input isn't live, or the pipeline hasn't started | Confirm a mediasrc slot is streaming (`edgematic-media-streams` — `list_input_streams`) and that `./run.sh yolov8_seg` is running. |
 | `/detections` panel shows nothing / errors | Using an Image panel on `/detections` instead of Raw Messages | `/detections` is a custom message type — it only renders in a **Raw Messages** panel, never an Image panel. |
 | Pipeline process won't stop cleanly | `Ctrl+C` sometimes leaves it wedged | `kill -USR2 <pid>` for a clean shutdown (the pipeline's signal handler). |

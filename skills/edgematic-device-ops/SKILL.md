@@ -10,7 +10,7 @@ description: Use when the user asks to manage SiMa DevKits or deploy from the Ed
 Manage paired SiMa DevKits and trigger deployments from chat. You do this
 through the agent's device tools, which call the Edgematic Studio backend
 in-process. The user speaks in natural language ("show my devices", "add
-Edge-01 at 192.168.1.10", "deploy to Edge-01"); you translate that into the
+Edge-01 at <device-ip>", "deploy to Edge-01"); you translate that into the
 right tool call, collecting any missing information first and reporting the
 outcome clearly.
 
@@ -69,6 +69,27 @@ key path from configuration and the same default-login order via the available
 shell/pairing tools. Keep passwords out of command arguments and logs (use
 child-scoped `SSHPASS`); never guess a private key path. Preserve host-key and
 ownership checks. Do not repeatedly retry defaults after both are rejected.
+
+## Inspecting a board
+
+Hardware and network facts come from the paired board, never from the Studio
+container. Studio runs in its own container: its `ip addr`, `/dev` and `lsusb`
+describe that container, not the DevKit, and `get_device_status` is a summary
+that need not list every interface.
+
+- Use Studio's device tools first. When they do not answer the question, open a
+  read-only shell on the board with the managed key and known-hosts paths from
+  `list_devices` (`ssh.argv`).
+- Before asking the user how something is connected, enumerate every network
+  interface and address (`ip -br addr`, `ip route`), reachable neighbours
+  (`ip neigh`, a ping of each directly connected subnet), USB topology
+  (`lsusb -t`), stable device names (`/dev/v4l/by-id`, `arecord -l`, `aplay -l`)
+  and block devices. Report what the board shows; ask only for what it cannot.
+- When the user says "check" or "verify" a connection, do this inspection in
+  the same turn rather than asking again.
+- Keep these probes read-only. Changing the board (installs, services, files
+  outside the application directory) belongs to the application workflow and
+  `edgematic-ros2-board-setup`, not to inspection.
 
 ## Key rules
 

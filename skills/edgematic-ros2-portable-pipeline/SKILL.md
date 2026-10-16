@@ -103,9 +103,12 @@ Then honour the answer:
 
 Two failures that look like broken code and are not:
 
-- **The build script must be executable.** `write_file` cannot set the exec bit —
-  a permission is not file content — so the user sets `+x` from their own shell.
-  Without it the build dies instantly on a bad interpreter / permission denied.
+- **The build script must be executable.** Pass `executable: true` to
+  `write_file` only when its schema lists that parameter. Studio builds without
+  it rewrite the file and drop the execute bit on every `write_file`, so after
+  each write of a runnable script restore `+x` (one `chmod +x <script>` in the
+  shared workspace) and check the mode before calling `prepare_ros_build`.
+  Exit 126 from the build is this, not broken code.
 - **Name the script by its bare filename**, not a workspace-relative path. The
   container's working directory is already the project directory, so a path
   produces exit 127 and "No such file or directory".
@@ -119,25 +122,55 @@ and fails at runtime. Verify on the board, and say which of the two you have.
 `deploy_to_device` places the merge-install tree at the `remote_dir` from
 `deploy.yaml`.
 
+Select `remote_dir` from the live board before deploying. Inspect block devices
+and mounted filesystems (`lsblk` plus `findmnt`); if a writable filesystem is
+backed by a device whose transport/source is NVMe, set `remote_dir` to
+`<nvme-mount>/simaai/applications/<application>`. Verify the chosen path with
+`findmnt -T` and record its source, filesystem, free space, and resolved path.
+Do not treat a directory named `/media` as NVMe evidence by itself. Deploy only
+to NVMe. Do not fall back to the root filesystem (`/data/...` that resolves to
+the eMMC/SD root): if no writable NVMe-backed filesystem exists, stop before
+deployment and report the `lsblk`/`findmnt` evidence as the blocker. A path that
+is a symlink into NVMe (for example `/data/simaai/applications ->
+<nvme-mount>/applications`) is acceptable only when `findmnt -T` confirms it, but
+write the resolved NVMe path into `deploy.yaml`. Never deploy to two locations in
+one attempt.
+
+Studio resolves `remote_dir` from the active project's client `deploy.yaml`,
+not from a second manifest nested only inside the directory passed as
+`payload`. Synchronize the project-level manifest to the selected storage path
+before calling `deploy_to_device`, then reject the result if its returned
+`remote_path` differs from that path.
+
 The optional `payload` parameter is not a placeholder. Omit the key entirely
 for the normal staged install tree; never pass an empty string. When a prepared
 ROS app has assembled a complete payload directory, pass that exact directory
 relative to the shared workspace (for example `edgematic-demo/payload`), not the
-application source directory above it.
+application source directory above it, on every deploy. What is shipped differs
+silently depending on whether `payload` is passed.
 
-- **`remote_dir` must be owned by the SSH user** (`sima`). A root-owned target
-  fails while `tar` restores the directory's timestamps ("utime: Operation not
-  permitted"), after appearing to copy fine.
+**Verify the board carries the new code.** `deploy_to_device` can report
+success while shipping a stale tree. Before staging, write a build marker into
+the payload (source revision plus build time) and note the SHA-256 of a file you
+changed; after deploying, read the marker and hash that file on the board under
+the returned `remote_path`. If either does not match, redeploy with the correct
+`payload` before launching, and never launch or debug against unverified code.
+
+- **`remote_dir` must be writable by the configured SSH user.** For the common
+  `sima` login, a root-owned target fails while `tar` restores the directory's
+  timestamps ("utime: Operation not permitted"), after appearing to copy fine.
 - **`ros_domain_id` must match the board.** A wrong id fails *silently* on
-  hardware — everything launches and nothing ever discovers anything. Ask; do not
-  guess.
+  hardware — everything launches and nothing ever discovers anything. Read it
+  from the board's running graph or launch configuration, or probe the plausible
+  domains read-only; ask only if no probe resolves it. Do not guess.
 - Deploy overwrites files in place, so a deployed `foxglove_bridge` is killed by
   its own overwrite. Start the bridge **after** deploying, never before.
 
 ## 4. Board pre-flight, before every run
 
-Have the user run these over the built-in SSH terminal; both are cheap and both
-have cost hours when skipped.
+Run these through the available managed board command path or built-in SSH
+terminal. Ask the user to run a read-only command only when this deployment has
+no agent-controlled board path.
 
 - **The MLA shared-memory signature must be the live one.** Read the first four
   bytes of the MLA shared-memory node with `od` (`xxd` is frequently absent from
@@ -149,13 +182,16 @@ have cost hours when skipped.
   directory holds the MLA just as firmly, and it is easy to miss because you are
   looking at the wrong tree. When matching a process name, bracket the first
   character of the pattern so the search cannot match the very command that runs
-  it and kill the user's own session.
+  it and kill the user's own session. Stop only a previously recorded instance
+  of this deployment; another workload holding the MLA is a resource conflict
+  to report, not a process to clear speculatively.
 - **No stale DDS state may survive the old run.** A killed pipeline leaves its
   shared-memory transport files under `/dev/shm` (`fastrtps_*`), writable only
   by the user that created them. Left behind by another user, they let a fresh
   publisher and subscriber discover each other and exchange **no data** — nodes
-  and topics list normally while every rate is zero. Remove them once prior
-  deployments are cleared, and confirm no container survives with **zero**
+  and topics list normally while every rate is zero. Remove only files
+  attributable to the stopped deployment, after checking no other owner uses
+  them, and confirm no container survives with **zero**
   loaded components (`ros2 component list`): that one answers graph queries in
   place of your launch, so "the node is listed" proves nothing.
 - **The MLA segment pool must not be exhausted.** The board's shared memory is a
@@ -167,6 +203,22 @@ have cost hours when skipped.
   free. A reboot clears it. Two things follow: **fix the configuration before
   relaunching** rather than trying again and hoping, and treat the reboot as the
   shared-board action it is — ask the user, do not take it.
+
+### A PyNeat model load stuck in GStreamer discovery
+
+When a Python node prints the model archive's low-level `Model loaded` line but
+never reaches its own post-constructor log or publishes output, inspect its
+child processes before diagnosing an MLA failure. A `gst-plugin-scanner` child
+blocked in `isp_v4l2_m2m_fop_open` means GStreamer is enumerating the board's
+internal V4L devices. For a file or ROS-image input that does not need V4L
+plugins, give only that application a plugin directory excluding V4L and
+libcamera entries, set a separate `GST_REGISTRY`, and set
+`SIMA_GST_ALLOW_SYSTEM_PLUGINS=1` when intentionally setting
+`GST_PLUGIN_SYSTEM_PATH_1_0`; PyNeat rejects that override without the opt-in.
+Do not apply this filter to a pipeline that needs V4L capture. Stop only the
+owned launch before retrying; an uninterruptible scanner from another run is
+not a process to clear. Verify the node reaches model initialization and that
+fresh image and detection messages follow.
 
 ## 5. The source must match the geometry the pipeline was built for
 
@@ -196,7 +248,7 @@ you are editing. The other cause that is real is an encoder element string
 re-derived from prose that came out short of its full property set — read the
 exact string out of a working deploy rather than reconstructing it.
 
-## 6. The two things that decide whether the run survives
+## 6. How the run is launched, survives, and is recorded
 
 1. **Set the environment explicitly, do not source the deployed setup script.**
    The merge-install setup script re-sources the container's build-time parent
@@ -210,7 +262,14 @@ exact string out of a working deploy rather than reconstructing it.
    `cd "$COLCON_CURRENT_PREFIX/share/<pkg>"` runs with an empty value and
    launches from the wrong directory — where the pipeline's relative config paths
    resolve to nothing.
-2. **Launch detached.** A backgrounded launch over a non-interactive SSH command
+2. **Launch through Studio's run tools when one supports the package**
+   (`run_ros_pipeline` for a catalogue workspace, `run_pipeline` for a project
+   it can run). Studio currently has no run tool for an arbitrary deployed ROS
+   workspace; then launch and stop through the project's checked-in run/stop
+   script over managed SSH, and record each launch and stop (command, time,
+   PID, log path) in the project evidence. Use ad-hoc SSH commands only for
+   read-only inspection, never as the launch record.
+3. **Launch detached.** A backgrounded launch over a non-interactive SSH command
    dies of `SIGHUP` the moment that command returns. The tell is unmistakable and
    routinely misread: real annotated frames for roughly twenty seconds, then the
    tile goes dark. Launch it under `setsid` with stdout and stderr redirected to
