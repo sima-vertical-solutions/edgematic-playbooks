@@ -141,7 +141,7 @@ useful, suggest the next step.
 | --- | --- | --- |
 | `insight_unreachable` | The media/stream service didn't respond | The media service is unavailable — check the Studio backend, then retry. |
 | `insight_operation_failed` | The service rejected the operation (e.g. all slots busy, bad file) | Relay the message; for "all slots in use", offer to stop a stream first. |
-| `upstream_unavailable` | The curated catalogue source is unreachable | Only affects `add_video {name}` (curated clip). Listing is unaffected (curated clips just won't appear until it recovers); suggest uploading a local file via no-argument `add_video` instead. |
+| `upstream_unavailable` | The curated catalogue source is unreachable | Only affects `add_video {name}` (curated clip). Listing still answers, without the curated clips, and says so: `list_videos` reports `catalogue: "unavailable"`. Say the catalogue is unreachable and retry; offer a no-argument `add_video` upload only if the user wants to go ahead without it. |
 | `invalid_tool_params` | Missing/invalid arguments (e.g. no `name`, no `video`) | Ask for the missing field (a video name or a slot). |
 
 Note: `list_videos` no longer fails when the curated catalogue is unreachable —
