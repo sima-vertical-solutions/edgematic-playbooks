@@ -267,8 +267,10 @@ often does not show it. Take the bridge's state from `get_simulation_status` →
 `board.foxglove_bridge`, never from the node list, and do not start a second
 bridge or the HIL application to "get one". Its log is `journalctl -u
 foxglove-bridge`, not `/tmp/edgematic-foxglove-bridge.log`. It loads the message
-types of apps deployed under `/data/simaai/applications` and restarts after a
-deploy there.
+types of apps deployed under `/data/simaai/applications`, and restarts on its own
+5–15 s after an app from there starts (Flora reconnects within seconds). If Flora
+then shows the camera but not the app's topics, the bridge is stale: ask the user
+to run `sudo systemctl restart foxglove-bridge` on the board.
 
 ## Troubleshooting
 

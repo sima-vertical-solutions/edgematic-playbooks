@@ -184,7 +184,7 @@ JPEG). Steps 1 to 4 still apply; step 5 is replaced by:
    must not set its own, a deploy manifest's `ros_domain_id` must be 77, and
    `ros2_topic_list` / `ros2_node_list` take `domain` 77 or none (0 lists nothing).
    Deploy the app under `/data/simaai/applications` so the bridge decodes its message
-   types; the bridge restarts after a deploy there. `connect_simulation_input` and
+   types; the bridge restarts on its own shortly after an app from there starts. `connect_simulation_input` and
    `start_hil_application` are for boards an operator set up differently; never use
    them here. When something does not work, follow the ladder in `edgematic-simulation`'s
    troubleshooting reference.
