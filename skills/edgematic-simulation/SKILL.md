@@ -25,6 +25,12 @@ The whole flow is tool calls; nothing is done in the Isaac editor:
 any point. Every tool that changes something asks the user to confirm, unless the user chose a
 permission mode that approves for them — so state what a call will change before you make it.
 
+**No simulation tools at all?** (`upload_robot_bundle`, `create_robot`, `get_simulation_status`
+missing from your tools.) Studio hides the whole family while its simulation switch is off, and
+the switch resets to off whenever Studio restarts. Tell the user: turn on **Settings → Robotics →
+Simulation environment**, then start a new chat (the tool list is read when a chat starts). Do
+not work around it with REST calls or a shell: there is no other way to upload a bundle.
+
 **The rule that outranks everything else here: topic names come from the robot, never from
 memory.** Robots name their topics as they like (Nova Carter's odometry is `/chassis/odom`,
 ROSbot XL's `/odom`). Read them from `list_robots` (`interfaces`) or `get_board_link` before you
@@ -138,6 +144,32 @@ Hand the topic names to the board app from the link — never hard-code them:
 A board app can also find its topics by type (the demo apps do: odometry and velocity set to
 `auto`). Building, deploying and running the app is edgematic-build-deploy-run's job; preparing
 the board is edgematic-ros2-board-setup's.
+
+### The board's side is always on — do not start it
+
+A board set up for the simulator runs its half of the link and its Foxglove bridge as services
+that start with the board. There is nothing to connect or launch:
+
+- **Do not call `connect_simulation_input` or `start_hil_application`.** They run an older
+  hardware-in-the-loop setup (scripts under `/media/hil/`) that these boards do not have; exit
+  127 from either means exactly that, not a broken board. `start_hil_application` would also
+  start a different demo app.
+- **Ignore `tunnel` in `get_simulation_status`'s board part** — it looks for that older setup's
+  SSH tunnel and reads `false` on a working link. What tells you the link works: `get_board_link`
+  `applied_state: applied`, and the board part's `camera_hz` above zero (the camera arrived on
+  the board).
+- **The Foxglove bridge is running even when `ros2_node_list` does not list it.** Ask Studio's
+  Foxglove status (`GET /devices/{id}/foxglove`), or `ros2_topic_list` while a viewer is
+  connected; never conclude "no bridge" from the node list alone, and never start a second one.
+
+### Is the robot moving?
+
+Odometry is the answer, not the board app's log: read the odometry topic on the board twice, a
+few seconds apart, while the app publishes velocity. If the board publishes on the `accept`
+topic but the position does not change, the command reached the simulator and the robot did not
+drive — a simulator-side problem with that robot (its drive, its wheels, its spawn height).
+Report it with those two readings; do not redeploy or restart the board app, which is not the
+cause.
 
 ## 7. Removing robots, scenes and bundles
 

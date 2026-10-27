@@ -240,6 +240,11 @@ of the pill and tell the user the robot's odometry topic instead.
 "Image panel stays black" on a simulated robot almost always means the scene is
 loaded but not playing.
 
+A board set up for the simulator runs `foxglove_bridge` as a service on port 8765,
+and `ros2_node_list` often does not show it. Take the bridge's state from Studio's
+Foxglove status for the device, never from the node list, and do not start a
+second bridge or the HIL application to "get one".
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to tell the user |

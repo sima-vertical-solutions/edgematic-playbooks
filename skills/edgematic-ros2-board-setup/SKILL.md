@@ -176,6 +176,10 @@ JPEG). Steps 1 to 4 still apply; step 5 is replaced by:
    link's `camera` (`0` means the camera's own size, which the robot record's sensor
    tells you), and measure the rate on the board rather than assuming it — the
    simulator often runs below real time.
+5. Nothing to start on the board: its half of the link and its `foxglove_bridge` are
+   services. Do not call `connect_simulation_input` or `start_hil_application` (they
+   need an older `/media/hil/` setup and fail with exit 127), and ignore `tunnel: false`
+   in `get_simulation_status` — see `edgematic-simulation`.
 
 ### 6. foxglove_bridge, only if visualizing
 

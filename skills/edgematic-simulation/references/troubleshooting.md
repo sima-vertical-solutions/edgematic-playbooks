@@ -15,3 +15,9 @@
 | `joint_not_found` / `link_not_found` | the error lists the robot's joints or links | A name in robot.yaml does not match the URDF. Use one from the list. |
 | `simulator_not_running` | `get_simulation_status` | Start it with `control_simulation` `start` (a few minutes) when the user agrees: it costs GPU time. |
 | A deleted ready-made scene came back | — | The simulator's setup rewrites its ready-made scenes on every run; save a copy under another name to change one. |
+| No simulation tools in the tool list | — | Studio's simulation switch is off (it resets on every restart). Settings → Robotics → Simulation environment, then a new chat. |
+| `get_simulation_status` says `tunnel: false` | `get_board_link`, the board part's `camera_hz` | Not a fault: the field looks for an older setup's SSH tunnel. Applied link + camera on the board = working link. |
+| `connect_simulation_input` / `start_hil_application` exit 127 | — | They need `/media/hil/` scripts these boards do not have. The link is always on; do not call them. |
+| The board sends velocity, the robot stays put | odometry on the board, twice, a few seconds apart | The command arrives; the simulated robot does not drive. Report it as a simulator problem with that robot, with both readings. A ready-made scene with a known-good robot (e.g. the ROSbot XL) tells the robot from the rest of the chain. |
+| The simulator view in Studio is black or will not connect | — | Isaac's viewer takes one viewer at a time. Close the simulator view in any other tab or window, then reload the Simulation panel. |
+| "No `foxglove_bridge`" from `ros2_node_list` | Studio's Foxglove status for the device | The bridge is a board service and is often missing from the node list. Trust the status, not the list. |
