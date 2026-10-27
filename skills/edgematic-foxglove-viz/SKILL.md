@@ -233,8 +233,8 @@ When the board app runs against the Isaac Sim simulator (`edgematic-simulation`)
 the camera arrives as `/camera/image_raw/compressed` on the board, so the `raw`
 panel shows it unchanged. The `odometry` and `scene3d` panels read `/odom` only,
 and robots name their odometry differently (`/chassis/odom` for Nova Carter).
-Read it from `get_board_link` — the `forward` topic of type
-`nav_msgs/msg/Odometry` — and when it is not `/odom`, leave those two panels out
+Read it from `get_board_link`: the `forward` topic that its `interfaces` list as
+`nav_msgs/msg/Odometry` (`forward` holds names only) — and when it is not `/odom`, leave those two panels out
 of the pill and tell the user the robot's odometry topic instead.
 
 "Image panel stays black" on a simulated robot almost always means the scene is

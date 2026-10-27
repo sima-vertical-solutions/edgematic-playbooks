@@ -169,7 +169,8 @@ JPEG). Steps 1 to 4 still apply; step 5 is replaced by:
 2. `get_board_link` shows `applied_state: applied`, and its `camera` is not `null`
    (a robot with no camera sends none).
 3. Take the other topic names from the link, never from memory: odometry is the
-   `forward` topic of type `nav_msgs/msg/Odometry`, and the velocity command is the
+   `forward` topic that the link's `interfaces` list as `nav_msgs/msg/Odometry`
+   (`forward` holds names only), and the velocity command is the
    `accept` topic. Robots name these differently (`/chassis/odom`, `/odom`).
 4. The geometry is the compressed stream's: read `out_width` / `out_height` from the
    link's `camera` (`0` means the camera's own size, which the robot record's sensor

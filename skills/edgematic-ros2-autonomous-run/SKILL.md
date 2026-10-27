@@ -173,7 +173,7 @@ Having derived the requirement, satisfy it without asking:
    needs a compressed-image input or a decoder in front of it). Follow
    `edgematic-simulation` to load a scene and press Play, then read the link with
    `get_board_link`: its `camera` gives the geometry (`out_width` / `out_height`,
-   `0` meaning the camera's own size), its `forward` Odometry topic and its
+   `0` meaning the camera's own size), its `forward` topic that `interfaces` lists as `nav_msgs/msg/Odometry` and its
    `accept` velocity topic are the robot's real names. Use them for step 2's
    contract instead of the package's defaults — the package was usually written
    for a different robot — and measure the rate on the board: the simulator often

@@ -22,7 +22,8 @@ The whole flow is tool calls; nothing is done in the Isaac editor:
 6. **Run the board app** (edgematic-build-deploy-run), reading the topic names from the board link.
 
 `get_simulation_status` answers "is the simulator up, what is open, is the timeline playing" at
-any point. Every tool that changes something asks the user to confirm.
+any point. Every tool that changes something asks the user to confirm, unless the user chose a
+permission mode that approves for them — so state what a call will change before you make it.
 
 **The rule that outranks everything else here: topic names come from the robot, never from
 memory.** Robots name their topics as they like (Nova Carter's odometry is `/chassis/odom`,
@@ -128,7 +129,9 @@ following the scene.
 
 Hand the topic names to the board app from the link — never hard-code them:
 
-- odometry: the `forward` topic of type `nav_msgs/msg/Odometry`;
+- odometry: the `forward` topic that the link's `interfaces` list as `nav_msgs/msg/Odometry`
+  (`forward` holds topic names only; the types are in `interfaces`). A ready-made scene lists no
+  `interfaces`; its link forwards odometry only (Nova Carter's `/chassis/odom`);
 - velocity: the `accept` topic;
 - camera: `/camera/image_raw/compressed` (`sensor_msgs/msg/CompressedImage`, JPEG).
 
@@ -138,7 +141,9 @@ the board is edgematic-ros2-board-setup's.
 
 ## 7. Removing robots, scenes and bundles
 
-All three ask the user to confirm. State the consequence before you call the tool:
+All three are confirm-gated (unless the user's permission mode approves for them), and none can
+be undone except a ready-made scene, which the simulator's setup puts back. Delete only when the
+user asked, and state the consequence before you call the tool:
 
 | Tool | Removes | Also |
 | --- | --- | --- |
