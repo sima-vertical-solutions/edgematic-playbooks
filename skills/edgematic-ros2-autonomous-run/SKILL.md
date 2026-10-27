@@ -167,6 +167,17 @@ Having derived the requirement, satisfy it without asking:
    the one legitimate question about a source.
 4. **A live camera or existing RTSP source** — use it directly when its geometry
    matches, and say plainly it must be restreamed if it does not.
+5. **The simulator** — when the user asks to run against a simulated robot, there
+   is no stream to provision: the simulator's board link delivers the robot's
+   camera to the board as `/camera/image_raw/compressed` (JPEG, so the pipeline
+   needs a compressed-image input or a decoder in front of it). Follow
+   `edgematic-simulation` to load a scene and press Play, then read the link with
+   `get_board_link`: its `camera` gives the geometry (`out_width` / `out_height`,
+   `0` meaning the camera's own size), its `forward` Odometry topic and its
+   `accept` velocity topic are the robot's real names. Use them for step 2's
+   contract instead of the package's defaults — the package was usually written
+   for a different robot — and measure the rate on the board: the simulator often
+   runs below real time.
 
 **`ffprobe` the asset you actually started**, not the one its name suggests, and
 take the geometry from that.

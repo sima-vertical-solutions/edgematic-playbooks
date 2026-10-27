@@ -12,6 +12,7 @@ Complete endpoint reference for Edgematic Studio. All paths are relative to `STU
 - Nodes
 - Reverse (Source → Graph)
 - Settings
+- Simulation (sim-agent)
 - Infrastructure
 
 ---
@@ -242,6 +243,37 @@ Both return `{"graph": Graph}` on success with HTTP 200.
 | `GET/WS` | `/terminal` | Terminal session (WebSocket/SSE). |
 | `GET` | `/video` | Video proxy. |
 | `GET` | `/videos` | Videos API (list/manage video assets). |
+
+---
+
+## Simulation (sim-agent)
+
+Studio reaches the Isaac Sim simulator only through its sim-agent (URL and token in Settings →
+Robotics). Every route answers `409 simulation_not_configured` until both are set; a refusal by
+the sim-agent is `sim_agent_rejected` with the sim-agent's own code in the message
+(`[scene_exists]`, `[robot_not_found]`, …). Jobs (`202`) are followed with `GET
+/simulation/agent/jobs/:jobId`. None of these routes is offered as a chat quick action.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/simulation/agent/status` | Simulator service, Isaac stage and timeline (`real_time_factor`), job queue, viewer and Foxglove URLs. |
+| `POST` | `/simulation/agent/simulator/start` / `stop` | Start (job) or stop the Isaac service. Body `{}`. |
+| `POST` | `/simulation/agent/timeline/:action` | `play`, `pause`, `stop`, `reset`. Body `{}`. |
+| `GET` | `/simulation/agent/jobs/:jobId` | `{job_id, state: queued\|running\|done\|failed, result?, error?}`. |
+| `GET` | `/simulation/agent/bundles` | Uploaded robot bundles (id, label, size, candidates, profiles). |
+| `DELETE` | `/simulation/agent/bundles/:bundleId` | Delete a bundle **and every robot made from it**. `204`. |
+| `GET` | `/simulation/agent/robots` | The robot library: drive, sensors, `interfaces` (topic, direction, type), warnings. |
+| `POST` | `/simulation/agent/robots` | Create a ROS-ready robot from a bundle. Body `{bundle_id, profile?, entry?, name?, xacro_args?, urdf?}`. Job; `result` is the robot. |
+| `GET` | `/simulation/agent/robots/:robotId` | One robot. |
+| `DELETE` | `/simulation/agent/robots/:robotId` | Delete a robot (its bundle stays). `204`. |
+| `GET` | `/simulation/agent/scenes` | Saved scenes with the robots each places. |
+| `POST` | `/simulation/agent/scenes` | Compose a scene. Body `{name, world: {asset}\|{scene}\|{}, robots: [{robot_id, prim_name?, spawn?}], walkers?, clock?, overwrite?}`. `201`; not loaded. |
+| `GET` | `/simulation/agent/scenes/:name` | A scene's world, robots and their interfaces. |
+| `DELETE` | `/simulation/agent/scenes/:name` | Delete a saved scene (an open one stays open in Isaac). `204`. |
+| `POST` | `/simulation/agent/scenes/:name/load` | Load a scene (job), replacing the open stage; the timeline is stopped until play. |
+| `POST` | `/simulation/agent/scenes/:name/save` | Save the open stage. Body `{overwrite?}`. Job. |
+| `GET` | `/simulation/agent/board-link` | What the board gets: `{mode, scene, link, applied_state: applied\|pending\|failed, applied, interfaces}`. |
+| `PUT` | `/simulation/agent/board-link` | `{"mode": "auto"}` follows the loaded scene; `{"mode": "manual", camera, forward, accept, watchdog?, watchdog_timeout?}` replaces the whole link. |
 
 ---
 

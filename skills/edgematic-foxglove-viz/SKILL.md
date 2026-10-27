@@ -178,7 +178,8 @@ message dump (segmentation mask bytes included) and is unreadable in chat.
 Omitting `panels` keeps whatever the surface is already showing.
 
 Emit these once the board-side prerequisites above are satisfied (pipeline
-running, RTSP input live) — if either is still missing, walk the user through
+running, RTSP input live — or, for a simulated robot, the scene playing and the
+board link applied) — if either is still missing, walk the user through
 it first. You do **not** need the bridge to be up: the pill starts it. Don't
 offer them for a project that has no camera/detection pipeline at all.
 
@@ -226,6 +227,19 @@ an advertised topic proves frames render, or that a queued-byte count alone
 proves network saturation. Preserve URDF TF; do not imply stationary joint
 states or transforms are measured odometry.
 
+### A simulated robot
+
+When the board app runs against the Isaac Sim simulator (`edgematic-simulation`),
+the camera arrives as `/camera/image_raw/compressed` on the board, so the `raw`
+panel shows it unchanged. The `odometry` and `scene3d` panels read `/odom` only,
+and robots name their odometry differently (`/chassis/odom` for Nova Carter).
+Read it from `get_board_link` — the `forward` topic of type
+`nav_msgs/msg/Odometry` — and when it is not `/odom`, leave those two panels out
+of the pill and tell the user the robot's odometry topic instead.
+
+"Image panel stays black" on a simulated robot almost always means the scene is
+loaded but not playing.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to tell the user |
@@ -244,6 +258,8 @@ states or transforms are measured odometry.
 - Starting/stopping the RTSP input stream is `edgematic-media-streams`'s job,
   not this skill's — reach for it before or alongside these steps when the
   input isn't live yet.
+- Loading a simulated scene, pressing Play and the board link are
+  `edgematic-simulation`'s job.
 - Device pairing/status is `edgematic-device-ops`; building/deploying/running
   the pipeline itself is `edgematic-build-deploy-run`. This skill only covers
   getting the *visualization* connected once those are already in place.

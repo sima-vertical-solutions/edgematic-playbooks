@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edgematic Simulation"
+  short_description: "Bring robots into the Isaac Sim simulator and drive them from a DevKit"
+  default_prompt: "Use $edgematic-simulation when the user wants a robot in the simulator, a simulated scene, or a board app driving a simulated robot. Upload the bundle, create the robot, compose and load the scene, press play, and read the topic names from the board link rather than assuming them."
