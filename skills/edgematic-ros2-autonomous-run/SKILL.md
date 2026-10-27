@@ -248,7 +248,7 @@ the run works at all:
 - **Start the visualisation bridge last**, after the deploy and after the
   pipeline, and **as the same user as the pipeline**. A deploy overwrites it in
   place and kills it; a bridge under another user lists every topic and relays
-  no data.
+  no data. A simulator board (`edgematic-ros2-board-setup` 5b) is the exception: its bridge already runs as a service — never start a second one.
 
 If a run crashes, **fix the configuration before relaunching**. Each crashed run
 leaks accelerator segments from a fixed pool, so retrying an unchanged mistake

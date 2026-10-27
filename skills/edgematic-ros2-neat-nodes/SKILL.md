@@ -75,7 +75,12 @@ Full board-setup runbook (flash, ROS2 + Neat install, foxglove_bridge): the
   problem, and the honest answer names it.
 - **`ros2_node_list`** `{ device }` — `ros2 node list` over SSH → the running
   nodes (`/neat_inference`, `/yolov8_seg_neat_container`, `/foxglove_bridge`).
-  Use for "show me the ROS (neat) nodes".
+  Use for "show me the ROS (neat) nodes". A running `/foxglove_bridge` may be
+  missing from it; do not conclude the bridge is down from the list alone.
+
+Both list tools also take a `domain`. Pass the workspace's `ros_domain_id`; on a
+board set up for the simulator omit it or pass `77` (see
+`edgematic-ros-capabilities`, "After a deploy, look at the board").
 
 All three take the paired device by name or id. A transport failure surfaces as
 `device_unreachable`; a non-zero board-side exit as `ros_command_failed`.

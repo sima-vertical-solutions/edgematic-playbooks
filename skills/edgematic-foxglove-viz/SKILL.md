@@ -39,7 +39,8 @@ See `edgematic-device-ops` for that contract. Surface live output in either form
   request with prose alone.
 
 The one board-side thing that is **no longer manual** is `foxglove_bridge`
-itself: Studio can probe it and start it over SSH. Both Flora pills handle that
+itself (on a simulator board it is a service that is always running — see
+"A simulated robot" below): Studio can probe it and start it over SSH. Both Flora pills handle that
 automatically — if the bridge is down when the user clicks, the frontend starts
 it and only then opens Flora. So **do not** walk the user through
 `ros2 launch foxglove_bridge …` as a prerequisite unless they ask, or unless a
@@ -172,9 +173,26 @@ want instead of opening the surface and hunting for panels:
   detected (class, score, box). Offer this when the user is checking *what*
   was found or debugging accuracy, not just watching.
 
-`panels` accepts `overlay`, `raw`, `detclean`, `detlist`, `detections`,
-`state`, `odometry`, and `frames`. Prefer `detclean` for a detections table — `detections` is the raw
-message dump (segmentation mask bytes included) and is unreadable in chat.
+`panels` accepts exactly these keys (any other key makes the whole block render
+as plain text), each bound to a fixed topic:
+
+| Key | Binds |
+| --- | --- |
+| `overlay` | `/detections_overlay` (annotated video) |
+| `raw` | `/image_raw` (the pipeline's raw frame) |
+| `detlist`, `detclean`, `detections` | `/detections` as a table, a readable table, the raw dump |
+| `state` | `/neat_inference/transition_event` |
+| `input` | `/camera/image_raw/compressed` (the camera the board consumes — a robot's or the simulator's) |
+| `odom` | `/odom` |
+| `imu` | `/sima/sensors/base/imu/imu_raw` |
+| `gnss` | `/sima/sensors/lg290p_gnss/*` |
+| `battery` | `/sima/robot/base/power_board_node/battery_state` |
+| `scene3d` | `/odom`, `/tf`, `/scan`, `/ti_mmwave/radar_scan_pcl`, following `base_link` |
+
+The last five are one robot's sensor stack: offer a panel only when the board
+actually has its topic. Prefer `detclean` for a detections table — `detections`
+is the raw message dump (segmentation mask bytes included) and is unreadable in
+chat.
 Omitting `panels` keeps whatever the surface is already showing.
 
 Emit these once the board-side prerequisites above are satisfied (pipeline
@@ -230,9 +248,12 @@ states or transforms are measured odometry.
 ### A simulated robot
 
 When the board app runs against the Isaac Sim simulator (`edgematic-simulation`),
-the camera arrives as `/camera/image_raw/compressed` on the board, so the `raw`
-panel shows it unchanged. The `odometry` and `scene3d` panels read `/odom` only,
-and robots name their odometry differently (`/chassis/odom` for Nova Carter).
+the camera arrives as `/camera/image_raw/compressed` on the board, so the `input`
+panel shows it (`raw` binds `/image_raw`, which the simulator does not send). The
+`odom` and `scene3d` panels read `/odom` only, and robots name their odometry
+differently (`/chassis/odom` for Nova Carter). `scene3d` also expects `/scan`,
+the radar cloud and a `base_link` frame; `imu`, `gnss` and `battery` bind one
+robot's own sensor topics — leave them out unless the board receives those.
 Read it from `get_board_link`: the `forward` topic that its `interfaces` list as
 `nav_msgs/msg/Odometry` (`forward` holds names only) — and when it is not `/odom`, leave those two panels out
 of the pill and tell the user the robot's odometry topic instead.
@@ -240,10 +261,14 @@ of the pill and tell the user the robot's odometry topic instead.
 "Image panel stays black" on a simulated robot almost always means the scene is
 loaded but not playing.
 
-A board set up for the simulator runs `foxglove_bridge` as a service on port 8765,
-and `ros2_node_list` often does not show it. Take the bridge's state from Studio's
-Foxglove status for the device, never from the node list, and do not start a
-second bridge or the HIL application to "get one".
+A board set up for the simulator runs `foxglove_bridge` as a service on port 8765
+(read-only: a viewer cannot publish or drive the robot), and `ros2_node_list`
+often does not show it. Take the bridge's state from `get_simulation_status` →
+`board.foxglove_bridge`, never from the node list, and do not start a second
+bridge or the HIL application to "get one". Its log is `journalctl -u
+foxglove-bridge`, not `/tmp/edgematic-foxglove-bridge.log`. It loads the message
+types of apps deployed under `/data/simaai/applications` and restarts after a
+deploy there.
 
 ## Troubleshooting
 
@@ -251,7 +276,7 @@ second bridge or the HIL application to "get one".
 | --- | --- | --- |
 | Flora tab opens but never connects / spins on "Connecting…" | A firewall blocks 8765, or the bridge died right after starting | The pill starts the bridge, so a dead connection here usually means the port is blocked: `nc -z <devkit-ip> 8765` from the host. Also check `/tmp/edgematic-foxglove-bridge.log` on the board — that's where the launch output goes. |
 | "foxglove_bridge did not come up in time" | The bridge process started but never opened its port — usually a missing ROS environment or a port already taken | `cat /tmp/edgematic-foxglove-bridge.log` on the board. If the ROS env is the problem, check `/opt/ros/*/setup.sh` exists; if the port is taken, `ss -ltn \| grep 8765`. |
-| "foxglove_bridge is not installed on the DevKit" | The ROS2 package is absent | Install it on the board (`sudo apt install ros-$ROS_DISTRO-foxglove-bridge`, or build it into the workspace), then retry. |
+| "foxglove_bridge is not installed on the DevKit" | The ROS2 package is absent | Build it into the board's workspace — SiMa's ROS 2 has no `foxglove-bridge` apt package; a simulator board gets it from its provisioning — then retry. |
 | Image panel stays black / no frames | RTSP input isn't live, or the pipeline hasn't started | Confirm a mediasrc slot is streaming (`edgematic-media-streams` — `list_input_streams`) and that `./run.sh yolov8_seg` is running. |
 | `/detections` panel shows nothing / errors | Using an Image panel on `/detections` instead of Raw Messages | `/detections` is a custom message type — it only renders in a **Raw Messages** panel, never an Image panel. |
 | Pipeline process won't stop cleanly | `Ctrl+C` sometimes leaves it wedged | `kill -USR2 <pid>` for a clean shutdown (the pipeline's signal handler). |

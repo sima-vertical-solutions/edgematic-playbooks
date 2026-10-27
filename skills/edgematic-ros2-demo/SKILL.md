@@ -78,7 +78,8 @@ from the expected topic.
 6. Launch with a saved PID, detached session, closed stdin, and a log file. Use
    the same ROS domain for publishers, probes, the bridge, and Studio.
 7. Start `foxglove_bridge` last, after the demo publishes. Verify its listener
-   and advertised viewer channels.
+   and advertised viewer channels. On a simulator board port 8765 is already its
+   provisioned bridge's: use that one, never start a second.
 8. Measure the output from a second session. Fresh non-zero rates are the
    pre-open data proof; do not manufacture a browser connection from the shell.
 9. For a successful `VIEW`, end the same final response with a bare

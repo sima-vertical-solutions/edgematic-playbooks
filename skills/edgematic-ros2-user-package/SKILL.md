@@ -70,7 +70,8 @@ workspace elsewhere.
   log. Verify the process from a second SSH session so a surviving local shell
   is not mistaken for a surviving workload.
 - Start or restart `foxglove_bridge` only after deploy and after publishers are
-  live. An in-place deploy can invalidate a running bridge binary.
+  live. An in-place deploy can invalidate a running bridge binary. A simulator board (`edgematic-ros2-board-setup` 5b) is the exception: its bridge already runs as a service — never start a second one. Its
+  log is `journalctl -u foxglove-bridge`.
 
 ## Prove the outcome at three levels
 

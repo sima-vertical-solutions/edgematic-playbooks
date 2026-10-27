@@ -25,6 +25,15 @@ The whole flow is tool calls; nothing is done in the Isaac editor:
 any point. Every tool that changes something asks the user to confirm, unless the user chose a
 permission mode that approves for them — so state what a call will change before you make it.
 
+**How it is reached: the VPN and the API, nothing else.** The simulator host is the hub of a
+private WireGuard network (usually `10.77.0.1`); the machine running Studio and every board are
+peers on it, and the board link runs over it. Studio talks to the simulator only through the
+sim-agent's API (usually `http://10.77.0.1:8740`; the URL and token in Settings → Robotics are
+what counts) — through these tools. Never SSH or run a shell on the simulator host, never ask for or repeat the token, and
+never send the user to a public address. When `get_simulation_status`'s `sim_agent` part is
+`{"unknown": …}`: "not both set" → Settings → Robotics; "unreachable" → the WireGuard tunnel on
+the machine running Studio is down, which the user brings back up.
+
 **No simulation tools at all?** (`upload_robot_bundle`, `create_robot`, `get_simulation_status`
 missing from your tools.) Studio hides the whole family while its simulation switch is off, and
 the switch resets to off whenever Studio restarts. Tell the user: turn on **Settings → Robotics →
@@ -73,6 +82,11 @@ Read the result, then tell the user what they got:
 - `sensors` — the mounted cameras. None means the board gets no camera from this robot.
 - `interfaces` — every topic the robot publishes or subscribes to, with its message type.
 - `warnings` — skipped sensors, no drive, and so on. Repeat them to the user.
+
+A robot is a robot here: nothing in this flow is specific to one model. When a new robot
+misbehaves, check in this order — `drive` (null → no robot.yaml drive and no ros2_control
+config), then `sensors` (none → no camera on the board), then `warnings`, then `interfaces` (the
+names the board app must use). A `.xacro` that needs arguments takes them in `xacro_args`.
 
 A job that is still running comes back as `{job_id, state}`; follow it with
 `get_simulation_job`.
@@ -137,7 +151,8 @@ Hand the topic names to the board app from the link — never hard-code them:
 
 - odometry: the `forward` topic that the link's `interfaces` list as `nav_msgs/msg/Odometry`
   (`forward` holds topic names only; the types are in `interfaces`). A ready-made scene lists no
-  `interfaces`; its link forwards odometry only (Nova Carter's `/chassis/odom`);
+  `interfaces`; its link forwards odometry only (Nova Carter's `/chassis/odom`), and
+  `get_simulation_status`'s `board.odometry.topic` names it;
 - velocity: the `accept` topic;
 - camera: `/camera/image_raw/compressed` (`sensor_msgs/msg/CompressedImage`, JPEG).
 
@@ -147,29 +162,38 @@ the board is edgematic-ros2-board-setup's.
 
 ### The board's side is always on — do not start it
 
-A board set up for the simulator runs its half of the link and its Foxglove bridge as services
-that start with the board. There is nothing to connect or launch:
+A board set up for the simulator runs its half of the link and a Foxglove bridge (port 8765) as
+services, and every login on it already carries the simulator's ROS domain (77) and DDS
+settings. There is nothing to connect or launch:
 
-- **Do not call `connect_simulation_input` or `start_hil_application`.** They run an older
-  hardware-in-the-loop setup (scripts under `/media/hil/`) that these boards do not have; exit
-  127 from either means exactly that, not a broken board. `start_hil_application` would also
-  start a different demo app.
-- **Ignore `tunnel` in `get_simulation_status`'s board part** — it looks for that older setup's
-  SSH tunnel and reads `false` on a working link. What tells you the link works: `get_board_link`
-  `applied_state: applied`, and the board part's `camera_hz` above zero (the camera arrived on
-  the board).
-- **The Foxglove bridge is running even when `ros2_node_list` does not list it.** Ask Studio's
-  Foxglove status (`GET /devices/{id}/foxglove`), or `ros2_topic_list` while a viewer is
-  connected; never conclude "no bridge" from the node list alone, and never start a second one.
+- **Read the board from `get_simulation_status`'s `board` part**: `zenoh_bridge` (its half of the
+  link), `foxglove_bridge`, `camera_hz` (the camera arriving) and `odometry`. A working link is
+  `get_board_link` `applied_state: applied` plus `camera_hz` above zero.
+- **`zenoh_bridge: false` is a provisioning problem** on the board, for whoever set it up; say
+  so — do not try to start a bridge.
+- **The Foxglove bridge's state is `foxglove_bridge`**, never `ros2_node_list` (the bridge is
+  often missing from the node list while it runs). Never start a second one.
+- **A board app keeps the board's domain and DDS settings**: it must not set its own
+  `ROS_DOMAIN_ID` or `CYCLONEDDS_URI`, or it hears no camera and drives nothing. For
+  `ros2_topic_list` / `ros2_node_list` on such a board, omit `domain` or pass `77`.
+- **`connect_simulation_input` and `start_hil_application` exist only where an operator set board
+  commands** for a board that does not link on its own. Never use them as a step of this flow.
 
 ### Is the robot moving?
 
-Odometry is the answer, not the board app's log: read the odometry topic on the board twice, a
-few seconds apart, while the app publishes velocity. If the board publishes on the `accept`
-topic but the position does not change, the command reached the simulator and the robot did not
-drive — a simulator-side problem with that robot (its drive, its wheels, its spawn height).
-Report it with those two readings; do not redeploy or restart the board app, which is not the
-cause.
+Call `get_simulation_status` while the app commands the robot. `board.odometry` is the robot's
+odometry read twice on the board, a few seconds apart: `{topic, first, second, seconds_apart,
+moved_m, turned_deg, moving}`. Check that `topic` is the link's odometry (`forward`) — the probe
+takes the first `nav_msgs/msg/Odometry` topic on the board, which could be one the app publishes.
+
+- `moving: true` — the robot drives; judge the behaviour (following, turning) from there.
+- `moving: false` while the app publishes on the `accept` topic — the command reached the
+  simulator and the robot did not drive: a simulator-side problem with that robot. Work through
+  the ladder in [references/troubleshooting.md](references/troubleshooting.md) and report the two
+  readings; do not redeploy or restart the board app, which is not the cause.
+- `{"unknown": …}` — no odometry reached the board: check the link's `forward`.
+
+Never judge motion from the app's log: it says what was commanded, not what happened.
 
 ## 7. Removing robots, scenes and bundles
 
@@ -187,6 +211,7 @@ user asked, and state the consequence before you call the tool:
 
 ## Troubleshooting
 
-See [references/troubleshooting.md](references/troubleshooting.md): the robot does not move or
-turns too slowly, no camera on the board, `applied_state` stuck, the simulation runs slowly, an
-import fails on a file reference or a YAML line.
+See [references/troubleshooting.md](references/troubleshooting.md). It opens with the ladder to
+follow whenever something in a simulated run does not work, for any robot; then the robot does
+not move or turns badly, no camera on the board, `applied_state` stuck, the simulation runs
+slowly, an import fails on a file reference or a YAML line.

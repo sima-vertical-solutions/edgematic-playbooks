@@ -249,7 +249,8 @@ Both return `{"graph": Graph}` on success with HTTP 200.
 ## Simulation (sim-agent)
 
 Studio reaches the Isaac Sim simulator only through its sim-agent (URL and token in Settings →
-Robotics). Every route answers `409 simulation_not_configured` until both are set; a refusal by
+Robotics). Every route answers `503 simulation_not_configured` until both are set (`409
+simulation_disabled` while the simulation switch is off); a refusal by
 the sim-agent is `sim_agent_rejected` with the sim-agent's own code in the message
 (`[scene_exists]`, `[robot_not_found]`, …). Jobs (`202`) are followed with `GET
 /simulation/agent/jobs/:jobId`. None of these routes is offered as a chat quick action.

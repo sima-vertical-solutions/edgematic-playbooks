@@ -421,6 +421,11 @@ not there.
 Take the value from `ros_domain_id`, which both `prepare_ros_build` and `deploy_to_device`
 report. Never guess it, and never carry one over from another workspace.
 
+**A board set up for the simulator is the exception.** Its own environment already puts every
+login on the simulator's domain, `77`, and its apps must stay there to hear the robot. Omit
+`domain` (the board's own `77` applies) or pass `77` — passing a workspace's default `0`
+exports `ROS_DOMAIN_ID=0` and lists nothing.
+
 ## Watching the build
 
 What `prepare_ros_build` set in motion depends on `run_on`. With `run_on: "host"` Studio

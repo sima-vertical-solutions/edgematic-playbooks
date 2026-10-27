@@ -1,6 +1,7 @@
 # robot.yaml — the robot profile
 
-A robot profile says what no standard robot file says for a simulator. It is optional: a URDF
+A robot profile says what no standard robot file says for a simulator. It is Edgematic's own
+draft format (`edgematic.robot/v0-draft`), not a ROS standard, and it is optional: a URDF
 plus the robot's ros2_control `diff_drive_controller` config is enough for a wheeled robot
 without cameras. Put it at the bundle's top folder as `robot.yaml`. Keys the simulator does not
 use are ignored, so a profile written for more is fine. A profile that is not valid YAML is
@@ -38,6 +39,9 @@ channels:                        # topic names of the generated graphs (defaults
   tf: { topic: /tf }
   joint_states: { topic: /joint_states }
 ```
+
+`channels` are only what the generated graphs use when nothing overrides them; a robot's own
+ROS nodes (in a USD robot) keep their names. Read the real names from the robot's `interfaces`.
 
 Only `type: camera` with an `asset` is built; other sensor types are skipped with a warning.
 

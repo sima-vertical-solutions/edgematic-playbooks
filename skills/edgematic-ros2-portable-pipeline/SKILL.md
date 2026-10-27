@@ -129,10 +129,12 @@ application source directory above it.
   fails while `tar` restores the directory's timestamps ("utime: Operation not
   permitted"), after appearing to copy fine.
 - **`ros_domain_id` must match the board.** A wrong id fails *silently* on
-  hardware — everything launches and nothing ever discovers anything. Ask; do not
-  guess.
+  hardware — everything launches and nothing ever discovers anything. On a
+  simulator board it is the simulator's, `77` (the board's own environment sets
+  it); otherwise ask; do not guess.
 - Deploy overwrites files in place, so a deployed `foxglove_bridge` is killed by
   its own overwrite. Start the bridge **after** deploying, never before.
+  A simulator board (`edgematic-ros2-board-setup` 5b) is the exception: its bridge already runs as a service — never start a second one.
 
 ## 4. Board pre-flight, before every run
 
@@ -239,7 +241,8 @@ exact string out of a working deploy rather than reconstructing it.
   `sensor_msgs/Image` overlay from the node holding the finished frame and point
   an Image panel at that. Start `foxglove_bridge` last — after the deploy and
   after the pipeline — and as the same user as the pipeline, or it lists every
-  topic and relays nothing (see the DDS pre-flight above).
+  topic and relays nothing (see the DDS pre-flight above). On a simulator board
+  it already runs as a service.
 
 ## 9. How often to check
 

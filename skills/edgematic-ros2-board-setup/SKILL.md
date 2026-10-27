@@ -174,18 +174,27 @@ JPEG). Steps 1 to 4 still apply; step 5 is replaced by:
    `accept` topic. Robots name these differently (`/chassis/odom`, `/odom`).
 4. The geometry is the compressed stream's: read `out_width` / `out_height` from the
    link's `camera` (`0` means the camera's own size, which the robot record's sensor
-   tells you), and measure the rate on the board rather than assuming it — the
-   simulator often runs below real time.
-5. Nothing to start on the board: its half of the link and its `foxglove_bridge` are
-   services. Do not call `connect_simulation_input` or `start_hil_application` (they
-   need an older `/media/hil/` setup and fail with exit 127), and ignore `tunnel: false`
-   in `get_simulation_status` — see `edgematic-simulation`.
+   tells you), and take the rate the board measures — `get_simulation_status` →
+   `board.camera_hz` — rather than assuming it: the simulator often runs below real
+   time.
+5. **A simulator board is provisioned, not prepared by hand.** Its half of the link
+   and a Foxglove bridge (port 8765) run as services — `board.zenoh_bridge` and
+   `board.foxglove_bridge` say whether they run; start neither. Every login already
+   carries the simulator's ROS domain (`ROS_DOMAIN_ID=77`) and DDS settings: the app
+   must not set its own, a deploy manifest's `ros_domain_id` must be 77, and
+   `ros2_topic_list` / `ros2_node_list` take `domain` 77 or none (0 lists nothing).
+   Deploy the app under `/data/simaai/applications` so the bridge decodes its message
+   types; the bridge restarts after a deploy there. `connect_simulation_input` and
+   `start_hil_application` are for boards an operator set up differently; never use
+   them here. When something does not work, follow the ladder in `edgematic-simulation`'s
+   troubleshooting reference.
 
 ### 6. foxglove_bridge, only if visualizing
 
 Needed only to render output (see `edgematic-foxglove-viz`). Not a precondition
 for the pipeline itself — do not block a run on it, and do not start it
-speculatively.
+speculatively. On a simulator board it is already running as a service (5b): never
+launch a second one.
 
 ## After the run starts
 
