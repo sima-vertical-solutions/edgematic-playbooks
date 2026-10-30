@@ -133,6 +133,35 @@ on the board cannot be repointed or relaunched from chat — deploy and launch y
 own build instead, and say that is what you are doing rather than reporting a
 capability as half-loaded.
 
+### 4b. Where Edgematic writes on the board
+
+Deploy targets, copied ROS bags and recordings need a directory the paired SSH
+user can write to, and **which directories exist depends on the board image**.
+A path that worked on an older image, or that appears in an older document or
+pull request, is not evidence that it exists on this board. Check before the
+first write:
+
+```bash
+ls -ld /media/nvme /media/nvme/applications "$HOME"
+lsblk -d -o NAME,SIZE,TYPE | grep -i nvme; df -h /media/nvme
+```
+
+Pick the first that works, in this order:
+
+1. **The NVMe disk:** `/media/nvme/applications/<name>` when `/media/nvme` is a
+   mounted NVMe disk and the SSH user can write under `/media/nvme/applications`.
+   This keeps large files (bags, models, build trees) off the eMMC root.
+2. **Fallback, the SSH user's home:** `$HOME/<name>`. It is always writable, but
+   it sits on the eMMC root (around 29 GB), so say so before copying anything
+   large there.
+
+Older images used `/media/simaai/applications/...`. On current images that
+directory does not exist. Do not create it, or change ownership of any root-owned
+directory with `sudo`, to make an old path work. Use the order above instead.
+Name `<name>` for what it holds (for example `edgematic-bag-playback`), never a
+placeholder copied from an example. The user decides where the deployment lives:
+report what you found and ask before writing to a new location.
+
 ### 5. The input stream comes from Edgematic Streams
 
 This is a requirement, not a preference. Start the stream through Studio
