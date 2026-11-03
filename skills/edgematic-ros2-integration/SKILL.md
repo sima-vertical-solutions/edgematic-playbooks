@@ -96,7 +96,8 @@ root-owned log file).
 ## Part B — Visualization (Foxglove / Flora)
 
 - Install the **Foxglove bridge** on the board (VP Confluence
-  "foxglove_bridge installation on a board").
+  "foxglove_bridge installation on a board") — except on a board set up for the
+  simulator, whose provisioning installs it as a service.
 - Run the **Foxglove client on the host** to render the pipeline with overlays
   (Mykola's overlay scripts). Install the extensions from the `vdp-simaai-ros2`
   repo ("FoxGlove extensions installation" page).

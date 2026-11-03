@@ -103,6 +103,7 @@ PUT  /settings/llm
 - **`/agent/chat[?project_id=<uuid>]`** — WebSocket; streams a live turn (`token` / `tool_call` / `tool_result` / `clarification_request` / `code_preview` / `done` / `error`). Bind with `project_id` to persist + replay. `code_preview` fires only under a tool-emitting provider, not `claude-code`.
 - **`/projects/:id/agent/transcript`** — persisted conversation as ordered turns (replay/seed counterpart of the WS).
 - **`/projects/:id/agent/history`** — paginated conversation history per project.
+- **`/simulation/agent/*`** — the Isaac Sim simulator through its sim-agent: status, timeline, robots, scenes and the board link (see the Simulation section of `references/api-surface-map.md`; the chat flow is the `edgematic-simulation` skill).
 
 ## Boundaries
 
