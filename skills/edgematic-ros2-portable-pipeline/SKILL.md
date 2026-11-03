@@ -15,11 +15,7 @@ build against is **sima-core** — the capabilities sibling — plus their own
 bringup package. Everything else here is board mechanics, true of any ROS 2 Neat
 pipeline whatever repository it came from.
 
-Prefer it whenever the user has their own workspace. It is the only path
-available at all on a deployment whose Robotics settings have disowned the
-legacy client repository — and this skill deliberately does not name that
-repository anywhere, because naming it is exactly what makes a skill invisible
-to the deployments that need this one most.
+Prefer it whenever the user has their own workspace.
 
 ## 1. The layout the tooling requires
 

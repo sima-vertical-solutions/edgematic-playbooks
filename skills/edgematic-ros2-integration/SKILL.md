@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-integration
-description: Use when running SiMa ROS 2 pipelines such as yolov8_seg on a Modalix SoM/DevKit and wiring them into Edgematic Studio chat. Covers flashing the SoC, installing ROS 2 and Neat, building and running vdp-simaai-ros2 pipelines, Foxglove/Flora visualization, and installing Edgematic Studio playbooks into the Neat SDK container. Trigger on ROS 2, Neat, SoM/Modalix, yolov8_seg, Foxglove/Flora, or Edgematic skills/playbooks.
+description: Use when running SiMa ROS 2 pipelines such as yolov8_seg on a Modalix SoM/DevKit and wiring them into Edgematic Studio chat. Covers flashing the SoC, installing ROS 2 and Neat, building and running the ROS 2 Neat example pipelines, Foxglove/Flora visualization, and installing Edgematic Studio playbooks into the Neat SDK container. Trigger on ROS 2, Neat, SoM/Modalix, yolov8_seg, Foxglove/Flora, or Edgematic skills/playbooks.
 ---
 
 # ROS2 + Edgematic Integration
@@ -51,16 +51,17 @@ it from a script that allocates a PTY — the metadata is fine, the picker is no
 1. **Flash SoC to 2.1.2** using the STMS eLxr TFTP/Netboot flashing steps.
 2. **Install ROS2** on the devkit (STMS "Setup ROS2 in eLxr on the Board").
 3. **Install Neat** core 0.2.1: `sima-cli neat install core@v0.2.1`.
-4. **Clone** `vdp-simaai-ros2` on the devkit. The circulated instructions say
-   branch `yolov8_seg_neat_integration`; that branch **does not exist** on the
-   remote (verified 2026-07-29). Use **`neat_integration`**.
+4. **Clone** the ROS 2 workspace that holds the pipeline on the devkit — the
+   repository the user names; ask for it rather than guessing one. The circulated
+   instructions say branch `yolov8_seg_neat_integration`; that branch **does not
+   exist** on the remote (verified 2026-07-29). Use **`neat_integration`**.
 5. **Start the RTSP server** and edit
    `packages/yolov8_seg/params/yolov8_seg.yaml` for the app used.
 6. **Build & run:**
 
    ```bash
    apt install git
-   cd /data/workspace/vdp-simaai-ros2
+   cd /data/workspace/<workspace>
    source /usr/local/ros2/local_setup.bash
    ./build.sh yolov8_seg
    ./run.sh yolov8_seg
@@ -68,8 +69,8 @@ it from a script that allocates a PTY — the metadata is fine, the picker is no
 
    Ignore the error from `apt install simaai-socpipeline-dev`.
 
-> On the Edgematic DevKit the workspace lives at
-> `/media/nvme/ros-work/vdp-simaai-ros2`, not `/data/workspace/...`, and ROS2 is
+> On the Edgematic DevKit the workspace lives under
+> `/media/nvme/ros-work/`, not `/data/workspace/...`, and ROS2 is
 > at `/usr/local/ros2/local_setup.bash` (there is no `/opt/ros`). The overlay
 > `install/setup.bash` must also be sourced for `simaai_common` message types.
 
@@ -99,8 +100,8 @@ root-owned log file).
   "foxglove_bridge installation on a board") — except on a board set up for the
   simulator, whose provisioning installs it as a service.
 - Run the **Foxglove client on the host** to render the pipeline with overlays
-  (Mykola's overlay scripts). Install the extensions from the `vdp-simaai-ros2`
-  repo ("FoxGlove extensions installation" page).
+  (Mykola's overlay scripts). Install the extensions from the ROS 2 workspace's
+  repository ("FoxGlove extensions installation" page).
 - **Flora Suite** (open-source, maintained fork of Foxglove Studio 1.x) is the
   preferred forward path: it integrates with Foxglove Bridge already used by the
   robotics teams. Rerun is an alternative for heavy ML multimodal data.

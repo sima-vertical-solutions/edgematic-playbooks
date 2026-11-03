@@ -208,25 +208,15 @@ def check_robot_tui_workspace_contract() -> None:
 # can reach it, and reading the text is the only check that works on a skill set
 # we install but do not control.
 #
-# The consequence for this repository is that a mention is load-bearing. These
-# skills are the ones a deployment still has once the repository is disowned, so
-# a mention inside one of them removes the very guidance that mode depends on —
-# and the failure is silent, because a hidden skill looks exactly like a skill
-# that was never installed.
+# The consequence for this repository is that a mention is load-bearing: one
+# passing mention hides the whole skill, and the failure is silent, because a
+# hidden skill looks exactly like a skill that was never installed. So no skill
+# here names the repository.
 LEGACY_REPO_SLUG = "vdp-simaai-ros2"
-MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO = (
-    "edgematic-ros2-portable-pipeline",
-    # The orchestrator runs on BOTH paths and branches on which one it is on, so
-    # it is the one skill that must never be hidden — a deployment that lost it
-    # would lose the flow that tells it the client-repository path is gone.
-    "edgematic-ros2-autonomous-run",
-)
 
 
 def check_legacy_repo_mentions(skill: Path) -> None:
-    """A skill that must outlive the legacy repository must not name it."""
-    if skill.name not in MUST_SURVIVE_WITHOUT_THE_LEGACY_REPO:
-        return
+    """No skill may name the legacy repository: naming it hides the skill."""
     for path in sorted(skill.rglob("*")):
         if not path.is_file() or path.suffix not in (".md", ".yml", ".yaml"):
             continue
@@ -235,11 +225,9 @@ def check_legacy_repo_mentions(skill: Path) -> None:
             if LEGACY_REPO_SLUG in line:
                 rel = path.relative_to(REPO)
                 fail(
-                    f"{rel}:{lineno}: names `{LEGACY_REPO_SLUG}`, but this skill is "
-                    "what a deployment falls back to once that repository is "
-                    "disowned — naming it makes the skill invisible to exactly "
-                    "the deployments that need it. Describe the repository "
-                    "without its name."
+                    f"{rel}:{lineno}: names `{LEGACY_REPO_SLUG}`; Studio hides every "
+                    "skill that names it on a deployment that has disowned that "
+                    "repository. Describe the workspace without its name."
                 )
 
 
