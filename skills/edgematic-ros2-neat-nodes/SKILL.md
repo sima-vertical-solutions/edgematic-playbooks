@@ -9,11 +9,11 @@ description: Use when the user wants to build, run, or introspect the SiMa ROS2 
 launch, verify and view, with minimal questions — start from
 `edgematic-ros2-autonomous-run` and come back here for the board-side tools.
 
-The DevKit runs the SiMa **`vdp-simaai-ros2`** workspace (branch
+The DevKit runs the SiMa ROS 2 Neat example workspace (branch
 `neat_integration`), whose `yolov8_seg` package is a single NEAT-native
 **`neat_inference`** lifecycle node — it decodes an RTSP feed, runs YOLOv8
 segmentation on the MLA, and publishes the results. The workspace is
-pre-provisioned on the board (typically at `/media/nvme/ros-work/vdp-simaai-ros2`);
+pre-provisioned on the board (typically under `/media/nvme/ros-work/`);
 you drive it over SSH through three agent tools — you do **not** need the
 terminal for these.
 
@@ -96,7 +96,7 @@ re-run `run_ros_pipeline` to restart it fresh.
 
 ## Example pipelines (neat_integration branch)
 
-The `vdp-simaai-ros2` (`neat_integration`) workspace ships several NEAT example
+The example workspace (`neat_integration` branch) ships several NEAT example
 pipelines under `packages/`. Pass the one you want as `run_ros_pipeline`'s
 `package`; `yolov8_seg` is the default demo. When the user asks to "show the
 examples", list these with a one-line description each.
@@ -107,7 +107,6 @@ examples", list these with a one-line description each.
 | **`yolov8`** | YOLOv8 **object detection** (boxes only) | `/detections_overlay` (Image), `/detections` (DetectionArray) |
 | **`yolo_pose`** | YOLO **pose** estimation | `/image_raw` (Image), `/simaai/genericrender/output` (annotated Image) |
 | **`yolov8_seg_sensor_fusion`** | seg + Intel **RealSense** depth fusion | `/…/color/image_raw`, `/…/depth/image_raw`, `/simaai/segmentation/detections`, `/simaai/sensor_fusion/output` |
-| `yolov8_rover` / `yolov8_seg_rover` | rover variants — **only on the Husarion ROSBot XL** | as above + rover odom/cmd_vel |
 
 All publish `/neat_inference/transition_event` (lifecycle state). For Flora, the
 inline card's default panels (overlay + raw + detections + pipeline-state) fit
