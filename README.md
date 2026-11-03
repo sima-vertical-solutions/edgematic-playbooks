@@ -58,6 +58,7 @@ sima-cli playbooks remove edgematic-device-ops
 | [`edgematic-ros2-demo`](skills/edgematic-ros2-demo) | Run a standard ROS 2 proof at the smallest useful level: READY, HELLO, LAUNCH, DEPLOY, or live VIEW. |
 | [`edgematic-ros2-user-package`](skills/edgematic-ros2-user-package) | Preserve, build, deploy, run, and verify an existing user-supplied ROS 2 package or workspace. |
 | [`edgematic-robot-tui`](skills/edgematic-robot-tui) | Prepare the user-supplied application TUI with generic build, provisioning, payload and rendering checks. |
+| [`edgematic-simulation`](skills/edgematic-simulation) | Bring robots into the Isaac Sim simulator — upload a bundle, create a ROS-ready robot, compose, load and play scenes, check which topics reach the DevKit over the board link, and remove robots, scenes and bundles. |
 
 ## Layout
 

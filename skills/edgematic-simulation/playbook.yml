@@ -1,0 +1,8 @@
+id: edgematic-simulation
+name: Edgematic Simulation
+version: 0.1.0
+agents: [codex, claude]
+description: Bring robots into the Isaac Sim simulator from Edgematic Studio — upload a robot bundle, create a ROS-ready robot (drafting a robot.yaml from the URDF when needed), compose, load and play scenes, check which of the robot's topics reach the paired DevKit, and remove robots, scenes and bundles.
+compatibility:
+  env_types: [host, sdk]
+  min_cli_version: 2.1.0

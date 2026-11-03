@@ -1,6 +1,6 @@
 ---
 name: edgematic-ros2-board-setup
-description: Use BEFORE running a ROS2 pipeline on a Modalix DevKit — preparing the board so the run can succeed, and checking it is still prepared. Covers the pre-flight order (pairing, a clean board, Neat version match, workspace state, input stream, foxglove_bridge), the rule that the pipeline's RTSP input must come from Edgematic's own Streams rather than an ad-hoc external server, and the failures that let a pipeline report "started" while producing nothing. Trigger on "set up the board", "prepare the DevKit", "why is the pipeline not producing output", "no detections", "the run started but nothing happens", or any ROS2 run against a board whose state is unknown. Do NOT use for running/introspecting a prepared pipeline (see edgematic-ros2-neat-nodes), pairing or deploying (see edgematic-device-ops), Flora rendering (see edgematic-foxglove-viz), or first-time SoC flashing (see edgematic-ros2-integration).
+description: Use BEFORE running a ROS2 pipeline on a Modalix DevKit — preparing the board so the run can succeed, and checking it is still prepared. Covers the pre-flight order (pairing, a clean board, Neat version match, workspace state, input stream, foxglove_bridge), the rule that the pipeline's input comes from Edgematic's own Streams (RTSP) or from the Isaac Sim simulator's board link rather than an ad-hoc external server, and the failures that let a pipeline report "started" while producing nothing. Trigger on "set up the board", "prepare the DevKit", "why is the pipeline not producing output", "no detections", "the run started but nothing happens", or any ROS2 run against a board whose state is unknown. Do NOT use for running/introspecting a prepared pipeline (see edgematic-ros2-neat-nodes), pairing or deploying (see edgematic-device-ops), Flora rendering (see edgematic-foxglove-viz), or first-time SoC flashing (see edgematic-ros2-integration).
 ---
 
 # Preparing a DevKit before a ROS2 pipeline run
@@ -10,9 +10,10 @@ A ROS2 pipeline launched against an unprepared board does not fail. It reports
 condition below produces that same symptom, which is why the board is checked
 *before* the run rather than diagnosed after it.
 
-For an **RTSP** pipeline, the video input comes from **Edgematic's own Streams**,
-never from an RTSP server someone started by hand. A pipeline whose confirmed
-input contract is direct USB V4L2 uses that exact device instead of Streams.
+For an **RTSP** pipeline, the video input comes from **Edgematic's own Streams**
+or from **the simulator's board link**, never from an RTSP server someone
+started by hand. A pipeline whose confirmed input contract is direct USB V4L2
+uses that exact device instead of Streams.
 
 ## Pre-flight order
 
@@ -207,11 +208,44 @@ started.
 > value cannot be resolved automatically today. Until it does, treat an unverified
 > geometry as a blocker rather than launching with a guess.
 
+### 5b. Or: the input comes from the simulator
+
+When the board app runs against a simulated robot (see `edgematic-simulation`), the
+camera does not come over RTSP: the simulator sends it over its board link, and the
+board receives it as `/camera/image_raw/compressed` (`sensor_msgs/msg/CompressedImage`,
+JPEG). Steps 1 to 4 still apply; step 5 is replaced by:
+
+1. A scene is loaded **and playing** — `get_simulation_status`. A loaded scene is
+   stopped until Play, and a stopped scene sends nothing.
+2. `get_board_link` shows `applied_state: applied`, and its `camera` is not `null`
+   (a robot with no camera sends none).
+3. Take the other topic names from the link, never from memory: odometry is the
+   `forward` topic that the link's `interfaces` list as `nav_msgs/msg/Odometry`
+   (`forward` holds names only), and the velocity command is the
+   `accept` topic. Robots name these differently (`/chassis/odom`, `/odom`).
+4. The geometry is the compressed stream's: read `out_width` / `out_height` from the
+   link's `camera` (`0` means the camera's own size, which the robot record's sensor
+   tells you), and take the rate the board measures — `get_simulation_status` →
+   `board.camera_hz` — rather than assuming it: the simulator often runs below real
+   time.
+5. **A simulator board is provisioned, not prepared by hand.** Its half of the link
+   and a Foxglove bridge (port 8765) run as services — `board.zenoh_bridge` and
+   `board.foxglove_bridge` say whether they run; start neither. Every login already
+   carries the simulator's ROS domain (`ROS_DOMAIN_ID=77`) and DDS settings: the app
+   must not set its own, a deploy manifest's `ros_domain_id` must be 77, and
+   `ros2_topic_list` / `ros2_node_list` take `domain` 77 or none (0 lists nothing).
+   Deploy the app under `/data/simaai/applications` so the bridge decodes its message
+   types; the bridge restarts on its own shortly after an app from there starts. `connect_simulation_input` and
+   `start_hil_application` are for boards an operator set up differently; never use
+   them here. When something does not work, follow the ladder in `edgematic-simulation`'s
+   troubleshooting reference.
+
 ### 6. foxglove_bridge, only if visualizing
 
 Needed only to render output (see `edgematic-foxglove-viz`). Not a precondition
 for the pipeline itself — do not block a run on it, and do not start it
-speculatively.
+speculatively. On a simulator board it is already running as a service (5b): never
+launch a second one.
 
 ## After the run starts
 
@@ -230,6 +264,8 @@ not something to retry — say so rather than restarting repeatedly.
 
 - Do not start an RTSP server by hand to "get something flowing" — it reintroduces
   the stale-address failure this skill exists to prevent.
+- Do not hard-code a simulated robot's odometry or velocity topic; read it from the
+  board link.
 - Do not treat a successful build as a working pipeline, or `started` as running.
 - Do not guess stream geometry.
 - Do not assume the board is in the state the last session left it in; a DevKit is
@@ -241,6 +277,7 @@ not something to retry — say so rather than restarting repeatedly.
 | --- | --- |
 | Pairing, status, deployment | `edgematic-device-ops` |
 | Starting and listing streams | `edgematic-media-streams` |
+| A simulated robot as the input | `edgematic-simulation` |
 | Running and introspecting the pipeline | `edgematic-ros2-neat-nodes` |
 | Rendering output in Flora | `edgematic-foxglove-viz` |
 | First-time SoC flash and full integration | `edgematic-ros2-integration` |
