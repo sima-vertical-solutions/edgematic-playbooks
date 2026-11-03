@@ -21,7 +21,7 @@ drive:                           # omit when the bundle has a ros2_control diff_
   right_wheel_joints: [wheel_right_joint]
   wheel_radius: 0.033            # metres
   wheel_separation: 0.288        # metres, between the left and right wheels
-  wheel_separation_multiplier: 1.0   # skid steer: raise until turns match the command (ROSbot XL: 3.0)
+  wheel_separation_multiplier: 1.0   # skid steer: raise until turns match the command (the four-wheel example below: 3.0)
   max_wheel_torque: 40           # N m in Isaac; raise when a skid steer will not turn in place
   max_linear_speed: 1.0          # m/s
   max_angular_speed: 3.0         # rad/s
@@ -80,14 +80,14 @@ drive:
 The result publishes `/odom`, `/tf` and `/joint_states` and drives from `/cmd_vel`. It has no
 camera: the Waffle Pi's camera is a URDF link, not a camera asset.
 
-## Example: ROSbot XL
+## Example: a four-wheel skid-steer robot
 
 A USD robot, a camera asset and a skid-steer drive tuned for Isaac:
 
 ```yaml
-name: rosbot_xl
+name: skid_steer_robot
 description:
-  usd: usd/rosbot_xl_isaac/rosbot_xl_isaac.usda
+  usd: usd/robot_isaac/robot_isaac.usda
   articulation_root: body_link
 drive:
   type: skid_steer

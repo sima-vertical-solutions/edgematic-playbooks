@@ -42,7 +42,7 @@ not work around it with REST calls or a shell: there is no other way to upload a
 
 **The rule that outranks everything else here: topic names come from the robot, never from
 memory.** Robots name their topics as they like (Nova Carter's odometry is `/chassis/odom`,
-ROSbot XL's `/odom`). Read them from `list_robots` (`interfaces`) or `get_board_link` before you
+another robot's plain `/odom`). Read them from `list_robots` (`interfaces`) or `get_board_link` before you
 write a topic into a config, a launch file or a Flora layout. The one fixed name is the camera on
 the board: the simulator compresses the robot's camera and the board always receives it as
 `/camera/image_raw/compressed`.
