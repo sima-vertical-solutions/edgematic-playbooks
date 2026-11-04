@@ -116,10 +116,10 @@ Key facts:
 - Edgematic is **not** shipped with skills. Neat SDK env setup auto-installs
   Neat skills, but Edgematic-specific skills must be installed separately via
   `sima-cli playbooks`.
-- Skills live in the **public** repo `sima-vertical-solutions/edgematic-playbooks`
-  under `skills/`. It needs no token. Studio's SDK extension installs from it by
-  default — `infrastructure/sdk-extension/source.json` carries
-  `skills.source: gh:sima-vertical-solutions/edgematic-playbooks`.
+- Skills live in the **public** repo `sima-vertical-solutions/edgematic-playbooks`.
+  It needs no token. `skills/` holds the base set, which every Studio install
+  takes, and `skills-ros/` holds the ROS 2 set, including this skill, which is
+  added only when ROS 2 is asked for at install time or by hand.
 - Distribution copies each skill into the per-agent home dir:
   `~/.claude/skills/<skill-id>/` and `~/.codex/skills/<skill-id>/`.
   Claude Code (subscription) reads `~/.claude/skills/` on launch; the
@@ -131,19 +131,20 @@ Key facts:
 
 ### Installing by hand
 
-The Studio installer does this for you. Install by hand only when tracking an
-unmerged branch, or when checking a skill you have just edited:
+The Studio installer does this for you when ROS 2 is asked for. Install by hand
+when Studio was installed without it, when tracking an unmerged branch, or when
+checking a skill you have just edited:
 
 ```bash
-sima-cli playbooks install gh:sima-vertical-solutions/edgematic-playbooks
+sima-cli playbooks install gh:sima-vertical-solutions/edgematic-playbooks/skills-ros --force
 ```
 
-Add `@branch` to take an unmerged branch, and `--force` to overwrite an
-existing copy. To test a working tree before it is pushed, point it at the
+Without `--force`, the install stops at the first skill already registered. Add
+`@branch` to take an unmerged branch. To test a working tree before it is pushed, point it at the
 directory instead:
 
 ```bash
-sima-cli playbooks install ./skills/edgematic-ros2-neat-nodes --force
+sima-cli playbooks install ./skills-ros/edgematic-ros2-neat-nodes --force
 ```
 
 Then verify the skills landed in `~/.claude/skills/<skill-id>/` (and

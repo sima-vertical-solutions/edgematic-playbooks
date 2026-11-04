@@ -17,7 +17,13 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+# Two trees, because they install separately: a default Edgematic Studio install
+# takes `skills/` alone, and `skills-ros/` is added only when ROS is asked for.
+# Installed skills are visible to any agent reading the skill homes, Studio's or
+# not, so a ROS skill in the wrong tree cannot be hidden later.
 SKILLS = REPO / "skills"
+SKILLS_ROS = REPO / "skills-ros"
+TREES = (SKILLS, SKILLS_ROS)
 
 # A directory holding any of these is a playbook root as far as sima-cli is
 # concerned. One at the repo root would make the WHOLE repository a single
@@ -162,7 +168,7 @@ def check_skill(skill: Path) -> None:
 def check_robot_tui_workspace_contract() -> None:
     """Keep the TUI flow off the projects root that Studio cannot adopt."""
     flow = (
-        SKILLS
+        SKILLS_ROS
         / "edgematic-robot-tui"
         / "references"
         / "automatic-flow.md"
@@ -244,7 +250,7 @@ def check_robot_agnostic_content(skill: Path) -> None:
     for path in sorted(skill.rglob("*")):
         if not path.is_file():
             continue
-        relative = path.relative_to(SKILLS).as_posix()
+        relative = path.relative_to(REPO).as_posix()
         if ROBOT_SPECIFIC_CONTENT.search(relative):
             fail(f"{relative}: robot-specific filename in shared skills")
         try:
@@ -257,23 +263,83 @@ def check_robot_agnostic_content(skill: Path) -> None:
                 fail(f"{relative}:{lineno}: robot-specific content in shared skills")
 
 
-def main() -> int:
-    if not SKILLS.is_dir():
-        print("error: no skills/ directory", file=sys.stderr)
-        return 1
+# What marks a skill as belonging in `skills-ros/`. Patterns rather than a list of
+# tool names, so a tool or skill added later is covered without touching this.
+ROS_CONTENT = re.compile(
+    r"\bROS\b|(?i:\bros2|\bros_|_ros_|colcon|foxglove|edgematic-ros|edgematic-robot)"
+)
 
+
+def check_base_skill_is_not_ros(skill: Path) -> None:
+    """A base skill reaches every install, so it must not be about ROS.
+
+    Also what stops a new ROS skill merged from another branch landing in
+    `skills/` and quietly becoming part of every install.
+    """
+    for path in sorted(skill.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(REPO)
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1
+        ):
+            match = ROS_CONTENT.search(line)
+            if match:
+                fail(
+                    f"{rel}:{lineno}: mentions {match.group(0)!r}, but skills/ is "
+                    "installed everywhere. Move a ROS skill to skills-ros/, or "
+                    "reword a passing mention."
+                )
+
+
+MARKDOWN_LINK = re.compile(r"\]\(([^)\s]+)\)")
+
+
+def check_relative_links(tree: Path, skill: Path) -> None:
+    """A relative link must resolve, and must stay inside its own tree.
+
+    Installed skills sit side by side while this repo has two trees, so a link
+    between the trees cannot be right in both places. And when only `skills/` is
+    installed, a link from it into `skills-ros/` points at nothing. Name the other
+    skill in prose instead.
+    """
+    for doc in sorted(skill.rglob("*.md")):
+        for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), start=1):
+            for target in MARKDOWN_LINK.findall(line):
+                if re.match(r"[a-z][a-z0-9+.-]*:", target) or target.startswith(("#", "/")):
+                    continue
+                resolved = (doc.parent / target.split("#", 1)[0]).resolve()
+                rel = doc.relative_to(REPO)
+                if not resolved.is_relative_to(tree.resolve()):
+                    fail(f"{rel}:{lineno}: link {target!r} leaves {tree.name}/")
+                elif not resolved.exists():
+                    fail(f"{rel}:{lineno}: link {target!r} does not resolve")
+
+
+def main() -> int:
     check_repo_root()
 
-    skills = sorted(p for p in SKILLS.iterdir() if p.is_dir())
-    if not skills:
-        print("error: skills/ holds no skills", file=sys.stderr)
-        return 1
-
-    for skill in skills:
-        check_skill(skill)
-        check_legacy_repo_mentions(skill)
-        check_robot_agnostic_content(skill)
+    skills: list[Path] = []
+    for tree in TREES:
+        found = sorted(p for p in tree.iterdir() if p.is_dir()) if tree.is_dir() else []
+        if not found:
+            print(f"error: {tree.name}/ holds no skills", file=sys.stderr)
+            return 1
+        for skill in found:
+            check_skill(skill)
+            check_legacy_repo_mentions(skill)
+            check_robot_agnostic_content(skill)
+            check_relative_links(tree, skill)
+            if tree == SKILLS:
+                check_base_skill_is_not_ros(skill)
+        skills.extend(found)
     check_robot_tui_workspace_contract()
+
+    # Both trees install into one flat skill home, so the second copy would
+    # silently overwrite the first on any install that takes both.
+    names = [s.name for s in skills]
+    for name in sorted({n for n in names if names.count(n) > 1}):
+        fail(f"{name}: present in both skills/ and skills-ros/")
 
     if errors:
         print(f"{len(errors)} problem(s) found:\n", file=sys.stderr)
