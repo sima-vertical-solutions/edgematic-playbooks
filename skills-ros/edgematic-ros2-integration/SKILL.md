@@ -136,11 +136,11 @@ when Studio was installed without it, when tracking an unmerged branch, or when
 checking a skill you have just edited:
 
 ```bash
-sima-cli playbooks install gh:sima-vertical-solutions/edgematic-playbooks/skills-ros
+sima-cli playbooks install gh:sima-vertical-solutions/edgematic-playbooks/skills-ros --force
 ```
 
-Add `@branch` to take an unmerged branch, and `--force` to overwrite an
-existing copy. To test a working tree before it is pushed, point it at the
+Without `--force`, the install stops at the first skill already registered. Add
+`@branch` to take an unmerged branch. To test a working tree before it is pushed, point it at the
 directory instead:
 
 ```bash
