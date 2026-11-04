@@ -283,9 +283,14 @@ time you take a video pipeline to a device:
      It is the user's source, not a slot you own.
 4. **Pick the video.** Use the one the user named. Otherwise take a
    `downloaded` entry from `list_videos`; if the library holds fewer videos than
-   there are slots to fill, reuse one video across them. If the library is
-   empty, stop and offer `add_video` (a curated clip by name, or no arguments to
-   upload a file) — a video pipeline with no input has nothing to show.
+   there are slots to fill, reuse one video across them. An empty `videos` is
+   only an empty library when `list_videos` also reports `catalogue` and
+   `media_library` as `ok`. If either is `unavailable`, say which one is
+   unreachable and call `list_videos` again before anything else; asking the
+   user to upload a clip is not the fix for a source that did not answer. If
+   the library really is empty, stop and offer `add_video` (a curated clip by
+   name, or no arguments to upload a file) — a video pipeline with no input has
+   nothing to show.
 5. **Keep positions.** `streams[N]` feeds output channel `N`. Replace entries in
    place; never reorder, drop or append to tidy the list — that silently
    rewires every later channel. If the list is empty and nothing in the config
