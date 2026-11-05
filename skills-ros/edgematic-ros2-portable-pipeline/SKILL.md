@@ -155,6 +155,9 @@ the returned `remote_path`. If either does not match, redeploy with the correct
 - **`remote_dir` must be writable by the configured SSH user.** For the common
   `sima` login, a root-owned target fails while `tar` restores the directory's
   timestamps ("utime: Operation not permitted"), after appearing to copy fine.
+  Choose it in the order `edgematic-ros2-board-setup` gives (the NVMe disk under
+  `/media/nvme/applications/`, then the SSH user's `$HOME`), and check that it
+  exists on this board rather than reusing a path from an older image.
 - **`ros_domain_id` must match the board.** A wrong id fails *silently* on
   hardware — everything launches and nothing ever discovers anything. On a
   simulator board it is the simulator's, `77` (the board's own environment sets
