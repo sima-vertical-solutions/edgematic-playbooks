@@ -1,6 +1,6 @@
 ---
 name: edgematic-simulation
-description: Use when the user wants to bring a robot into the Isaac Sim simulator, build or open a simulated scene, drive a simulated robot from a paired Modalix DevKit, or remove robots, scenes or bundles — "add this robot to the simulator", "import my URDF", "make a warehouse scene with the ROSbot", "load the scene and play", "what does the board get from the simulator", "delete that robot". Covers uploading a robot bundle, creating a ROS-ready robot (drafting a robot.yaml from the URDF when there is none), composing and loading scenes, the board link (which of the robot's topics reach the board, under the robot's own names), and removal. Do not use for a board app's own build, deploy or run (see edgematic-build-deploy-run), for board preparation (see edgematic-ros2-board-setup), or for Foxglove/Flora rendering (see edgematic-foxglove-viz).
+description: Use when the user wants to bring a robot into the Isaac Sim simulator, build or open a simulated scene, drive a simulated robot from a paired Modalix DevKit, or remove robots, scenes or bundles — "add this robot to the simulator", "import my URDF", "make a warehouse scene with my robot", "load the scene and play", "what does the board get from the simulator", "delete that robot". Covers uploading a robot bundle, creating a ROS-ready robot (drafting a robot.yaml from the URDF when there is none), composing and loading scenes, the board link (which of the robot's topics reach the board, under the robot's own names), and removal. Do not use for a board app's own build, deploy or run (see edgematic-build-deploy-run), for board preparation (see edgematic-ros2-board-setup), or for Foxglove/Flora rendering (see edgematic-foxglove-viz).
 ---
 
 # Edgematic Simulation
@@ -42,7 +42,7 @@ not work around it with REST calls or a shell: there is no other way to upload a
 
 **The rule that outranks everything else here: topic names come from the robot, never from
 memory.** Robots name their topics as they like (Nova Carter's odometry is `/chassis/odom`,
-ROSbot XL's `/odom`). Read them from `list_robots` (`interfaces`) or `get_board_link` before you
+a wheeled robot's `/odom`). Read them from `list_robots` (`interfaces`) or `get_board_link` before you
 write a topic into a config, a launch file or a Flora layout. The one fixed name is the camera on
 the board: the simulator compresses the robot's camera and the board always receives it as
 `/camera/image_raw/compressed`.

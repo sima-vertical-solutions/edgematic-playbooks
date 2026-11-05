@@ -3,7 +3,7 @@ name: edgematic-ros2-host-container
 description: Use when the ROS 2 container has to be created, provisioned or repaired on the user's own host before any ROS 2 work can start — there is no ROS 2 SDK container yet, the container was recreated and lost what was installed into it, or a workspace build dies within seconds on a build dependency the container does not carry (GTSAM, socpipeline, shapely). Covers the host install command, cloning sima-core into the directory shared by Studio and the ROS container, and running sima-core's in-place container provisioning. Trigger on "install ROS2", "set up the ROS container", "I have no ros2-sdk container", "provision the container", or an early missing-build-dependency failure. Do not use for capability selection/building, DevKit preflight, running a prepared pipeline, or SoC flashing.
 ---
 
-For robot-specific build/provisioning failures, consult the retained [bootstrap lessons](../edgematic-stiga-tui-demo/references/bootstrap-and-build.md), including binfmt loss after reboot, independent dependency checks, CPU budgeting and menu versus hardware readiness.
+For application build/provisioning failures, consult the [bootstrap lessons](../edgematic-robot-tui/references/bootstrap-and-build.md), including binfmt loss after reboot, independent dependency checks, CPU budgeting and menu versus hardware readiness.
 
 # Standing up the ROS 2 container on the host
 

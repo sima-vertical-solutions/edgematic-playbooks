@@ -257,14 +257,14 @@ the sim-agent is `sim_agent_rejected` with the sim-agent's own code in the messa
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/simulation/agent/status` | Simulator service, Isaac stage and timeline (`real_time_factor`), job queue, viewer and Foxglove URLs. |
+| `GET` | `/simulation/agent/status` | Simulator service, Isaac stage and timeline (`real_time_factor`), job queue, viewer URLs. |
 | `POST` | `/simulation/agent/simulator/start` / `stop` | Start (job) or stop the Isaac service. Body `{}`. |
 | `POST` | `/simulation/agent/timeline/:action` | `play`, `pause`, `stop`, `reset`. Body `{}`. |
 | `GET` | `/simulation/agent/jobs/:jobId` | `{job_id, state: queued\|running\|done\|failed, result?, error?}`. |
 | `GET` | `/simulation/agent/bundles` | Uploaded robot bundles (id, label, size, candidates, profiles). |
 | `DELETE` | `/simulation/agent/bundles/:bundleId` | Delete a bundle **and every robot made from it**. `204`. |
 | `GET` | `/simulation/agent/robots` | The robot library: drive, sensors, `interfaces` (topic, direction, type), warnings. |
-| `POST` | `/simulation/agent/robots` | Create a ROS-ready robot from a bundle. Body `{bundle_id, profile?, entry?, name?, xacro_args?, urdf?}`. Job; `result` is the robot. |
+| `POST` | `/simulation/agent/robots` | Create a simulation-ready robot from a bundle. Body `{bundle_id, profile?, entry?, name?, xacro_args?, urdf?}`. Job; `result` is the robot. |
 | `GET` | `/simulation/agent/robots/:robotId` | One robot. |
 | `DELETE` | `/simulation/agent/robots/:robotId` | Delete a robot (its bundle stays). `204`. |
 | `GET` | `/simulation/agent/scenes` | Saved scenes with the robots each places. |

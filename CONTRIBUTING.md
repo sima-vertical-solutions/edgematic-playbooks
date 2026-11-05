@@ -7,7 +7,16 @@ machine.
 
 ## Skill Layout
 
-Every skill lives under `skills/<skill-id>/`.
+Every skill lives under `skills/<skill-id>/` or `skills-ros/<skill-id>/`, and the
+tree decides who receives it:
+
+- `skills/` goes to every Edgematic Studio install, so nothing in it may be about
+  ROS 2, not even in passing. Agents outside Studio read the same skill folders,
+  so a skill that is installed cannot be hidden from them later.
+- `skills-ros/` is added only when ROS 2 is asked for.
+
+Installed skills sit side by side, so a relative link must stay inside its own
+tree. To point at a skill in the other tree, name it in prose.
 
 Required:
 
@@ -105,7 +114,9 @@ python3 .github/scripts/validate_skills.py
 
 It checks that every skill has a `SKILL.md` and a `playbook.yml`, that the id,
 directory name and frontmatter `name` agree, that `agents` lists both `codex` and
-`claude`, and that no skill-root marker has appeared at the repository root.
+`claude`, that no skill-root marker has appeared at the repository root, that no
+skill in `skills/` is about ROS 2, that no skill is in both trees, and that relative
+links resolve inside their own tree.
 
 Then install from the working tree into throwaway homes, so a broken draft cannot
 overwrite the skills you actually use:
@@ -122,10 +133,11 @@ that passed validation, and `discarded` the ones dropped — a non-zero
 the installed copy under `$CLAUDE_HOME/skills/<id>/` and confirm the files you
 expected are there.
 
-To validate the whole repository the way the bundle installer does:
+To validate a tree the way the bundle installer takes it:
 
 ```bash
-sima-cli playbooks install . --force
+sima-cli playbooks install ./skills --force
+sima-cli playbooks install ./skills-ros --force
 ```
 
 ## What CI Cannot Check Here
