@@ -32,8 +32,8 @@ contracts and evidence, outside these shared skills.
 
 Resolve SiMa platform repositories, Model Zoo artifacts, SDK dependencies and
 stored credentials inside the Studio workflow. Use
-[Modalix MLA runtime and ABI diagnosis](../edgematic-ros2-portable-pipeline/references/modalix-mla-runtime.md)
-for first-frame aborts or stalled model loads. The user's short outcome prompt
+the `edgematic-ros2-portable-pipeline` skill (MLA segment exhaustion, input
+geometry failures) for first-frame aborts or stalled model loads. The user's short outcome prompt
 needs hardware identity, connection and behavior; it need not name the SiMa
 GitHub organization, compiler packages, or workaround steps.
 Check the selected ROS SDK container and build channel before building. When

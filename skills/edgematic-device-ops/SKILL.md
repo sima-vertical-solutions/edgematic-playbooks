@@ -88,8 +88,7 @@ that need not list every interface.
 - When the user says "check" or "verify" a connection, do this inspection in
   the same turn rather than asking again.
 - Keep these probes read-only. Changing the board (installs, services, files
-  outside the application directory) belongs to the application workflow and
-  `edgematic-ros2-board-setup`, not to inspection.
+  outside the application directory) belongs to the application workflow, not to inspection.
 
 ## Key rules
 
