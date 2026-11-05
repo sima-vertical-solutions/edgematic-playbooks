@@ -3,7 +3,7 @@ name: edgematic-ros-capabilities
 description: Use when the user wants to set up or open a host ROS 2 colcon workspace in EdgeMatic Studio; clone the robot repositories; inspect, add, remove, or turn off build capabilities; build the ROS workspace; or deploy it to the robot. Covers clone_repository, open_ros_workspace, list_ros_capabilities, set_ros_capabilities, prepare_ros_build, cancel_ros_build, and build-log monitoring. Ensures the client repository and sima-core share one parent, only bringup exec_depend entries select capabilities, declared third-party sources are complete, the build script is explicit, and the run_on result controls the build handoff. Do NOT use for board-side ROS 2 Neat pipelines on a paired DevKit, Foxglove or Flora rendering, board bring-up and flashing, or non-ROS EdgeMatic model-archive projects.
 ---
 
-For robot TUI deployments, also read [robot TUI setup](../edgematic-stiga-tui-demo/SKILL.md). It preserves the reusable build and payload lessons from withdrawn Stiga PR #55 without depending on that feature branch.
+For robot TUI deployments, also read [robot TUI setup](../edgematic-robot-tui/SKILL.md). It covers generic build, payload and operator-session verification.
 
 # ROS Workspace Capabilities, Build & Deploy
 
@@ -82,10 +82,10 @@ Follow it. Each step needs what the one before it returns.
 ## 0. Getting the two repositories onto disk
 
 When the workspace is not on disk yet, put it there with `clone_repository` — **twice, into
-one and the same `parent`** — and then open that parent. Unless the user named other
-repositories, they are:
+one and the same `parent`** — and then open that parent. Take the application
+repository from the user's prompt; do not substitute a remembered robot repository:
 
-1. `clone_repository` `{ "repo": "sima-vertical-solutions/stiga", "parent": "<the parent>" }`
+1. `clone_repository` `{ "repo": "<user-supplied-application-repository>", "parent": "<the parent>" }`
 2. `clone_repository` `{ "repo": "sima-vertical-solutions/sima-core", "parent": "<same parent>" }`
 3. `open_ros_workspace` `{ "path": "<that same parent>" }`
 
@@ -284,10 +284,8 @@ Each is a `vcs` manifest: a `repositories:` map of `name → {type, url, version
 
 **`manifest.repos` is where to look when a package is missing that no
 `dependencies.repos` declares.** It names the platform repositories — usually the client
-and the core you cloned yourself, but it can name more: the Stiga workspace declares
-`sima-sensor-stack`, which carries `sensor_bringup`, `intel_realsense_d435`,
-`imu_icm42688_spi`, `power_board_driver` and `sensor_manager`, and nothing else on disk
-mentions them.
+and the core you cloned yourself, but it can also name sensor and runtime providers that
+nothing else on disk mentions.
 
 Fetch from it on that symptom rather than on sight. The capability manifests declare BUILD
 dependencies, so taking all of them is right; `manifest.repos` mostly declares packages
@@ -296,15 +294,15 @@ disk — so pulling one nothing needs lengthens every build and adds ways for it
 
 **Do not scope this to the selected capabilities.** It is tempting and it is wrong: a
 package outside the selection can still be pulled into the build graph by an ordinary
-dependency — in the Stiga workspace `stiga_behavior` requires `apriltag_docking` whatever
-the selection says. Take every declaration.
+dependency, whatever the selection says. Take every declaration, and do not infer
+dependency names from a previous robot.
 
 **`ref` is not optional in practice.** The manifests pin branches (`release/2.4.x`), tags
 (`v1.2.1-devel`) and raw commits (`62a272ac…`). Omitting it clones the default branch,
 which succeeds, builds, and ships a different revision than the one asked for — a failure
 nothing downstream can notice.
 
-A manifest may name a private repository (the Stiga workspace's `visual_odometry` names two).
+A manifest may name a private repository.
 Those need a credential; report them by name rather than silently skipping them.
 
 ## Which script builds this project
