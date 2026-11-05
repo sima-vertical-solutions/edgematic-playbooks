@@ -81,6 +81,8 @@ sima-cli playbooks remove edgematic-device-ops
 | [`edgematic-ros-capabilities`](skills-ros/edgematic-ros-capabilities) | Set up or open a host colcon workspace in Studio and manage its capabilities. |
 | [`edgematic-foxglove-viz`](skills-ros/edgematic-foxglove-viz) | View a running pipeline's live detections and masks in the bundled Flora app. |
 | [`edgematic-simulation`](skills-ros/edgematic-simulation) | Bring robots into the Isaac Sim simulator — upload a bundle, create a ROS-ready robot, compose, load and play scenes, check which topics reach the DevKit over the board link, and remove robots, scenes and bundles. |
+| [`edgematic-ros2-contract-builder`](skills-ros/edgematic-ros2-contract-builder) | Generate a package from user-supplied robot sources and evidence contracts. |
+| [`edgematic-ros2-starter-prompts`](skills-ros/edgematic-ros2-starter-prompts) | Prepare copy-ready prompts including the user's source and target. |
 | [`edgematic-robot-tui`](skills-ros/edgematic-robot-tui) | Prepare the user-supplied application TUI with generic build, provisioning, payload and rendering checks. |
 
 ## Layout

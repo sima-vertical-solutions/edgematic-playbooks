@@ -5,6 +5,12 @@ description: Use when the user wants to build an Edgematic project, deploy it to
 
 # Edgematic Build, Deploy & Run
 
+If building requires choosing or replacing a model or runtime component, look
+for a compatible SiMa artifact first (the Studio model catalogue and the Model
+Zoo for the observed SDK version and board type) and reuse it before custom
+compilation or an external runtime. Preserve an existing project's working,
+explicitly selected contract.
+
 ## Overview
 
 Take a project all the way to running on a device, from chat: **build** it, wait
@@ -394,6 +400,9 @@ rebuild, redeploy, restart or stop a healthy run to fix a viewing problem.
   `unrecognized arguments`. If `requirements.txt` exists it is `pip install -r`'d
   ON THE DEVICE before the script — list only packages available on the board,
   and never `pyneat` (the board's venv already provides it).
+- **A deploy that reports success is not proof the board has the new code.**
+  Check a build marker or file hash on the board after `deploy_to_device`, and
+  pass `payload` explicitly when the project stages one.
 - **Builds and runs are async — always poll before the next step.** Don't deploy
   right after `build_project`, and don't fetch results right after `run_pipeline`;
   poll the status tool first.

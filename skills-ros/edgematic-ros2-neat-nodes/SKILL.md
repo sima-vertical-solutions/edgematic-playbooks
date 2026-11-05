@@ -5,6 +5,11 @@ description: Use when the user wants to build, run, or introspect the SiMa ROS2 
 
 # ROS2 Neat Nodes (yolov8_seg) on a Modalix DevKit
 
+When selecting models or replacing inference components, follow
+[SiMa-first component selection](../edgematic-ros-capabilities/references/sima-first-selection.md).
+Discover the target-compatible SiMa artifact and its parser/input contract
+before adding an external model or implementing a duplicate inference path.
+
 **For a full end-to-end run** — sources, input provisioning, build, deploy,
 launch, verify and view, with minimal questions — start from
 `edgematic-ros2-autonomous-run` and come back here for the board-side tools.
@@ -143,9 +148,7 @@ in Edgematic (the Streams panel), chain the media tools with `run_ros_pipeline`:
 
    **Verify the host is board-reachable before blaming the pipeline.** The
    stream tools report the *host's* view of itself, which is not always the
-   address the board can route to (measured: one host answered on
-   `172.16.1.208` from the board while `172.16.1.114` — the reported endpoint —
-   was unreachable). A wrong host here produces a pipeline that runs happily
+   address the board can route to. Verify the reported endpoint from the board. A wrong host here produces a pipeline that runs happily
    with **`/image_raw` at 0 Hz** and a blank overlay, and no error anywhere.
    If frames never arrive, say so plainly and have the user run
    `ros2 topic hz /image_raw` and `nc -z <host> 8554` from the DevKit terminal.

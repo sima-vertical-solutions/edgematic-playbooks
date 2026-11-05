@@ -26,7 +26,7 @@ returns a 422:
 
 - **`nfs_host_setup_required`** — no workspace mounted on the DevKit. The
   error's `message` already contains the exact, copy-paste-ready command with the
-  real IP, e.g. `sima-cli sdk setup --devkit 192.168.91.131`. **Surface that
+  real IP, e.g. `sima-cli sdk setup --devkit <device-ip>`. **Surface that
   message verbatim** and tell the user to run it on the host (outside the
   container), then retry pairing.
 - **`nfs_workspace_mismatch`** — a workspace is mounted, but it is not the one
