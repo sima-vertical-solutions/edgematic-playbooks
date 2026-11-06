@@ -189,9 +189,12 @@ Having derived the requirement, satisfy it without asking:
    dataset's capture rate is rarely the pipeline's), then continue as case 2.
    If the download needs an account and a licence, ask for the archive — that is
    the one legitimate question about a source.
-4. **A live camera or existing RTSP source** — use it directly when its geometry
+4. **A project ROS bag** — when the user points at a bag in the project, run the
+   project's deployed perception on its camera with `run_ros_pipeline`
+   `input: "bag"` instead of provisioning a stream (see `edgematic-ros2-neat-nodes`).
+5. **A live camera or existing RTSP source** — use it directly when its geometry
    matches, and say plainly it must be restreamed if it does not.
-5. **The simulator** — when the user asks to run against a simulated robot, there
+6. **The simulator** — when the user asks to run against a simulated robot, there
    is no stream to provision: the simulator's board link delivers the robot's
    camera to the board as `/camera/image_raw/compressed` (JPEG, so the pipeline
    needs a compressed-image input or a decoder in front of it). Follow
