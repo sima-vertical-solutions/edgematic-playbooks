@@ -66,7 +66,7 @@ see — go to *Triage*.
      frame, which takes seconds to ~2 minutes. Poll `count_streams` every ~10 s
      for up to ~2 minutes. Only if it is still 0 report it as a **pipeline**
      problem, with `get_pipeline_status.log_tail` — and do **not** offer to start
-     a stream: `start_stream` fills input slots (1–16) and cannot create an
+     a stream: `start_stream` fills input slots (1-based) and cannot create an
      output channel (0–79).
    - **On a bare request** with no run in flight — tell the user there are no
      active streams and offer to start one (via the media/streams skill).

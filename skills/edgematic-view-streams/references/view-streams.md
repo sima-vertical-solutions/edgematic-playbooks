@@ -56,7 +56,7 @@ So immediately after a deploy, `count: 0` is a *timing* reading, not a verdict:
 - Only a count still at 0 after that window is a pipeline problem — report it
   with `get_pipeline_status.log_tail`, which names the actual fault (missing
   model, unreadable source, bad config).
-- **`start_stream` is never the remedy.** Input slots (1–16) and output channels
+- **`start_stream` is never the remedy.** Input slots (1-based) and output channels
   (0–79) are separate namespaces; starting an input stream cannot bring an
   output channel into existence, and doing so only adds an unrelated stream.
 - A count that comes up and then *shrinks* is a pipeline dying mid-run, not a

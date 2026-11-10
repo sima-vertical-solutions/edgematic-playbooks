@@ -31,7 +31,7 @@ about.
 | `remove_video` | Remove a video from the library by `name` | Requires confirmation. |
 | `start_stream` | Start an RTSP/WebRTC stream for a video | `video` (library name or `rtsp://` URL); optional `index` pins the slot, else the lowest free slot is used. Returns the slot + RTSP + WebRTC addresses. |
 | `stop_stream` | Stop a running stream | `index` stops one slot; `all: true` stops every slot. Requires confirmation. |
-| `list_input_streams` | List running input streams (playing slots) with RTSP + WebRTC | Read-only. Slots are **1-based** (1–16). |
+| `list_input_streams` | List running input streams (playing slots) with RTSP + WebRTC | Read-only. Slots are **1-based**; `slot_count` says how many exist (Insight decides). |
 | `list_output_streams` | Output addresses **plus live per-peer egress and browser decode/render statistics** | Read-only. Output channels are **0-based** (0–79). The tool to reach for when a stream is running but the user can't see it. |
 
 Full request/response and error detail: `references/media-streams-api.md`.
@@ -54,8 +54,9 @@ output channel maps to the slot of the same number — see the reference.
    (e.g. `people.mp4`). If the user is vague ("stream that detection clip"), call
    `list_videos` first and confirm which entry they mean.
 5. **Let the slot be auto-picked.** `start_stream` chooses the lowest free slot
-   automatically. Only pass an explicit `index` (1–16) if the user asks for a
-   specific slot. If all 16 slots are in use, tell the user and offer to stop one.
+   automatically. Only pass an explicit `index` (1-based, up to the
+   `slot_count` from `list_input_streams`) if the user asks for a specific slot.
+   If every slot is in use, tell the user and offer to stop one.
 6. **Don't add your own confirmation.** `remove_video` and `stop_stream` are
    gated by the runtime approval policy, which decides from the user's posture
    whether to prompt — so never ask "shall I?" on top of it. What you MUST do is
@@ -103,8 +104,10 @@ addresses for an input stream so they can pick whichever their viewer supports.
 
 ## Key rules
 
-- **Slots are 1–16 and auto-assigned.** Don't ask the user for a slot number
-  unless they want a specific one; `start_stream` picks the lowest free slot.
+- **Slots are 1-based and auto-assigned; Insight decides how many exist.** Read
+  the count from `list_input_streams`' `slot_count`, never assume one. Don't ask
+  the user for a slot number unless they want a specific one; `start_stream`
+  picks the lowest free slot.
 - **`add_video` is for curated clips by `name` only.** For the user's own file,
   use no-argument `add_video` (chat file picker). There is no URL/path add.
 - **After starting a stream that feeds a RUNNING pipeline, verify and show the
