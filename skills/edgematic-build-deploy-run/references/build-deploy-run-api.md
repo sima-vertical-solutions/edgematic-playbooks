@@ -136,7 +136,7 @@ such, with expected-vs-seen counts.
 | `output_fps` present then collapses to 0 | Source ended or the pipeline stalled | Assume the board is fine |
 | Ladder green, user sees blank tiles | insight→browser leg (WebRTC/decode) | Restart / rebuild / redeploy — it fixes nothing |
 
-Input slots (`start_stream`, 1–16) and output channels (`count_streams`, 0–79)
+Input slots (`start_stream`, 1-based) and output channels (`count_streams`, 0–79)
 are **different namespaces**: no `start_stream` call can create an output
 channel, so it is never the remedy for a zero stream count after a run.
 

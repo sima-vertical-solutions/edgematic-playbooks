@@ -271,7 +271,7 @@ time you take a video pipeline to a device:
 
 1. **Read the config** with `read_file` (`common/config.yaml`). No `streams:`
    list, or `output.video_enabled: false` → not a video pipeline; skip this.
-2. **See what is playing** — `list_input_streams` (slots are 1-based, 1–16).
+2. **See what is playing** — `list_input_streams` (slots are 1-based; `slot_count` says how many exist).
 3. **Walk `streams:` in order and fix each entry in place:**
    - An Insight slot URL whose slot **is playing** → leave it.
    - An Insight slot URL whose slot is **not playing** → `start_stream` with
@@ -319,7 +319,7 @@ pushing frames, and is it still pushing them a moment later?*
    So `count: 0` immediately after a run means *not yet*, **not** "no streams":
    poll every ~10 s for up to ~2 minutes before calling it a failure. Never
    "fix" a zero count by starting an input stream — `start_stream` fills input
-   slots (1–16) on the way IN and cannot create an output channel (0–79).
+   slots (1-based) on the way IN and cannot create an output channel (0–79).
 3. **They are STABLE, not merely present.** One reading proves a frame arrived
    once; it does not prove video. Sample `count_streams` again after **10 s** and
    require the channel set to be the **same or larger**. Ten seconds of held
@@ -364,7 +364,7 @@ rebuild, redeploy, restart or stop a healthy run to fix a viewing problem.
 - **`count_streams: 0` right after a run means "not yet", not "none".** Output
   channels appear only after the first annotated frame (up to ~2 min). Poll
   before concluding — and never answer a zero count by starting an input stream:
-  slots 1–16 (in) and channels 0–79 (out) are different namespaces, and
+  input slots (1-based) and output channels 0–79 (out) are different namespaces, and
   `start_stream` cannot create the latter. An Insight slot that `streams:` names
   and that is NOT playing starves the pipeline just as surely — but that is
   checked BEFORE the build (*Provisioning input streams*), not reached for as a

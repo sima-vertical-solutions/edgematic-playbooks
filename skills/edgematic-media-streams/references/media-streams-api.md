@@ -19,8 +19,9 @@ Curated `sima` clips are known catalogue entries that may be `remote` until
 
 ## Stream model
 
-The insight service exposes up to **16 input slots** (`mediasrc`), each with an
-`index` (**1–16**, 1-based), a `file` (the assigned video), and a `state` (a slot
+The insight service exposes a set of **input slots** (`mediasrc`) — how many is
+Insight's decision, and `list_input_streams` reports it as `slot_count` — each
+with an `index` (**1-based**), a `file` (the assigned video), and a `state` (a slot
 is considered running when `state == "playing"`). Pipeline **output** channels
 are a separate, **0-based** namespace (`0–79`) that shares the same
 `?channel=N` viewer endpoint — see *Channel namespaces* below before quoting any
@@ -73,26 +74,30 @@ from the service, never `localhost`):
 
 ### `start_stream`
 - Params: `video` (required — a library name or an `rtsp://` URL); optional
-  `index` (1–16). When `index` is omitted the tool assigns the **lowest free
+  `index` (1-based; a slot Insight does not report is refused with
+  `invalid_tool_params` naming the real range). When `index` is omitted the tool assigns the **lowest free
   slot** (the lowest index not currently `playing`).
 - Sequence: list slots → pick slot → assign the video → start → read server IP.
 - Returns: `{ index, video, rtsp, webrtc }` with the fully-formed addresses.
 - Errors: `video_not_found` (a non-`rtsp://` `video` not in the Media Library —
   checked before proxying; `rtsp://` passthrough URLs skip this check),
-  `insight_operation_failed` (all 16 slots in use, or the service rejected
+  `invalid_tool_params` (an `index` that is not a slot number, or not a slot
+  Insight reports — nothing is assigned or started),
+  `insight_operation_failed` (every slot in use, or the service rejected
   assign/start), `insight_unreachable`.
 
 ### `stop_stream`
 - Params: `index` (stop one slot) OR `all: true` (stop every slot). Requires
   confirmation (destructive).
 - Returns: `{ stopped: <index> }` or `{ stopped: "all" }`.
-- Errors: `invalid_tool_params` (neither `index` nor `all`),
-  `insight_unreachable`, `insight_operation_failed`.
+- Errors: `invalid_tool_params` (neither `index` nor `all`, or an `index` that is
+  not a slot Insight reports — nothing is stopped), `insight_unreachable`,
+  `insight_operation_failed`.
 
 ### `list_input_streams`
 - Params: none. Read-only.
-- Returns: `{ streams: [ { index, file, rtsp, webrtc } ] }` — only the slots that
-  are currently `playing`.
+- Returns: `{ streams: [ { index, file, rtsp, webrtc } ], slot_count }` — only the
+  slots that are currently `playing`, plus how many slots Insight has in total.
 - Errors: `insight_unreachable`.
 
 ### `list_output_streams`
@@ -150,7 +155,7 @@ Both are addressed as `?channel=N` on port 8081, and they are offset by one:
 
 | | Range | Base | Addressed as |
 | --- | --- | --- | --- |
-| **Input slots** (`mediasrc`, the playing videos) | 1–16 | **1-based** | `https://<ip>:8081/offer?channel=<slot>` |
+| **Input slots** (`mediasrc`, the playing videos) | 1–`slot_count` | **1-based** | `https://<ip>:8081/offer?channel=<slot>` |
 | **Output channels** (annotated pipeline results) | 0–79 | **0-based** | `https://<ip>:8081/offer?channel=<channel>` |
 
 So `?channel=1` is input slot 1 **and** output channel 1 — different streams on
