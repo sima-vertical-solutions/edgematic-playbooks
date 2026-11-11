@@ -172,6 +172,13 @@ runs is the project's own deployed perception (`runtime.perception_launch` in it
 first. Ask the user which camera when the bag has several. Rules, refusals and
 stop behaviour: [references/bag-input.md](references/bag-input.md).
 
+Show the output in the chat first, as for an RTSP run: poll
+`get_ros_bag_playback` until `state` is `playing` (the perception has nothing to
+draw before the bag plays), then end that reply with the `edgematic-flora`
+directive (empty body: the overlay and the detections table) and offer a
+`prompt` pill to stop it (`"prompt": "Stop the bag playback"`). Do not also
+offer a `flora` pill for the same view.
+
 ## Recommended flow for "build and run on device"
 
 **This is the one place a build on the board is correct**, and it is correct
