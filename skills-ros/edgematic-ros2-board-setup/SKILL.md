@@ -196,6 +196,11 @@ For RTSP input this is a requirement, not a preference. Start the stream through
 (`start_stream`, or the Streams page) and pass the returned `rtsp://…` address to
 `run_ros_pipeline` as `rtsp_url`.
 
+For a project ROS bag (`run_ros_pipeline` `input: "bag"`) there is no stream to
+start: the bag is copied to the board and played there. Check instead that the
+project is deployed to the board and that its directory (see 4b) has room for
+the bag.
+
 For direct USB V4L2, verify the exact configured device path resolves on the
 board and supports the contract's capture format, size and FPS. Start the
 client package's USB capture component with that path. Do not start Streams,
